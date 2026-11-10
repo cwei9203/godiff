@@ -1,9 +1,11 @@
 package main
 
 import (
+	"os/exec"
 	"runtime"
 
 	"github.com/egoist/godiff/internal/agent"
+	"github.com/egoist/godiff/internal/proc"
 	"github.com/egoist/mygo"
 )
 
@@ -95,6 +97,7 @@ func buildMenu() *mygo.Menu {
 		{Label: "File", Submenu: []*mygo.MenuItem{
 			{Label: "Open Folder…", Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { openFolder() }},
 			{Label: "Open Recent", Submenu: recentMenuItems()},
+			{Label: "Switch Repository…", Click: func(*mygo.MenuItem, *mygo.Window) { go showWelcome(nil) }},
 			{Label: "Open Commit…", Accelerator: "CmdOrCtrl+Shift+C", Click: inWindow(func(w *window) { w.openDialog(dialogCommit) })},
 			{Label: "Open Branch…", Click: inWindow(func(w *window) { w.openDialog(dialogBranch) })},
 			{Label: "Open Pull Request…", Click: inWindow(func(w *window) { w.openDialog(dialogPull) })},
@@ -107,6 +110,7 @@ func buildMenu() *mygo.Menu {
 			mygo.Separator(),
 			{Label: "Open File in Editor", Accelerator: "CmdOrCtrl+Shift+O", Click: inWindow(func(w *window) { w.openCurrent() })},
 			mygo.Separator(),
+			{Label: "Close Repository", Accelerator: "CmdOrCtrl+Shift+W", Click: inWindow(func(w *window) { closeRepository(w) })},
 			{Role: mygo.RoleClose},
 		}},
 		{Label: "Edit", Submenu: []*mygo.MenuItem{
@@ -257,6 +261,28 @@ func recentMenuItems() []*mygo.MenuItem {
 		state.clearRecent()
 		mygo.App.SetMenu(buildMenu())
 	}})
+}
+
+// closeRepository closes the window of a repository and opens the welcome
+// page: a window is a repository, so the way to another one leads back there
+// rather than to a window that shows none.
+func closeRepository(w *window) {
+	win := w.win
+	go func() {
+		win.Close()
+		showWelcome(nil)
+	}()
+}
+
+// revealInFinder shows a folder in the Finder, on the platforms that have
+// one.
+func revealInFinder(path string) {
+	if runtime.GOOS != "darwin" {
+		return
+	}
+	cmd := exec.Command("open", "-R", path)
+	proc.HideConsole(cmd)
+	cmd.Run()
 }
 
 // openRecent opens a repository of File → Open Recent.

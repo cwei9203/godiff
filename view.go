@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -102,11 +103,9 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 		if !w.sidebarShown {
 			w.sidebarToggle(c)
 		}
-		// The repository: its name, and where it is.
-		ui.Column(c).Gap(1).Shrink(1).MinWidth(0).Tooltip(w.repo.Root).Children(func() {
-			ui.Text(c, filepath.Base(w.repo.Root)).FontSize(13).Bold().SingleLine()
-			ui.Text(c, filepath.Dir(abbreviateHome(w.repo.Root))).FontSize(11).TextColor(t.TextMuted).SingleLine()
-		})
+		// The repository: its name, and where it is, and the way to
+		// another one: the folders of late, or one to pick.
+		w.repoSwitcher(c, pal)
 		if w.branch != "" && w.source.kind != sourcePull {
 			chip(c, pal, iconBranch, w.branch, t.TextMuted).Tooltip("Branch " + w.branch)
 		}
@@ -515,5 +514,50 @@ func (v *welcome) row(c *ui.Context, pal *palette, i int, root string) {
 			ui.Text(c, abbreviateHome(filepath.Dir(root))).FontSize(11).SingleLine().TextColor(muted)
 		})
 		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(muted).Shrink(0)
+	})
+}
+
+// repoSwitcher is the repository of the window as a menu: where it is, the
+// folders opened lately, and the way to another one. A window is a
+// repository, so another one is another window, and closing this one leads
+// back to the welcome page.
+func (w *window) repoSwitcher(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	root := w.repo.Root
+	b := ui.MenuButton(c, "", func(m *ui.Menu) {
+		m.Item(abbreviateHome(root)).Disabled(true)
+		m.Separator()
+		others := 0
+		for _, recent := range state.recent() {
+			if recent == root {
+				continue
+			}
+			others++
+			if m.Item(abbreviateHome(recent)).Chosen() {
+				go openRecent(recent)
+			}
+		}
+		if others == 0 {
+			m.Item("No other folder opened yet").Disabled(true)
+		}
+		m.Separator()
+		if m.Item("Open Folder…").Chosen() {
+			openFolder()
+		}
+		if m.Item("Reveal in Finder").Disabled(runtime.GOOS != "darwin").Chosen() {
+			revealInFinder(root)
+		}
+		if m.Item("Close Repository").Chosen() {
+			closeRepository(w)
+		}
+	}).Height(38)
+	b.Children(func() {
+		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+			ui.Column(c).Gap(1).Shrink(1).MinWidth(0).Children(func() {
+				ui.Text(c, filepath.Base(root)).FontSize(13).Bold().SingleLine()
+				ui.Text(c, filepath.Dir(abbreviateHome(root))).FontSize(11).TextColor(t.TextMuted).SingleLine()
+			})
+			ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+		})
 	})
 }
