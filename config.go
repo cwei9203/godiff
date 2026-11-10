@@ -32,8 +32,12 @@ type Settings struct {
 	// providers, as the AI Review card chooses it; empty for its own
 	// default, which for OpenCode is the one its own interface starts
 	// with.
-	AIAgent              string `json:"aiAgent"`
-	AIModel              string `json:"aiModel"`
+	AIAgent string `json:"aiAgent"`
+	AIModel string `json:"aiModel"`
+	// FixAgent and FixModel are the agent that fixes the comments of a
+	// review, and the model it uses: empty for the one that reviews.
+	FixAgent             string `json:"fixAgent"`
+	FixModel             string `json:"fixModel"`
 	ReviewCommentsPrefix string `json:"reviewCommentsPrefix"`
 	SidebarPosition      string `json:"sidebarPosition"` // left or right
 	ShowWhitespace       bool   `json:"showWhitespace"`
@@ -96,6 +100,10 @@ func (s *Settings) normalize() {
 	s.AIModel = strings.TrimSpace(s.AIModel)
 	if _, ok := agent.ByName(s.AIAgent); !ok {
 		s.AIAgent = ""
+	}
+	s.FixModel = strings.TrimSpace(s.FixModel)
+	if _, ok := agent.ByName(s.FixAgent); !ok {
+		s.FixAgent = ""
 	}
 	// The switches have no invalid value: load reads a file over the
 	// defaults, so a key left out keeps the default of the switch, and one

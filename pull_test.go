@@ -344,9 +344,9 @@ func TestAIReview(t *testing.T) {
 	old := runAgent
 	t.Cleanup(func() { runAgent = old })
 	var asked agent.Request
-	runAgent = func(ctx context.Context, a agent.Agent, req agent.Request, progress func(string)) (*agent.Analysis, error) {
+	runAgent = func(ctx context.Context, a agent.Agent, req agent.Request, progress func(agent.Progress)) (*agent.Analysis, error) {
 		asked = req
-		progress("Reading main.go")
+		progress(agent.Progress{Kind: agent.ProgressReading, Step: 1, Paths: []string{"main.go"}, Detail: "Reading main.go"})
 		return &agent.Analysis{
 			OverallSummary: "Greets louder and tidies the docs.",
 			Agent:          a.Name,
@@ -501,7 +501,7 @@ func TestAINotes(t *testing.T) {
 	w, tt := newTestWindow(t, testRepo(t))
 	old := runAgent
 	t.Cleanup(func() { runAgent = old })
-	runAgent = func(ctx context.Context, a agent.Agent, req agent.Request, progress func(string)) (*agent.Analysis, error) {
+	runAgent = func(ctx context.Context, a agent.Agent, req agent.Request, progress func(agent.Progress)) (*agent.Analysis, error) {
 		return &agent.Analysis{
 			OverallSummary: "Greets louder.",
 			Agent:          a.Name,
