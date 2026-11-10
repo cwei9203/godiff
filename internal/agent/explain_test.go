@@ -63,7 +63,7 @@ func TestExplainPiIsReadable(t *testing.T) {
 	if strings.Contains(message, "node_modules") || strings.Contains(message, "/Users/") {
 		t.Errorf("the message carries a path of the install: %q", message)
 	}
-	if !strings.Contains(message, "`pi`") || !strings.Contains(message, "sign in") {
+	if !strings.Contains(message, "pi") || !strings.Contains(message, "sign in") {
 		t.Errorf("the message does not say to sign in: %q", message)
 	}
 	if !strings.Contains(detail, "node_modules") {

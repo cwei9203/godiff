@@ -19,7 +19,7 @@ var explains = []explain{
 	{
 		clues: []string{"no models available", "log into a provider"},
 		message: "Pi is not signed in to a model provider. " +
-			"Run `pi` in a terminal and sign in, then try again.",
+			"Run pi in a terminal and sign in, then try again.",
 	},
 	{
 		clues: []string{"not logged in", "unauthorized", "401", "authentication"},
