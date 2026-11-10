@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -67,7 +68,8 @@ func Models(ctx context.Context, a Agent, dir string) (models []Model, def strin
 		if err != nil {
 			return nil, "", err
 		}
-		return piModels(out), "", nil
+		models, err := piModels(out)
+		return models, "", err
 	}
 	return nil, "", fmt.Errorf("unknown agent %s", a.Name)
 }
@@ -136,16 +138,37 @@ func providerModels(data []byte) []Model {
 
 // piModels reads Pi's table of models, whose first columns are the
 // provider and the model.
-func piModels(data []byte) []Model {
+// piModels reads Pi's table of models. Pi answers "No models available" with
+// the reason on the lines under it when it has none to name - no provider
+// signed in, or an agent directory without the models - and then says what it
+// found nothing in, which the caller shows as it came.
+func piModels(data []byte) ([]Model, error) {
+	text := string(data)
+	if strings.Contains(text, "No models available") {
+		if why := strings.TrimSpace(text); why != "" {
+			return nil, errors.New(why)
+		}
+		return nil, errors.New("pi names no models")
+	}
 	var models []Model
-	for line := range strings.Lines(string(data)) {
+	rows := false
+	for line := range strings.Lines(text) {
 		f := strings.Fields(line)
-		if len(f) < 2 || f[0] == "provider" {
+		// The table starts at its header, and a line of fewer fields than
+		// one ends it: anything above or below is not a model.
+		if !rows {
+			rows = len(f) > 1 && f[0] == "provider"
 			continue
+		}
+		if len(f) < 2 {
+			break
 		}
 		models = append(models, Model{ID: f[0] + "/" + f[1], Label: f[1], Provider: f[0]})
 	}
-	return models
+	if len(models) == 0 && text != "" {
+		return nil, errors.New(strings.TrimSpace(text))
+	}
+	return models, nil
 }
 
 // opencodeMajor returns the major version of OpenCode, 1 when it does not

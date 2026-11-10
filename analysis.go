@@ -673,7 +673,13 @@ func (w *window) modelMenu(c *ui.Context) {
 			m.Item("Loading models…").Disabled(true)
 			return
 		case list.err != nil:
-			msg, _, _ := strings.Cut(strings.TrimSpace(errorText(list.err)), "\n")
+			// The failure in a sentence to act on, the agent's own words
+			// only when godiff knows this one not.
+			raw := strings.TrimSpace(errorText(list.err))
+			msg, _ := agent.Explain(raw)
+			if msg == "" {
+				msg, _, _ = strings.Cut(raw, "\n")
+			}
 			if len(msg) > 80 {
 				msg = msg[:80] + "…"
 			}

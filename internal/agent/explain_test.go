@@ -17,8 +17,8 @@ func TestExplain(t *testing.T) {
 		raw  string
 		want string
 	}{
-		{"pi, signed in to no provider", piNotSignedIn, "Pi is not signed in to a model provider."},
-		{"pi, in another case", "NO MODELS AVAILABLE", "Pi is not signed in to a model provider."},
+		{"pi, signed in to no provider", piNotSignedIn, "Pi names no models."},
+		{"pi, in another case", "NO MODELS AVAILABLE", "Pi names no models."},
 		{"a login", "Error: not logged in. Run `codex login` first.", "The agent is not signed in."},
 		{"an unauthorized answer", "request failed: 401 Unauthorized", "The agent is not signed in."},
 		{"an authentication failure", "Authentication failed: invalid API key", "The agent is not signed in."},
@@ -63,7 +63,7 @@ func TestExplainPiIsReadable(t *testing.T) {
 	if strings.Contains(message, "node_modules") || strings.Contains(message, "/Users/") {
 		t.Errorf("the message carries a path of the install: %q", message)
 	}
-	if !strings.Contains(message, "pi") || !strings.Contains(message, "sign in") {
+	if !strings.Contains(message, "names no models") || !strings.Contains(message, "PI_CODING_AGENT_DIR") {
 		t.Errorf("the message does not say to sign in: %q", message)
 	}
 	if !strings.Contains(detail, "node_modules") {

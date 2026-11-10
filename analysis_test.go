@@ -169,7 +169,7 @@ func TestAnalysisExplainsFailures(t *testing.T) {
 	if st.running {
 		t.Fatal("the review never ended")
 	}
-	if st.err != "Pi is not signed in to a model provider. Run pi in a terminal and sign in, then try again." {
+	if st.err != "Pi names no models. Sign in to a provider in a terminal, and check PI_CODING_AGENT_DIR points at your Pi agent directory, then try again." {
 		t.Errorf("the error is %q, want the sentence to act on", st.err)
 	}
 	if strings.Contains(st.err, "node_modules") {
@@ -180,7 +180,7 @@ func TestAnalysisExplainsFailures(t *testing.T) {
 		t.Errorf("the detail is %q", st.errDetail)
 	}
 	tt.Frame()
-	if !tt.HasText("Pi is not signed in to a model provider.") {
+	if !tt.HasText("Pi names no models.") {
 		t.Errorf("no sentence in %q", tt.Texts())
 	}
 	if tt.HasText("node_modules") {

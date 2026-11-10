@@ -18,8 +18,11 @@ type explain struct {
 var explains = []explain{
 	{
 		clues: []string{"no models available", "log into a provider"},
-		message: "Pi is not signed in to a model provider. " +
-			"Run pi in a terminal and sign in, then try again.",
+		// Pi names no models either when no provider is signed in or when
+		// its agent directory holds none, as a PI_CODING_AGENT_DIR of
+		// another home does; the sentence names both.
+		message: "Pi names no models. Sign in to a provider in a terminal, " +
+			"and check PI_CODING_AGENT_DIR points at your Pi agent directory, then try again.",
 	},
 	{
 		clues: []string{"not logged in", "unauthorized", "401", "authentication"},

@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+// piNoModels is what Pi prints when it has no model to name.
+const piNoModels = "No models available. Use /login to log into a provider via OAuth or API key. See:\n" +
+	"  /Users/me/.pi/agent/install/releases/1.5.1/node_modules/@earendil-works/pi-coding-agent/docs/models.md\n"
+
 func TestModelLists(t *testing.T) {
 	codex, err := codexModels([]byte(`{"models":[
 		{"slug":"gpt-b","display_name":"GPT-B","visibility":"list","priority":5},
@@ -23,9 +27,17 @@ func TestModelLists(t *testing.T) {
 	if want := []Model{{ID: "deepseek/deepseek-flash", Label: "deepseek-flash", Provider: "deepseek"}, {ID: "vercel/bfl/flux-3-image", Label: "bfl/flux-3-image", Provider: "vercel"}}; !slices.Equal(oc, want) {
 		t.Errorf("opencode %+v", oc)
 	}
-	pi := piModels([]byte("provider   model             context\nanthropic  claude-opus-5-5   1M\nopenai     gpt-6-sol         400K\n"))
+	pi, err := piModels([]byte("provider   model             context\nanthropic  claude-opus-5-5   1M\nopenai     gpt-6-sol         400K\n"))
+	if err != nil {
+		t.Errorf("pi: %v", err)
+	}
 	if want := []Model{{ID: "anthropic/claude-opus-5-5", Label: "claude-opus-5-5", Provider: "anthropic"}, {ID: "openai/gpt-6-sol", Label: "gpt-6-sol", Provider: "openai"}}; !slices.Equal(pi, want) {
 		t.Errorf("pi %+v", pi)
+	}
+	// Pi without a model names no model, and says why: that is no model named
+	// "No/models", and the reason is what the card shows.
+	if none, err := piModels([]byte(piNoModels)); len(none) != 0 || err == nil {
+		t.Errorf("pi without models: %+v, %v", none, err)
 	}
 	for raw, want := range map[string]string{
 		`"openai/gpt-6"`: "openai/gpt-6",
