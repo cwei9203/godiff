@@ -151,18 +151,44 @@ func (w *window) analysisKeyOf(src source, a *agent.Analysis, fingerprints map[s
 	})
 }
 
-// analysisLocale is the language a review is written in: the machine's, as
-// the settings do not name one yet.
+// readerLocale is the language the reader prefers, as the system has them,
+// read once when the app is ready: asking MyGo for them runs on its main
+// loop, which a test has not.
+var readerLocale string
+
+// analysisLocale is the language a review is written in: the one the
+// settings name, else the first the reader prefers, as macOS puts them,
+// else the shell's.
 func analysisLocale() string {
+	if tag := localeTag(cfg.Get().SummaryLocale); tag != "" {
+		return tag
+	}
+	if tag := localeTag(readerLocale); tag != "" {
+		return tag
+	}
 	for _, key := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
-		v := strings.TrimSpace(os.Getenv(key))
-		if v == "" {
-			continue
+		if tag := localeTag(os.Getenv(key)); tag != "" {
+			return tag
 		}
-		v, _, _ = strings.Cut(v, ".")
-		return strings.ReplaceAll(v, "_", "-")
 	}
 	return ""
+}
+
+// localeTag reads a language as BCP 47: the tag alone, its encoding and
+// its modifiers left out, its parts joined by dashes.
+func localeTag(s string) string {
+	s = strings.TrimSpace(s)
+	if i := strings.IndexByte(s, '.'); i >= 0 {
+		s = s[:i]
+	}
+	if i := strings.IndexByte(s, '@'); i >= 0 {
+		s = s[:i]
+	}
+	s = strings.ReplaceAll(s, "_", "-")
+	if s == "C" || s == "POSIX" {
+		return ""
+	}
+	return s
 }
 
 // analysisSlot names the place the review of a source is saved: one per

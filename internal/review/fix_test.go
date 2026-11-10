@@ -441,13 +441,13 @@ func TestFixExplainsAFailure(t *testing.T) {
 		t.Fatal("a run that exits 1 reported no error")
 	}
 	// The failure says what to do, with no path into an install in it.
-	if !strings.Contains(res.ErrMessage, "Pi is not signed in to a model provider") {
+	if !strings.Contains(res.ErrMessage, "Pi names no models") {
 		t.Errorf("message: %q", res.ErrMessage)
 	}
 	if strings.Contains(res.ErrMessage, "node_modules") {
 		t.Errorf("the message carries a path of the install: %q", res.ErrMessage)
 	}
-	if !strings.Contains(err.Error(), "Pi is not signed in") {
+	if !strings.Contains(err.Error(), "Pi names no models") {
 		t.Errorf("error: %v", err)
 	}
 	// What the agent said is kept, and the log holds all of it.

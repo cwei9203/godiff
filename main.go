@@ -310,6 +310,9 @@ func main() {
 	}
 	fetchAvatars, detectAgents = true, true
 	mygo.App.WhenReady(func() {
+		if langs := mygo.App.PreferredLanguages(); len(langs) > 0 {
+			readerLocale = langs[0]
+		}
 		if debugFrames {
 			go watchMainThread()
 		}

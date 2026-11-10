@@ -56,7 +56,7 @@ var summaryLocales = []string{"", "en", "zh-CN", "ja", "de", "fr"}
 func summaryLocaleLabel(tag string) string {
 	switch tag {
 	case "":
-		return "The Interface's Language"
+		return "The Reader's Language"
 	case "en":
 		return "English"
 	case "zh-CN":
