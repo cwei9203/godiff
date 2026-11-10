@@ -420,3 +420,41 @@ sleep 60
 		t.Fatal("a cancelled context did not end the run")
 	}
 }
+
+// piNotSignedInAgent fails the way Pi does when it is signed in to no model
+// provider: the report a person running a repair can hit first.
+const piNotSignedInAgent = `#!/bin/sh
+cat > "$FAKE_STDIN"
+cat >&2 <<'EOM'
+No models available. Use /login to log into a provider via OAuth or API key. See:
+/Users/ada/.pi/agent/install/releases/1.5.1/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+EOM
+exit 1
+`
+
+func TestFixExplainsAFailure(t *testing.T) {
+	fakeAgent(t, "pi", piNotSignedInAgent)
+	root := fixRepo(t)
+	a, _ := agent.ByName("pi")
+	res, err, _ := runFix(t, FixRequest{Root: root, Agent: a, Task: "# Review\n\n- `tracked.txt`: fix it\n"})
+	if err == nil {
+		t.Fatal("a run that exits 1 reported no error")
+	}
+	// The failure says what to do, with no path into an install in it.
+	if !strings.Contains(res.ErrMessage, "Pi is not signed in to a model provider") {
+		t.Errorf("message: %q", res.ErrMessage)
+	}
+	if strings.Contains(res.ErrMessage, "node_modules") {
+		t.Errorf("the message carries a path of the install: %q", res.ErrMessage)
+	}
+	if !strings.Contains(err.Error(), "Pi is not signed in") {
+		t.Errorf("error: %v", err)
+	}
+	// What the agent said is kept, and the log holds all of it.
+	if !strings.Contains(res.ErrDetail, "No models available") {
+		t.Errorf("detail: %q", res.ErrDetail)
+	}
+	if log := reading(t, res.LogPath); !strings.Contains(log, "node_modules") {
+		t.Errorf("the log lost what the agent said:\n%s", log)
+	}
+}

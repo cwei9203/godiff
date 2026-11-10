@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/egoist/godiff/internal/agent"
@@ -139,5 +142,78 @@ func TestSavedAnalysisKeyed(t *testing.T) {
 	os.WriteFile(analysisPath(repo.Root, src), data, 0o644)
 	if a := loaded(); a != nil {
 		t.Errorf("a review of another contract loaded: %+v", a)
+	}
+}
+
+// piNotSignedIn is what Pi prints when it is signed in to no model provider,
+// verbatim, paths into its install and all.
+const piNotSignedIn = `No models available. Use /login to log into a provider via OAuth or API key. See:
+/Users/ada/.pi/agent/install/releases/1.5.1/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+/Users/ada/.pi/agent/install/releases/1.5.1/node_modules/@earendil-works/pi-coding-agent/docs/models.md`
+
+// TestAnalysisExplainsFailures is the report the translation layer answers:
+// the card says what to do, and the agent's own words are found under it, not
+// over it.
+func TestAnalysisExplainsFailures(t *testing.T) {
+	w, tt := newTestWindow(t, testRepo(t))
+	old := runAgent
+	t.Cleanup(func() { runAgent = old })
+	runAgent = func(ctx context.Context, a agent.Agent, req agent.Request, progress func(agent.Progress)) (*agent.Analysis, error) {
+		return nil, errors.New("Pi failed: " + piNotSignedIn)
+	}
+	withSettings(t, func(s *Settings) { s.AIAgent = "pi" })
+	w.settings = cfg.Get()
+	w.runAnalysis()
+
+	st := w.analyses[w.source]
+	if st.running {
+		t.Fatal("the review never ended")
+	}
+	if st.err != "Pi is not signed in to a model provider. Run `pi` in a terminal and sign in, then try again." {
+		t.Errorf("the error is %q, want the sentence to act on", st.err)
+	}
+	if strings.Contains(st.err, "node_modules") {
+		t.Errorf("the error carries a path of the install: %q", st.err)
+	}
+	// The raw text is kept, whole.
+	if st.errDetail != "Pi failed: "+piNotSignedIn {
+		t.Errorf("the detail is %q", st.errDetail)
+	}
+	tt.Frame()
+	if !tt.HasText("Pi is not signed in to a model provider.") {
+		t.Errorf("no sentence in %q", tt.Texts())
+	}
+	if tt.HasText("node_modules") {
+		t.Errorf("the card shows the raw text unasked: %q", tt.Texts())
+	}
+	// It is a click away, for a report or a bug.
+	if err := tt.Click("Show what it said"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if !tt.HasText("node_modules") {
+		t.Errorf("the detail is not shown on request: %q", tt.Texts())
+	}
+}
+
+// TestAnalysisShowsUnknownFailures is the other half: a failure godiff does
+// not know is shown as it came, with nothing invented over it.
+func TestAnalysisShowsUnknownFailures(t *testing.T) {
+	w, tt := newTestWindow(t, testRepo(t))
+	old := runAgent
+	t.Cleanup(func() { runAgent = old })
+	runAgent = func(ctx context.Context, a agent.Agent, req agent.Request, progress func(agent.Progress)) (*agent.Analysis, error) {
+		return nil, errors.New("Claude Code failed: it answered nothing")
+	}
+	withSettings(t, func(s *Settings) { s.AIAgent = "claude" })
+	w.settings = cfg.Get()
+	w.runAnalysis()
+	st := w.analyses[w.source]
+	if st.err != "Claude Code failed: it answered nothing" || st.errDetail != st.err {
+		t.Errorf("the error is %q, detail %q", st.err, st.errDetail)
+	}
+	tt.Frame()
+	if !tt.HasText("it answered nothing") || tt.HasText("Show what it said") {
+		t.Errorf("the card of a failure it does not know: %q", tt.Texts())
 	}
 }
