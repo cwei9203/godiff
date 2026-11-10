@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"github.com/egoist/godiff/internal/agent"
 	"github.com/egoist/mygo"
@@ -38,15 +39,36 @@ type Settings struct {
 	ShowWhitespace       bool   `json:"showWhitespace"`
 	Theme                string `json:"theme"` // system, light or dark
 	WordWrap             bool   `json:"wordWrap"`
+	// GroupingEnabled lets an agent group the files by intent; off, the
+	// rules alone group them, by their kind.
+	GroupingEnabled bool `json:"groupingEnabled"`
+	// OverallSummary asks for the summary of the whole review; off, the
+	// prompt has none and the surface shows no summary card.
+	OverallSummary bool `json:"overallSummary"`
+	// SummaryExpanded shows that summary in full at once, rather than its
+	// first line, which opens.
+	SummaryExpanded bool `json:"summaryExpanded"`
+	// Notes asks for the notes on files and lines; off, they are not drawn.
+	Notes bool `json:"notes"`
+	// SummaryLocale is the language the review is written in, as a BCP 47
+	// tag; empty follows the language of the interface.
+	SummaryLocale string `json:"summaryLocale"`
+	// MaxFiles is the most files an agent is asked to group: beyond it the
+	// rules group them, as the list of files would run away.
+	MaxFiles int `json:"maxFiles"`
 }
 
 func defaultSettings() Settings {
 	return Settings{
 		CodeFontSize:         13,
 		DiffStyle:            "split",
+		GroupingEnabled:      true,
+		Notes:                true,
+		OverallSummary:       true,
 		ReviewCommentsPrefix: "# Address these Review Comments",
 		SidebarPosition:      "left",
 		Theme:                "system",
+		MaxFiles:             maxFilesDefault,
 	}
 }
 
@@ -75,6 +97,49 @@ func (s *Settings) normalize() {
 	if _, ok := agent.ByName(s.AIAgent); !ok {
 		s.AIAgent = ""
 	}
+	// The switches have no invalid value: load reads a file over the
+	// defaults, so a key left out keeps the default of the switch, and one
+	// written false turns it off.
+	s.SummaryLocale = strings.TrimSpace(s.SummaryLocale)
+	if !validLocale(s.SummaryLocale) {
+		s.SummaryLocale = d.SummaryLocale
+	}
+	if s.MaxFiles <= 0 {
+		s.MaxFiles = d.MaxFiles
+	}
+	s.MaxFiles = min(s.MaxFiles, maxFilesLimit)
+}
+
+// maxFilesDefault is how many files an agent groups, unless asked otherwise,
+// and maxFilesLimit is the most it may be asked for.
+const (
+	maxFilesDefault = 2000
+	maxFilesLimit   = 100_000
+)
+
+// validLocale reports whether a language tag is one a review may be asked
+// for: empty, or BCP 47 as en, zh-CN or pt-BR.
+func validLocale(tag string) bool {
+	if tag == "" {
+		return true
+	}
+	if len(tag) > 35 {
+		return false
+	}
+	for i, part := range strings.Split(tag, "-") {
+		if part == "" || len(part) > 8 {
+			return false
+		}
+		if i == 0 && (len(part) < 2 || len(part) > 3) {
+			return false
+		}
+		for _, r := range part {
+			if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // config holds the settings, shared by the windows, and keeps them in
