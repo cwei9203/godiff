@@ -169,7 +169,7 @@ func TestAnalysisExplainsFailures(t *testing.T) {
 	if st.running {
 		t.Fatal("the review never ended")
 	}
-	if st.err != "Pi is not signed in to a model provider. Run `pi` in a terminal and sign in, then try again." {
+	if st.err != "Pi is not signed in to a model provider. Run pi in a terminal and sign in, then try again." {
 		t.Errorf("the error is %q, want the sentence to act on", st.err)
 	}
 	if strings.Contains(st.err, "node_modules") {
