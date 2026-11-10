@@ -20,9 +20,12 @@ type treeNode struct {
 	name     string
 	dir      bool
 	file     int    // the file's index in window.files
-	path     string // a directory's
+	path     string // a directory's, or a path no longer in the diff
 	group    int    // a group's index, -1 for the others
 	children []string
+	// missing marks a path the review groups that is no longer in the diff:
+	// it shows weak, and going to it goes nowhere.
+	missing bool
 }
 
 // The sidebar's width: its default, its bounds, and the width below which
@@ -170,17 +173,42 @@ func (w *window) buildTree() {
 	}
 	var roots []string
 	for gi, files := range byGroup {
-		if len(files) == 0 {
+		g := w.groups[gi]
+		// A group whose paths the diff no longer holds still shows them.
+		if len(files) == 0 && len(g.missing) == 0 {
 			continue
 		}
-		g := w.groups[gi]
 		key := "g:" + g.key
-		items[key] = &treeNode{name: g.label, dir: true, file: -1, group: gi, children: tree(files, g.key+":")}
+		children := tree(files, g.key+":")
+		// The paths the review groups that the diff no longer holds stay
+		// at the end of the group, out of reach.
+		here := map[string]bool{}
+		for _, i := range files {
+			here[w.files[i].Path] = true
+		}
+		for _, p := range g.missing {
+			if here[p] {
+				// The diff holds it after all: the review is stale there.
+				continue
+			}
+			k := "m:" + g.key + ":" + p
+			items[k] = &treeNode{name: baseName(p), file: -1, path: p, group: gi, missing: true}
+			children = append(children, k)
+		}
+		items[key] = &treeNode{name: g.label, dir: true, file: -1, group: gi, children: children}
 		roots = append(roots, key)
 	}
 	roots = append(roots, tree(ungrouped, "")...)
 	w.treeRoots = roots
 	w.treeItems = items
+}
+
+// baseName is the last element of a path, as a row of the tree shows it.
+func baseName(p string) string {
+	if i := strings.LastIndexByte(p, '/'); i >= 0 {
+		return p[i+1:]
+	}
+	return p
 }
 
 // statusColor is the color of a file's status letter.
@@ -446,8 +474,13 @@ func (w *window) fileTree(c *ui.Context) {
 	rows := w.visibleTree()
 	w.treeRows = rows
 	choose := func(key string) {
+		n := w.treeItems[key]
+		if n == nil || n.missing {
+			// A path no longer in the diff goes nowhere.
+			return
+		}
 		w.treeSel = key
-		if n := w.treeItems[key]; n != nil && !n.dir {
+		if !n.dir {
 			w.commitOpen = false
 			w.revealFile(n.file)
 		}
@@ -478,10 +511,10 @@ func (w *window) fileTree(c *ui.Context) {
 		case row.Hovered():
 			row.Background(ui.RGBA(127, 127, 127, 0.08))
 		}
-		if row.Pressed() && (!selected || w.commitOpen) {
+		if row.Pressed() && !n.missing && (!selected || w.commitOpen) {
 			choose(key)
 		}
-		if row.Clicked() {
+		if row.Clicked() && !n.missing {
 			if n.dir {
 				w.closedDirs[key] = !w.closedDirs[key]
 			}
@@ -504,7 +537,12 @@ func (w *window) fileTree(c *ui.Context) {
 				})
 				if n.group >= 0 && n.group < len(w.groups) {
 					g := &w.groups[n.group]
-					icon := ui.Icon(c, groupIcon(g)).FontSize(14).TextColor(muted)
+					svg, accent := groupMark(g)
+					color := categoryColor(accent, t, pal)
+					if accent == accentMuted {
+						color = muted
+					}
+					icon := ui.Icon(c, svg).FontSize(14).TextColor(color)
 					if g.critical && !(selected && focused) {
 						icon.TextColor(t.Danger)
 					}
@@ -514,6 +552,14 @@ func (w *window) fileTree(c *ui.Context) {
 				}
 				ui.Icon(c, iconFolder).FontSize(14).TextColor(muted)
 				ui.Text(c, n.name).FontSize(13).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+				return
+			}
+			if n.missing {
+				// A path the review groups, which the diff no longer holds.
+				ui.Icon(c, iconXCircle).FontSize(12).TextColor(muted).Shrink(0)
+				ui.Text(c, n.name).Font(w.codeFont()).FontSize(12).TextColor(muted).SingleLine().Grow(1).Shrink(1).MinWidth(0).Tooltip(n.path)
+				ui.Text(c, "Not in this diff").FontSize(10).TextColor(muted).Shrink(0).
+					Tooltip("The review groups this path, which this diff no longer holds.")
 				return
 			}
 			f := w.files[n.file]
@@ -606,13 +652,16 @@ func (w *window) fileTree(c *ui.Context) {
 	}
 }
 
-// treeCount counts the files under a row of the tree.
+// treeCount counts the files under a row of the tree: those the diff holds.
 func (w *window) treeCount(key string) int {
 	n := w.treeItems[key]
 	if n == nil {
 		return 0
 	}
 	if !n.dir {
+		if n.missing {
+			return 0
+		}
 		return 1
 	}
 	total := 0

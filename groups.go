@@ -28,6 +28,11 @@ type fileGroup struct {
 	summary    string
 	critical   bool
 	ai         bool
+	// category is what part of the system the group touches, as PRD §6.2
+	// has it, "" when the analysis does not say yet.
+	category string
+	// missing are the paths of the group that are no longer in the diff.
+	missing []string
 }
 
 // kind is a kind of file, as pulls.review's rules sort them.
@@ -103,6 +108,12 @@ func (w *window) grouping() groupMode {
 	if mode == groupAI && an == nil {
 		mode = groupAuto
 	}
+	if !w.settings.GroupingEnabled {
+		// Smart grouping is off: the rules group the files alone.
+		if mode == groupAI || mode == groupAuto {
+			return groupKind
+		}
+	}
 	if mode != groupAuto {
 		return mode
 	}
@@ -166,7 +177,8 @@ func (w *window) regroup() {
 		an := w.analysisResult()
 		byPath := map[string]int{}
 		for gi, g := range an.Groups {
-			w.groups = append(w.groups, fileGroup{key: g.Key, label: g.Label, summary: g.Summary, critical: g.Critical, ai: true})
+			w.groups = append(w.groups, fileGroup{key: g.Key, label: g.Label, summary: g.Summary, critical: g.Critical, ai: true,
+				category: groupCategory(&g), missing: groupMissing(&g)})
 			for _, p := range g.FilePaths {
 				if _, ok := byPath[p]; !ok {
 					byPath[p] = gi
@@ -258,12 +270,107 @@ func (w *window) revealGroup(gi int) {
 	}
 }
 
-// groupMark draws the mark of a group: a sparkle for the agent's groups.
+// groupIcon draws the mark of a group: a sparkle for the agent's groups.
 func groupIcon(g *fileGroup) *ui.SVG {
 	if g.ai {
 		return iconSparkle
 	}
 	return iconLayers
+}
+
+// categoryAccent names the tone of a category's icon: a theme has no color for
+// each of the sixteen, so a category picks one of the few it has.
+type categoryAccent uint8
+
+const (
+	accentMuted categoryAccent = iota
+	accentAccent
+	accentDanger
+	accentWarning
+	accentSuccess
+	accentRef
+)
+
+// categoryColor resolves a tone for a theme.
+func categoryColor(a categoryAccent, t *ui.Theme, pal *palette) ui.Color {
+	switch a {
+	case accentAccent:
+		return t.Accent
+	case accentDanger:
+		return t.Danger
+	case accentWarning:
+		return t.Warning
+	case accentSuccess:
+		return t.Success
+	case accentRef:
+		return pal.ref
+	}
+	return t.TextMuted
+}
+
+// categories are the sixteen kinds of change of PRD §6.2, each with its icon
+// and tone. A category decides the icon and the tone alone, never the order of
+// the groups.
+var categories = map[string]struct {
+	icon   *ui.SVG
+	accent categoryAccent
+}{
+	"ui":       {iconSidebar, accentAccent},
+	"api":      {iconOpen, accentAccent},
+	"core":     {iconLayers, accentAccent},
+	"data":     {iconTree, accentAccent},
+	"cli":      {iconCommand, accentAccent},
+	"security": {iconEye, accentDanger},
+	"tests":    {iconCheckCircle, accentSuccess},
+	"docs":     {iconFile, accentMuted},
+	"examples": {iconSparkle, accentMuted},
+	"deps":     {iconPull, accentWarning},
+	"build":    {iconRefresh, accentWarning},
+	"scripts":  {iconPencil, accentWarning},
+	"config":   {iconList, accentRef},
+	"i18n":     {iconComment, accentAccent},
+	"assets":   {iconFolderOpen, accentRef},
+	"other":    {iconFileDiff, accentMuted},
+}
+
+// categoryIcon returns the icon and the tone of a category, those of "other"
+// for one the analysis does not know.
+func categoryIcon(category string) (*ui.SVG, categoryAccent) {
+	c, ok := categories[strings.ToLower(strings.TrimSpace(category))]
+	if !ok {
+		c = categories["other"]
+	}
+	return c.icon, c.accent
+}
+
+// groupCategory is the category of a group of the review: which part of the
+// system its change touches, of PRD §6.2's sixteen.
+//
+// TODO(category): read it off the group once the analysis carries it, as
+// Group.Category set by the grouping under way, and drop the empty string that
+// has every group fall back to the mark of how it was made. This function is
+// the one place to change.
+func groupCategory(g *agent.Group) string {
+	return ""
+}
+
+// groupMissing lists the paths a group holds that are no longer in the diff,
+// which the review keeps as missing.
+//
+// TODO(missing): return g.Missing once the analysis carries it, so the tree
+// lists those paths, weak and out of reach. This function is the one place to
+// change.
+func groupMissing(g *agent.Group) []string {
+	return nil
+}
+
+// groupMark is the icon and the tone that mark a group: those of its category
+// once the analysis says it, else the mark of how the group was made.
+func groupMark(g *fileGroup) (*ui.SVG, categoryAccent) {
+	if g.category != "" {
+		return categoryIcon(g.category)
+	}
+	return groupIcon(g), accentMuted
 }
 
 // scopeBar shows the groups as chips, with how many of their files were
@@ -309,7 +416,8 @@ func (w *window) scopeBar(c *ui.Context, pal *palette) {
 				}
 				done := viewed[gi] == total[gi] && total[gi] > 0
 				b.Children(func() {
-					icon := ui.Icon(c, groupIcon(g)).FontSize(12).TextColor(t.TextMuted)
+					svg, accent := groupMark(g)
+					icon := ui.Icon(c, svg).FontSize(12).TextColor(categoryColor(accent, t, pal))
 					if g.critical {
 						icon.TextColor(t.Danger)
 					}
@@ -351,7 +459,8 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 	}
 	ui.Column(c).Padding(20, 2, 0).Gap(4).Background(pal.appBg).Children(func() {
 		ui.Row(c).Gap(8).Children(func() {
-			icon := ui.Icon(c, groupIcon(g)).FontSize(15).TextColor(t.TextMuted)
+			svg, accent := groupMark(g)
+			icon := ui.Icon(c, svg).FontSize(15).TextColor(categoryColor(accent, t, pal))
 			if g.critical {
 				icon.TextColor(t.Danger)
 			}
@@ -409,7 +518,7 @@ func (w *window) buildNotes() {
 	sel := w.noteSel
 	w.notes, w.noteSel = nil, nil
 	st := w.analyses[w.source]
-	if st == nil || st.result == nil {
+	if st == nil || st.result == nil || !w.settings.Notes {
 		return
 	}
 	// The note gone to last stays marked.

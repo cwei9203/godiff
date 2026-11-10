@@ -69,7 +69,16 @@ func (w *window) analysisResult() *agent.Analysis {
 // there is one, one under way, one that failed, or one offered.
 func (w *window) showSummary() bool {
 	st := w.analyses[w.source]
-	return st != nil && (st.result != nil || st.running || st.err != "" || st.offered)
+	if st == nil {
+		return false
+	}
+	// A review whose overall summary is turned off leaves no card rather
+	// than an empty one; one under way, failed or offered still holds what the
+	// card is there for.
+	if !w.settings.OverallSummary && st.result != nil && !st.running && st.err == "" && !st.offered {
+		return false
+	}
+	return st.result != nil || st.running || st.err != "" || st.offered
 }
 
 // analysisKey names a source for the reviews saved.
@@ -311,14 +320,14 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			if ui.Button(c, label).Height(26).Clicked() {
 				w.runAnalysis()
 			}
-			if st.result != nil {
-				tip := "Hide the summary"
-				if st.folded {
-					tip = "Show the summary"
+			if st.result != nil && w.settings.OverallSummary {
+				// The summary shows whole, or else as its first line alone.
+				svg, tip := iconChevronDown, "Hide the summary"
+				if !w.settings.SummaryExpanded {
+					svg, tip = iconChevronRight, "Show the summary"
 				}
-				b := iconButton(c, iconChevronDown, tip).Size(26, 26)
-				if b.Clicked() {
-					st.folded = !st.folded
+				if iconButton(c, svg, tip).Size(26, 26).Clicked() {
+					cfg.Update(func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded })
 				}
 			}
 		})
@@ -343,11 +352,29 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			ui.Text(c, st.err).FontSize(12).TextColor(t.Danger).Selectable().MaxLines(6)
 		}
 		a := st.result
-		if a == nil || st.folded || st.running {
+		if a == nil || st.running {
 			return
 		}
-		if s := strings.TrimSpace(a.OverallSummary); s != "" {
-			ui.Text(c, s).FontSize(13).Selectable()
+		summary := strings.TrimSpace(a.OverallSummary)
+		if w.settings.OverallSummary && summary != "" {
+			if w.settings.SummaryExpanded {
+				ui.Text(c, summary).FontSize(13).Selectable()
+			} else {
+				// One line of it, which opens the whole.
+				line, _, _ := strings.Cut(summary, "\n")
+				b := ui.ButtonBase(c).Padding(2, 6).Radius(6).Gap(6).Label("Show the summary").
+					Tooltip("Show the whole summary of the review")
+				if b.Hovered() {
+					b.Background(pal.hover)
+				}
+				if b.Clicked() {
+					cfg.Update(func(s *Settings) { s.SummaryExpanded = true })
+				}
+				b.Children(func() {
+					ui.Text(c, line).FontSize(13).TextColor(t.Text.Alpha(0.8)).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+					ui.Icon(c, iconChevronRight).FontSize(12).TextColor(t.TextMuted).Shrink(0)
+				})
+			}
 		}
 		notes := 0
 		for _, g := range a.Groups {

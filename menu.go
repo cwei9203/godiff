@@ -28,6 +28,47 @@ func inWindow(fn func(w *window)) func(*mygo.MenuItem, *mygo.Window) {
 	}
 }
 
+// setting returns a menu item's action on the settings: it changes one, and
+// lays the rows of the windows out again, as the review's switches decide what
+// the surface shows.
+func setting(fn func(s *Settings)) func(*mygo.MenuItem, *mygo.Window) {
+	return func(*mygo.MenuItem, *mygo.Window) {
+		cfg.Update(fn)
+		windowsMu.Lock()
+		defer windowsMu.Unlock()
+		for _, w := range windows {
+			if w.win == nil {
+				w.rowsDirty = true
+				continue
+			}
+			w.win.Update(func() { w.rowsDirty = true })
+		}
+	}
+}
+
+// summaryLocales are the languages a review may be asked for: the interface's
+// own first, then the tags the settings keep.
+var summaryLocales = []string{"", "en", "zh-CN", "ja", "de", "fr"}
+
+// summaryLocaleLabel names a language of the review's.
+func summaryLocaleLabel(tag string) string {
+	switch tag {
+	case "":
+		return "The Interface's Language"
+	case "en":
+		return "English"
+	case "zh-CN":
+		return "简体中文"
+	case "ja":
+		return "日本語"
+	case "de":
+		return "Deutsch"
+	case "fr":
+		return "Français"
+	}
+	return tag
+}
+
 var appMenu *mygo.Menu
 
 // buildMenu makes the menu bar.
@@ -96,6 +137,7 @@ func buildMenu() *mygo.Menu {
 				{Label: "By AI Review", Click: inWindow(func(w *window) { w.chooseGrouping(groupAI) })},
 			}},
 			{Label: "AI Agent", Submenu: agentMenuItems(s)},
+			{Label: "AI Review", Submenu: reviewMenuItems(s)},
 			mygo.Separator(),
 			{Label: "Diff", Submenu: []*mygo.MenuItem{
 				{ID: "split", Label: "Split", Type: mygo.MenuItemRadio, Checked: s.DiffStyle == "split", Click: func(*mygo.MenuItem, *mygo.Window) {
@@ -156,6 +198,13 @@ func syncMenu(s Settings) {
 	set("wrap", s.WordWrap)
 	set("whitespace", s.ShowWhitespace)
 	set("copyOnClose", s.CopyCommentsOnClose)
+	set("grouping", s.GroupingEnabled)
+	set("overallSummary", s.OverallSummary)
+	set("summaryExpanded", s.SummaryExpanded)
+	set("notes", s.Notes)
+	for _, tag := range summaryLocales {
+		set("locale-"+tag, s.SummaryLocale == tag)
+	}
 	set("theme-system", s.Theme == "system")
 	set("theme-light", s.Theme == "light")
 	set("theme-dark", s.Theme == "dark")
@@ -245,4 +294,27 @@ func agentMenuItems(s Settings) []*mygo.MenuItem {
 		items = append(items, &mygo.MenuItem{ID: "agent-" + a.Name, Label: a.Label, Type: mygo.MenuItemRadio, Checked: s.AIAgent == a.Name, Click: choose(a.Name)})
 	}
 	return items
+}
+
+// reviewMenuItems are the settings of the agent's review: the switches that
+// decide what it is asked for and what the surface shows.
+func reviewMenuItems(s Settings) []*mygo.MenuItem {
+	switchItem := func(id, label string, on bool, flip func(s *Settings)) *mygo.MenuItem {
+		return &mygo.MenuItem{ID: id, Label: label, Type: mygo.MenuItemCheckbox, Checked: on, Click: setting(flip)}
+	}
+	locales := make([]*mygo.MenuItem, 0, len(summaryLocales))
+	for _, tag := range summaryLocales {
+		chosen := tag
+		locales = append(locales, &mygo.MenuItem{ID: "locale-" + tag, Label: summaryLocaleLabel(tag), Type: mygo.MenuItemRadio, Checked: s.SummaryLocale == tag,
+			Click: func(*mygo.MenuItem, *mygo.Window) { cfg.Update(func(s *Settings) { s.SummaryLocale = chosen }) }})
+	}
+	return []*mygo.MenuItem{
+		switchItem("grouping", "Smart Grouping", s.GroupingEnabled, func(s *Settings) { s.GroupingEnabled = !s.GroupingEnabled }),
+		mygo.Separator(),
+		switchItem("overallSummary", "Overall Summary", s.OverallSummary, func(s *Settings) { s.OverallSummary = !s.OverallSummary }),
+		switchItem("summaryExpanded", "Expand the Summary", s.SummaryExpanded, func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded }),
+		switchItem("notes", "Notes on Files and Lines", s.Notes, func(s *Settings) { s.Notes = !s.Notes }),
+		mygo.Separator(),
+		{Label: "Summary Language", Submenu: locales},
+	}
 }
