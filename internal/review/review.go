@@ -75,7 +75,13 @@ func Path(root string) string {
 // writes nothing when there is no unresolved comment: a task file left from
 // a review already acted on would ask again for what was done.
 func Write(path string, doc Document) error {
-	text := Render(doc)
+	return WriteText(path, Render(doc))
+}
+
+// WriteText writes a task file's text at path, making the directories it
+// needs, and writes nothing when there is no text. A repair writes the same
+// text it is about to send, so it is rendered once and handed to both.
+func WriteText(path, text string) error {
 	if text == "" {
 		return nil
 	}

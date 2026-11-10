@@ -42,6 +42,12 @@ func (w *window) commands() []command {
 	if w.settings.ShowWhitespace {
 		whitespace = "Hide Whitespace Changes"
 	}
+	// Writing the task file asks for the comments there are: with none, the
+	// command has nothing to do and is left out of the bar.
+	var exportTask func()
+	if w.repo != nil && w.pendingComments() > 0 {
+		exportTask = w.exportReviewTask
+	}
 	return []command{
 		{title: "Focus File Filter", keys: "⌘P", run: w.focusFilter},
 		{title: "Find in Diffs", keys: "⌘F", run: func() { w.finding = true }},
@@ -66,6 +72,7 @@ func (w *window) commands() []command {
 			}
 		}},
 		{title: "Copy Review Comments", run: w.copyComments},
+		{title: "Export Review Task", hint: ".review/REVIEW.md, for an agent", run: exportTask},
 		{title: "Submit Review", hint: "Approve, comment or request changes", run: w.openSubmit},
 		{title: "Open Pull Request on GitHub", run: w.openPullOnGitHub},
 		{title: "Copy Review Comments and Close", run: func() {
