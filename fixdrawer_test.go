@@ -96,6 +96,16 @@ func TestEndFix(t *testing.T) {
 		t.Errorf("the error shown is %q, want %q", end.errText, failed.ErrDetail)
 	}
 
+	// A failure godiff knows shows the sentence to act on, not its raw words.
+	explained := res
+	explained.ExitCode = 1
+	explained.ErrMessage = "The agent is not signed in. Sign in with its own CLI in a terminal, then try again."
+	explained.ErrDetail = "Error: not logged in\nSee /opt/agent/docs/login.md"
+	end = endFix(explained, errAgent, false)
+	if end.errText != explained.ErrMessage {
+		t.Errorf("the error shown is %q, want %q", end.errText, explained.ErrMessage)
+	}
+
 	// A failure that wrote nothing to stderr shows the error itself, and the
 	// long tail of it is cut to the lines the card shows.
 	end = endFix(review.FixResult{ExitCode: -1}, errAgent, false)

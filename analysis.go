@@ -30,9 +30,14 @@ type analysisState struct {
 	running      bool
 	progress     agent.Progress
 	started      time.Time
-	err          string
-	cancel       context.CancelFunc
-	agent        string // the label of the agent at work
+	// err is what the card says of a failure: a sentence to act on, the
+	// agent's own words only when they are all there is. errDetail is those
+	// words, kept aside, and errOpen shows them.
+	err       string
+	errDetail string
+	errOpen   bool
+	cancel    context.CancelFunc
+	agent     string // the label of the agent at work
 	// allNotes lists every note in the card, not the first alone.
 	allNotes bool
 	// offered is set when the user chose to group by a review there is
@@ -282,7 +287,7 @@ func (w *window) runAnalysis() {
 	name := w.settings.AIAgent
 	path := analysisPath(w.repo.Root, src)
 	ctx, cancel := context.WithCancel(context.Background())
-	st.running, st.err, st.started, st.cancel, st.offered = true, "", time.Now(), cancel, false
+	st.running, st.err, st.errDetail, st.errOpen, st.started, st.cancel, st.offered = true, "", "", false, time.Now(), cancel, false
 	st.progress = thinkingStart
 	st.agent = ""
 	req.Locale = analysisLocale()
@@ -339,9 +344,16 @@ func (w *window) runAnalysis() {
 			case errors.Is(err, context.Canceled):
 				st.err = ""
 			case err != nil:
-				st.err = err.Error()
+				// The failure as a sentence to act on, with what the agent
+				// said kept under it: one godiff does not know is shown as
+				// it came.
+				st.err, st.errDetail = agent.Explain(err.Error())
+				st.errOpen = false
+				if st.err == "" {
+					st.err = err.Error()
+				}
 			default:
-				st.result, st.fingerprints, st.err = an, fingerprints, ""
+				st.result, st.fingerprints, st.err, st.errDetail = an, fingerprints, "", ""
 			}
 			if w.source == src {
 				w.regroupSoon()
@@ -461,6 +473,22 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 		}
 		if st.err != "" {
 			ui.Text(c, st.err).FontSize(12).TextColor(t.Danger).Selectable().MaxLines(6)
+			if d := st.errDetail; d != st.err {
+				// What the agent said itself, for a report or a bug: it is
+				// no sentence to act on, so it stays folded away.
+				label := "Show what it said"
+				if st.errOpen {
+					label = "Hide what it said"
+				}
+				if ui.ButtonBase(c).Padding(2, 0).Children(func() {
+					ui.Text(c, label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
+				}).Clicked() {
+					st.errOpen = !st.errOpen
+				}
+				if st.errOpen {
+					ui.Text(c, d).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).Selectable().MaxLines(12)
+				}
+			}
 		}
 		a := st.result
 		if a == nil || st.running {
@@ -853,7 +881,7 @@ func (w *window) chooseGrouping(mode groupMode) {
 		w.groupPref = groupAI
 		st := w.analysisFor(w.source)
 		if !st.running {
-			st.offered, st.err = true, ""
+			st.offered, st.err, st.errDetail = true, "", ""
 		}
 		w.rowsDirty = true
 		w.list.ScrollTo(0, ui.Start)

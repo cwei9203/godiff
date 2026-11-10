@@ -63,7 +63,12 @@ func endFix(res review.FixResult, err error, stopped bool) fixEnd {
 		end.phase = fixStopped
 	case err != nil:
 		end.phase = fixFailed
-		end.errText = strings.TrimSpace(res.ErrDetail)
+		// The sentence to act on, when godiff knows the failure; else what
+		// the agent wrote, else the error itself.
+		end.errText = strings.TrimSpace(res.ErrMessage)
+		if end.errText == "" {
+			end.errText = strings.TrimSpace(res.ErrDetail)
+		}
 		if end.errText == "" {
 			end.errText = err.Error()
 		}
