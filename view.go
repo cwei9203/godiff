@@ -390,6 +390,10 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	if w.commitOpen || w.paletteOpen || w.dialogOpen || w.help || typing || !reviewBuilt || (w.pr != nil && w.pr.submitOpen) {
 		return
 	}
+	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyA) {
+		// Every change, from whatever part of the review was shown.
+		w.showAll()
+	}
 	if c.Shortcut(0, ui.KeyJ) || c.Shortcut(ui.Ctrl, ui.KeyDown) {
 		w.nextHunk(1)
 	}
