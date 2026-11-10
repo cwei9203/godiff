@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -83,6 +84,143 @@ func TestReviewDocumentStatus(t *testing.T) {
 	}
 	if len(doc.Groups) != 0 {
 		t.Errorf("ungrouped files came in groups: %d", len(doc.Groups))
+	}
+}
+
+// scopedReview is a window on three comments in two groups: two of the code
+// group, one of the docs group.
+func scopedReview(t *testing.T) *window {
+	t.Helper()
+	w, _ := newTestWindow(t, testRepo(t))
+	w.groupPref = groupKind
+	w.regroup()
+	addText(w, "main.go", sideNew, 3, 3, "Name it for what it returns.")
+	addText(w, "docs/long.txt", sideOld, 5, 6, "This range goes away.")
+	addText(w, "src/new.go", sideNew, 2, 2, "Drop the comment.")
+	w.addComment("main.go", sideNew, 9, 9) // an empty draft: no comment yet
+	return w
+}
+
+// showFile puts a file at the top of the surface, which a scope's file and
+// group are read from.
+func showFile(t *testing.T, w *window, path string) {
+	t.Helper()
+	for i, f := range w.files {
+		if f.Path == path {
+			w.current = i
+			return
+		}
+	}
+	t.Fatalf("no %s in the review", path)
+}
+
+// documentPaths is the comments and files a document asks about.
+func documentPaths(doc review.Document) (comments, files []string) {
+	for _, c := range doc.Comments {
+		comments = append(comments, c.Path)
+	}
+	for _, g := range doc.Groups {
+		for _, f := range g.Files {
+			files = append(files, f.Path)
+		}
+	}
+	for _, f := range doc.Other {
+		files = append(files, f.Path)
+	}
+	return comments, files
+}
+
+// TestReviewDocumentScopes filters the one assembler: all of the review, the
+// group of the file in view, or that file alone, and only the comments still
+// unresolved.
+func TestReviewDocumentScopes(t *testing.T) {
+	w := scopedReview(t)
+	showFile(t, w, "docs/long.txt")
+
+	comments, _ := documentPaths(w.reviewDocumentFor(fixScopeAll))
+	if len(comments) != 3 {
+		t.Fatalf("all of it asks about %v, want three comments", comments)
+	}
+
+	// The group of the file in view: the docs, and only the docs.
+	doc := w.reviewDocumentFor(fixScopeGroup)
+	comments, files := documentPaths(doc)
+	if len(comments) != 1 || comments[0] != "docs/long.txt" {
+		t.Errorf("the docs group asks about %v", comments)
+	}
+	if len(files) != 1 || files[0] != "docs/long.txt" {
+		t.Errorf("the docs group holds %v", files)
+	}
+	if len(doc.Groups) != 1 || doc.Groups[0].Label != "Docs" {
+		t.Errorf("the groups are %+v", doc.Groups)
+	}
+	if text := review.Render(doc); strings.Contains(text, "main.go") {
+		t.Errorf("another group's file is in the task\n%s", text)
+	}
+
+	// The file in view alone.
+	showFile(t, w, "main.go")
+	doc = w.reviewDocumentFor(fixScopeFile)
+	comments, files = documentPaths(doc)
+	if len(comments) != 1 || comments[0] != "main.go" {
+		t.Errorf("the file asks about %v", comments)
+	}
+	if len(files) != 1 || files[0] != "main.go" {
+		t.Errorf("the file's group holds %v", files)
+	}
+	if text := review.Render(doc); !strings.Contains(text, "**1 unresolved comment.**") {
+		t.Errorf("the task does not count one comment\n%s", text)
+	}
+
+	// The code group holds the three code files: main.go, src/new.go and the
+	// deleted old.txt.
+	showFile(t, w, "src/new.go")
+	comments, files = documentPaths(w.reviewDocumentFor(fixScopeGroup))
+	if len(comments) != 2 {
+		t.Errorf("the code group asks about %v", comments)
+	}
+	if len(files) != 3 || !slices.Contains(files, "main.go") || !slices.Contains(files, "src/new.go") {
+		t.Errorf("the code group holds %v", files)
+	}
+
+	// All of the review is no filter at all: it is the export's document.
+	showFile(t, w, "main.go")
+	if w.scopePaths(fixScopeAll) != nil {
+		t.Error("all of the review came as a filter")
+	}
+	if got, want := review.Render(w.reviewDocumentFor(fixScopeAll)), review.Render(w.reviewDocument()); got != want {
+		t.Errorf("all of the review differs from the export\n%s\n%s", got, want)
+	}
+}
+
+// TestFixCommand needs the comments to fix and an agent that can fix them,
+// and keeps the export beside it for a machine with no agent.
+func TestFixCommand(t *testing.T) {
+	w, _ := newTestWindow(t, testRepo(t))
+	w.settings.FixAgent = "claude"
+	if cmd, ok := findCommand(w, "Fix Review Comments…"); !ok || cmd.run != nil {
+		t.Error("the repair is offered with no comment to fix")
+	}
+	addText(w, "main.go", sideNew, 3, 3, "Name it for what it returns.")
+	cmd, ok := findCommand(w, "Fix Review Comments…")
+	if !ok || cmd.run == nil {
+		t.Fatal("the repair is not offered with a comment to fix")
+	}
+	if want := "1 comment · Claude Code"; cmd.hint != want {
+		t.Errorf("the hint is %q, want %q", cmd.hint, want)
+	}
+	// The agent that reviews is the one that fixes when the settings name
+	// none for repairs; with no agent at all, nothing is offered.
+	w.settings.FixAgent, w.settings.AIAgent = "", "codex"
+	if got := w.fixHint(); got != "1 comment · Codex" {
+		t.Errorf("without an agent of its own, the repair names %q", got)
+	}
+	w.settings.AIAgent = ""
+	if cmd, ok := findCommand(w, "Fix Review Comments…"); !ok || cmd.run != nil {
+		t.Error("the repair is offered with no agent installed")
+	}
+	if cmd, ok := findCommand(w, "Export Review Task"); !ok || cmd.run == nil {
+		t.Error("the export went with the repair")
 	}
 }
 
