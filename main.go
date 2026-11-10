@@ -172,13 +172,13 @@ func showWelcome(err error) {
 		welcomeWin.Focus()
 		return
 	}
-	v := &welcome{err: err}
+	v := &welcome{err: err, choice: -1}
 	welcomeWin = mygo.NewWindow(mygo.WindowOptions{
 		Title:         "Godiff",
-		Width:         640,
-		Height:        420,
-		MinWidth:      480,
-		MinHeight:     320,
+		Width:         760,
+		Height:        560,
+		MinWidth:      620,
+		MinHeight:     480,
 		TitleBarStyle: mygo.TitleBarHiddenInset,
 		Content:       ui.View(v.view),
 	})
@@ -193,14 +193,33 @@ func closeWelcome() {
 	welcomeWin = nil
 }
 
+// showsWelcome reports whether a launch opens the welcome window, which
+// opens a repository, rather than a repository's window: it does when
+// nothing on the command line names one, as a click on the icon in the
+// Dock passes none.
+func showsWelcome(args []string, fromUser bool) bool {
+	return !fromUser && !namesRepository(args)
+}
+
+// namesRepository reports whether a command line names a repository,
+// apart from what macOS adds to an app opened from the Finder.
+func namesRepository(args []string) bool {
+	for _, a := range args {
+		if a != "" && !strings.HasPrefix(a, "-psn_") {
+			return true
+		}
+	}
+	return false
+}
+
 // open opens a window for a command line, or the welcome window when it
 // names no repository.
-func open(req request, fromUser bool) {
-	if !fromUser {
-		// Started from Finder or the Dock: the repository of last time.
-		if recent := state.recent(); len(recent) > 0 && openWindow(recent[0], source{}) == nil {
-			return
-		}
+func open(req request, args []string, fromUser bool) {
+	if showsWelcome(args, fromUser) {
+		// Started from Finder or the Dock: the window that opens a
+		// repository, of the recent ones or of a folder.
+		showWelcome(nil)
+		return
 	}
 	if err := openWindow(req.dir, req.src); err != nil {
 		showWelcome(err)
@@ -221,7 +240,7 @@ func main() {
 	}
 	// The command line names a repository, unless the app was started from
 	// Finder or the Dock, in /, or by `mygo dev`, in its project.
-	fromUser := len(args) > 0 || dir != wd || (wd != "/" && wd != "" && os.Getenv("MYGO_ENV") != "development")
+	fromUser := namesRepository(args) || dir != wd || (wd != "/" && wd != "" && os.Getenv("MYGO_ENV") != "development")
 
 	name := "Godiff"
 	if n := os.Getenv("GODIFF_NAME"); n != "" {
@@ -242,10 +261,10 @@ func main() {
 			go mygo.Dialog.Error("Godiff", err.Error())
 			return
 		}
-		go open(req, true)
+		go open(req, args, true)
 	})
 	mygo.App.OnOpenFile(func(path string) {
-		go open(request{dir: path}, true)
+		go open(request{dir: path}, nil, true)
 	})
 	state.open() // before the menu, which lists the recent repositories
 	applyTheme(cfg.Get())
@@ -262,10 +281,10 @@ func main() {
 		}
 	})
 	mygo.App.OnActivate(func(hasVisibleWindows bool) {
-		// A click on the Dock icon with no window open opens the last
-		// repository; the activation of the launch itself does not.
+		// A click on the Dock icon with no window open opens the welcome
+		// window; the activation of the launch itself does not.
 		if !hasVisibleWindows && launched.Load() && noWindows() {
-			go open(request{dir: wd}, false)
+			go open(request{dir: wd}, nil, false)
 		}
 	})
 	if path := os.Getenv("GODIFF_CPUPROFILE"); path != "" {
@@ -296,7 +315,7 @@ func main() {
 		}
 		cfg.watch()
 		go func() {
-			open(req, fromUser)
+			open(req, args, fromUser)
 			launched.Store(true)
 		}()
 	})
