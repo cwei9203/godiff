@@ -33,7 +33,6 @@ type analysisState struct {
 	err          string
 	cancel       context.CancelFunc
 	agent        string // the label of the agent at work
-	folded       bool
 	// allNotes lists every note in the card, not the first alone.
 	allNotes bool
 	// offered is set when the user chose to group by a review there is
@@ -221,7 +220,6 @@ func (w *window) loadAnalysis(src source) {
 				return
 			}
 			st.result, st.fingerprints = a, saved.Fingerprints
-			st.folded = true
 			if w.source == src {
 				w.regroupSoon()
 			}
@@ -284,7 +282,7 @@ func (w *window) runAnalysis() {
 	name := w.settings.AIAgent
 	path := analysisPath(w.repo.Root, src)
 	ctx, cancel := context.WithCancel(context.Background())
-	st.running, st.err, st.started, st.cancel, st.folded, st.offered = true, "", time.Now(), cancel, false, false
+	st.running, st.err, st.started, st.cancel, st.offered = true, "", time.Now(), cancel, false
 	st.progress = thinkingStart
 	st.agent = ""
 	req.Locale = analysisLocale()
@@ -868,7 +866,6 @@ func (w *window) chooseGrouping(mode groupMode) {
 func (w *window) reviewWithAI() {
 	st := w.analyses[w.source]
 	if st != nil && (st.result != nil || st.running) {
-		st.folded = false
 		w.rowsDirty = true
 		w.list.ScrollTo(0, ui.Start)
 		return
