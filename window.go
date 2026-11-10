@@ -184,6 +184,11 @@ type window struct {
 	// palettePointer is where the pointer was over the list.
 	palettePointer [2]float32
 
+	// The drawer of a repair: the run it hosts, and the choices it asks
+	// before one starts.
+	fix       *fixState
+	fixChoice fixChoice
+
 	// The dialog opening a commit or a branch.
 	dialog      dialogKind
 	dialogOpen  bool
@@ -258,6 +263,11 @@ func openWindow(dir string, src source) error {
 	})
 	offSettings := cfg.OnChange(func(s Settings) { w.win.Update(func() { w.applySettings(s) }) })
 	w.win.OnClosed(func() {
+		// A repair at work goes with the window: nothing would show it, or
+		// stop it, once the window is gone.
+		if w.fixAtWork() {
+			w.stopFix()
+		}
 		close(stop)
 		offSettings()
 		windowsMu.Lock()

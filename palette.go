@@ -48,6 +48,14 @@ func (w *window) commands() []command {
 	if w.repo != nil && w.pendingComments() > 0 {
 		exportTask = w.exportReviewTask
 	}
+	// Handing them to an agent asks for the comments there are and an agent
+	// installed that can write: without either, it is left out as well.
+	var fixComments func()
+	if w.repo != nil && w.pendingComments() > 0 && !w.fixAtWork() {
+		if _, ok := w.fixAgent(); ok {
+			fixComments = w.openFixDialog
+		}
+	}
 	return []command{
 		{title: "Focus File Filter", keys: "⌘P", run: w.focusFilter},
 		{title: "Find in Diffs", keys: "⌘F", run: func() { w.finding = true }},
@@ -73,6 +81,7 @@ func (w *window) commands() []command {
 		}},
 		{title: "Copy Review Comments", run: w.copyComments},
 		{title: "Export Review Task", hint: ".review/REVIEW.md, for an agent", run: exportTask},
+		{title: "Fix Review Comments…", hint: w.fixHint(), run: fixComments},
 		{title: "Submit Review", hint: "Approve, comment or request changes", run: w.openSubmit},
 		{title: "Open Pull Request on GitHub", run: w.openPullOnGitHub},
 		{title: "Copy Review Comments and Close", run: func() {

@@ -47,6 +47,9 @@ func (w *window) view(c *ui.Context) {
 		ui.Column(c).Grow(1).MinWidth(0).Background(pal.appBg).Children(func() {
 			w.toolbar(c, pal)
 			reviewBuilt = w.mainArea(c, pal)
+			// The drawer of a repair stays at the bottom of the review:
+			// it hosts the agent's process, not a part of the diff.
+			w.fixDrawer(c, pal)
 		})
 		if w.sidebarShown && right {
 			w.sidebarResizer(c, pal)
@@ -55,6 +58,7 @@ func (w *window) view(c *ui.Context) {
 	})
 	w.shortcuts(c, reviewBuilt)
 	w.palette(c)
+	w.fixDialog(c)
 	w.sourceDialog(c)
 	w.shortcutsHelp(c)
 	w.reviewDialog(c)
