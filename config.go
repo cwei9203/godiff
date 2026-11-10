@@ -282,6 +282,10 @@ type storeData struct {
 	Viewed       map[string]map[string]string `json:"viewed"`
 	SidebarWidth float32                      `json:"sidebarWidth"`
 	SidebarShown *bool                        `json:"sidebarShown"`
+	// SidebarGroups and SidebarFiles say whether the sections of the
+	// sidebar show: the groups of the files, and the files.
+	SidebarGroups *bool `json:"sidebarGroups"`
+	SidebarFiles  *bool `json:"sidebarFiles"`
 	// Recent are the repositories opened, the last first: File → Open
 	// Recent lists them, and the app opens the first when started without
 	// one, from the Dock.
@@ -300,7 +304,12 @@ func (s *store) open() {
 	if err != nil {
 		return
 	}
-	s.path = filepath.Join(dir, "state.json")
+	s.openAt(filepath.Join(dir, "state.json"))
+}
+
+// openAt reads the state kept at path, which it keeps from then on.
+func (s *store) openAt(path string) {
+	s.path = path
 	if data, err := os.ReadFile(s.path); err == nil {
 		json.Unmarshal(data, &s.data)
 	}
@@ -358,6 +367,28 @@ func (s *store) layout() (width float32, shown bool) {
 func (s *store) setLayout(width float32, shown bool) {
 	s.mu.Lock()
 	s.data.SidebarWidth, s.data.SidebarShown = width, &shown
+	s.mu.Unlock()
+	s.save()
+}
+
+// sections reports which of the sidebar's sections show: the groups, and
+// the files.
+func (s *store) sections() (groups, files bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	groups, files = true, true
+	if s.data.SidebarGroups != nil {
+		groups = *s.data.SidebarGroups
+	}
+	if s.data.SidebarFiles != nil {
+		files = *s.data.SidebarFiles
+	}
+	return groups, files
+}
+
+func (s *store) setSections(groups, files bool) {
+	s.mu.Lock()
+	s.data.SidebarGroups, s.data.SidebarFiles = &groups, &files
 	s.mu.Unlock()
 	s.save()
 }

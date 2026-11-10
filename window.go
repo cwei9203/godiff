@@ -75,6 +75,10 @@ type window struct {
 	// The sidebar.
 	sidebarShown bool
 	sidebarWidth float32
+	// groupsOpen and filesOpen say whether the two sections of the
+	// sidebar's files tab show.
+	groupsOpen   bool
+	filesOpen    bool
 	tab          int // 0 files, 1 history
 	filter       string
 	filterFocus  bool
@@ -283,6 +287,7 @@ func openWindow(dir string, src source) error {
 // repository.
 func newWindow(repo *git.Repo, src source) *window {
 	width, shown := state.layout()
+	groupsOpen, filesOpen := state.sections()
 	w := &window{
 		repo:         repo,
 		launch:       src,
@@ -290,6 +295,8 @@ func newWindow(repo *git.Repo, src source) *window {
 		settings:     cfg.Get(),
 		sidebarShown: shown,
 		sidebarWidth: width,
+		groupsOpen:   groupsOpen,
+		filesOpen:    filesOpen,
 		historyLimit: historyPage,
 		viewed:       state.viewed(viewedKey(repo.Root, src)),
 		hscroll:      map[string]float32{},

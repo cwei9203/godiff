@@ -413,12 +413,33 @@ type treeRow struct {
 
 // visibleTree lists the rows of the tree, inside the directories open.
 func (w *window) visibleTree() []treeRow {
+	return w.rowsOf(false)
+}
+
+// visibleFiles lists the rows of the Files section: the tree without the
+// rows of the groups, which the Groups section shows. A group closed in
+// that section keeps its files out, as a closed directory keeps its own.
+func (w *window) visibleFiles() []treeRow {
+	return w.rowsOf(true)
+}
+
+// rowsOf lists the rows of the tree, inside the directories open, the
+// rows of the groups left out when apart.
+func (w *window) rowsOf(apart bool) []treeRow {
 	var rows []treeRow
 	var walk func(keys []string, depth int)
 	walk = func(keys []string, depth int) {
 		for _, k := range keys {
+			n := w.treeItems[k]
+			if n != nil && apart && n.group >= 0 {
+				// The group's files come up to its place.
+				if !w.closedDirs[k] {
+					walk(n.children, depth)
+				}
+				continue
+			}
 			rows = append(rows, treeRow{k, depth})
-			if n := w.treeItems[k]; n != nil && n.dir && !w.closedDirs[k] {
+			if n != nil && n.dir && !w.closedDirs[k] {
 				walk(n.children, depth+1)
 			}
 		}
@@ -427,24 +448,208 @@ func (w *window) visibleTree() []treeRow {
 	return rows
 }
 
+// fileTree shows the sidebar's files tab: the groups of the files, then
+// the files under them.
 func (w *window) fileTree(c *ui.Context) {
-	t := c.Theme()
-	pal := paletteFor(t)
-	if len(w.treeRoots) == 0 {
-		ui.Column(c).Grow(1).Center().Padding(16).Children(func() {
-			msg := "No changed files"
-			switch {
-			case w.loading && len(w.files) == 0:
-				msg = "Loading…"
-			case strings.TrimSpace(w.filter) != "":
-				msg = "No matching files"
-			}
-			ui.Text(c, msg).FontSize(12).TextColor(t.TextMuted)
-		})
-		return
+	pal := paletteFor(c.Theme())
+	if len(w.groups) > 0 {
+		w.groupsSection(c, pal)
 	}
-	rows := w.visibleTree()
-	w.treeRows = rows
+	w.filesSection(c, pal)
+}
+
+// The groups section of the sidebar: how tall its rows are, the heading
+// of a section, and how tall the groups grow before they scroll.
+const (
+	groupRowHeight  = 38
+	headHeight      = 24
+	groupsMaxHeight = 6 * groupRowHeight
+)
+
+// groupsSection shows the groups of the files, which come first in the
+// sidebar: a row takes the surface to its group, as the group's heading
+// there does.
+func (w *window) groupsSection(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	active := -1
+	if w.current >= 0 && w.current < len(w.files) {
+		active = w.files[w.current].group
+	}
+	ui.Column(c).Shrink(0).Gap(1).Children(func() {
+		open, toggled := sectionHead(c, t, "Groups", len(w.groups), &w.groupsOpen, "Collapse the groups")
+		if toggled {
+			w.keepSections()
+		}
+		if !open {
+			return
+		}
+		// The rows and the gaps between them, up to where they scroll.
+		height := min(float32(len(w.groups))*(groupRowHeight+1), groupsMaxHeight)
+		ui.Scroll(c).Shrink(0).Height(height).Children(func() {
+			ui.Column(c).Gap(1).Children(func() {
+				for gi := range w.groups {
+					w.groupSectionRow(c, pal, gi, gi == active)
+				}
+			})
+		})
+	})
+}
+
+// keepSections keeps the sections of the sidebar in the store, as they
+// show now.
+func (w *window) keepSections() {
+	go state.setSections(w.groupsOpen, w.filesOpen)
+}
+
+// sectionHead is the heading of a section of the sidebar: its name, how
+// many items it holds, and a chevron that shows and hides them. It
+// reports whether the section shows, and whether the user changed that.
+func sectionHead(c *ui.Context, t *ui.Theme, name string, count int, open *bool, tip string) (shown, toggled bool) {
+	head := ui.Row(c).Height(headHeight).Padding(0, 8, 0, 4).Gap(6).Radius(6).AlignItems(ui.Center)
+	if head.Hovered() {
+		head.Background(ui.RGBA(127, 127, 127, 0.08))
+	}
+	if head.Clicked() {
+		*open = !*open
+		toggled = true
+	}
+	head.Label(name).Tooltip(tip).Children(func() {
+		ui.Box(c).Size(12, 12).Center().Shrink(0).Children(func() {
+			ic := ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted)
+			target := float32(0)
+			if !*open {
+				target = -90
+			}
+			ic.Rotate(ic.Animate("section", target, 150*time.Millisecond))
+		})
+		ui.Text(c, name).FontSize(11).FontWeight(700).TextColor(t.TextMuted).Grow(1).Shrink(1).MinWidth(0)
+		ui.Textf(c, "%d", count).FontSize(10).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
+	})
+	return *open, toggled
+}
+
+// groupSectionRow is a group in the sidebar: its files' count and change,
+// and how much of it was viewed.
+func (w *window) groupSectionRow(c *ui.Context, pal *palette, gi int, active bool) {
+	t := c.Theme()
+	g := &w.groups[gi]
+	key := "g:" + g.key
+	files := w.groupFiles(gi)
+	viewed, adds, dels := 0, 0, 0
+	for _, i := range files {
+		f := w.files[i]
+		if w.isViewed(f) {
+			viewed++
+		}
+		if countable(f) {
+			adds += f.Additions
+			dels += f.Deletions
+		}
+	}
+	open := !w.closedDirs[key]
+	row := ui.Row(c).Height(groupRowHeight).Padding(0, 8, 0, 4).Gap(6).Radius(6).AlignItems(ui.Center).
+		Background(pal.headerBg).Label(g.label)
+	switch {
+	case active:
+		row.Background(t.Accent.Alpha(0.14).Over(pal.headerBg))
+	case row.Hovered():
+		row.Background(t.Accent.Alpha(0.07).Over(pal.headerBg))
+	}
+	if row.Pressed() {
+		w.revealGroup(gi)
+	}
+	row.Children(func() {
+		tip := "Hide the files of " + g.label
+		if !open {
+			tip = "Show the files of " + g.label
+		}
+		// It sits by the group's name, the first of its two lines.
+		arrow := ui.Box(c).Size(12, 12).Center().Shrink(0).Label(tip).Tooltip(tip).AlignSelf(ui.Start).Margin(4, 0, 0, 0)
+		arrow.Children(func() {
+			ic := ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted)
+			target := float32(0)
+			if !open {
+				target = -90
+			}
+			ic.Rotate(ic.Animate("grp"+g.key, target, 150*time.Millisecond))
+		})
+		if arrow.Pressed() {
+			w.closedDirs[key] = open
+		}
+		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(1).Children(func() {
+			ui.Row(c).Gap(4).Children(func() {
+				icon := ui.Icon(c, groupIcon(g)).FontSize(13).TextColor(t.TextMuted).Shrink(0)
+				if g.critical {
+					icon.TextColor(t.Danger)
+				}
+				ui.Text(c, g.label).FontSize(14).FontWeight(600).SingleLine().Grow(1).Shrink(1).MinWidth(0).Tooltip(g.summary)
+				if g.critical {
+					ui.Icon(c, iconAlert).FontSize(11).TextColor(t.Danger).Shrink(0).Tooltip("Needs care")
+				}
+			})
+			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+				ui.RichText(c,
+					ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
+					ui.Span{Text: "+" + compact(adds), Color: pal.addText},
+					ui.Span{Text: " −" + compact(dels), Color: pal.delText},
+				).Font(w.codeFont()).FontSize(10).FontWeight(600).Shrink(0)
+				ui.Spacer(c)
+				ui.Textf(c, "%d/%d", viewed, len(files)).Font(w.codeFont()).FontSize(10).FontWeight(600).
+					TextColor(t.TextMuted).Shrink(0).Tooltip("Viewed files")
+				ui.Progress(c, ratio(viewed, len(files))).Width(44).Shrink(0)
+			})
+		})
+	})
+}
+
+// ratio is a share between 0 and 1, 0 when there is nothing to share.
+func ratio(n, of int) float64 {
+	if of <= 0 {
+		return 0
+	}
+	return float64(n) / float64(of)
+}
+
+// filesSection shows the files under the groups: the tree the search
+// field filters.
+func (w *window) filesSection(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	files := 0
+	for i := range w.files {
+		if w.fileVisible(i) {
+			files++
+		}
+	}
+	ui.Column(c).Grow(1).Gap(1).Children(func() {
+		open, toggled := sectionHead(c, t, "Files", files, &w.filesOpen, "Collapse the files")
+		if toggled {
+			w.keepSections()
+		}
+		if !open {
+			return
+		}
+		if len(w.treeRoots) == 0 {
+			ui.Column(c).Grow(1).Center().Padding(16).Children(func() {
+				msg := "No changed files"
+				switch {
+				case w.loading && len(w.files) == 0:
+					msg = "Loading…"
+				case strings.TrimSpace(w.filter) != "":
+					msg = "No matching files"
+				}
+				ui.Text(c, msg).FontSize(12).TextColor(t.TextMuted)
+			})
+			return
+		}
+		rows := w.visibleFiles()
+		w.treeRows = rows
+		w.fileTreeList(c, pal, rows)
+	})
+}
+
+// fileTreeList lists rows of the tree.
+func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
+	t := c.Theme()
 	choose := func(key string) {
 		w.treeSel = key
 		if n := w.treeItems[key]; n != nil && !n.dir {
@@ -639,7 +844,7 @@ func (w *window) selectTreeFile(i int) {
 			w.closedDirs[k] = false
 		}
 	}
-	for r, row := range w.visibleTree() {
+	for r, row := range w.visibleFiles() {
 		if row.key == key {
 			w.treeList.ScrollIntoView(r)
 			return

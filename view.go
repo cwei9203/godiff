@@ -232,7 +232,10 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 			})
 		})
 	}
-	if len(w.files) > 0 && w.loadErr == nil {
+	// The groups show in the sidebar while it shows the files, and as chips
+	// on the surface when it does not: one place for them, not both.
+	groupsInSidebar := w.sidebarShown && w.tab == 0
+	if len(w.files) > 0 && w.loadErr == nil && !groupsInSidebar {
 		w.scopeBar(c, pal)
 	}
 	find := ui.FindBar(c, &w.finding, &w.query, len(w.matches), &w.match).Label("Find in diffs")
