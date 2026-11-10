@@ -355,6 +355,9 @@ type storeData struct {
 	Viewed       map[string]map[string]string `json:"viewed"`
 	SidebarWidth float32                      `json:"sidebarWidth"`
 	SidebarShown *bool                        `json:"sidebarShown"`
+	// AsideWidth is the width of the aside listing a group's files, kept
+	// as the sidebar's is.
+	AsideWidth float32 `json:"asideWidth"`
 	// SidebarGroups and SidebarFiles say whether the sections of the
 	// sidebar show: the groups of the files, and the files.
 	SidebarGroups *bool `json:"sidebarGroups"`
@@ -440,6 +443,25 @@ func (s *store) layout() (width float32, shown bool) {
 func (s *store) setLayout(width float32, shown bool) {
 	s.mu.Lock()
 	s.data.SidebarWidth, s.data.SidebarShown = width, &shown
+	s.mu.Unlock()
+	s.save()
+}
+
+// asideWidth returns the width of the aside beside the diffs, the
+// default until the user drags it.
+func (s *store) asideWidth() float32 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	width := s.data.AsideWidth
+	if width == 0 {
+		width = asideDefault
+	}
+	return min(max(width, asideMin), asideMax)
+}
+
+func (s *store) setAsideWidth(width float32) {
+	s.mu.Lock()
+	s.data.AsideWidth = min(max(width, asideMin), asideMax)
 	s.mu.Unlock()
 	s.save()
 }

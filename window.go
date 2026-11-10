@@ -101,10 +101,21 @@ type window struct {
 	dragWidth float32
 
 	// The diff surface.
-	rows       []row
-	rowsDirty  bool
-	list       ui.ListState
-	current    int // the file shown at the top of the surface
+	rows      []row
+	rowsDirty bool
+	list      ui.ListState
+	current   int // the file shown at the top of the surface
+	// columnW is the width of the review beside its sidebar, measured the
+	// frame before: the aside shows on a window wide enough for it.
+	columnW float32
+	// The aside listing the files of the group shown.
+	asideWidth float32
+	asideDrag  float32
+	asideMoved bool // the divisor is dragging, its width to be kept
+	asideList  ui.ListState
+	asideFor   int // the group the aside lists, -1 for none yet
+	asideAt    int // the file the aside scrolled to, -1 for none yet
+	asideMore  map[string]bool
 	hscroll    map[string]float32
 	revealedAt time.Time
 	now        time.Time
@@ -305,6 +316,7 @@ func newWindow(repo *git.Repo, src source) *window {
 		settings:     cfg.Get(),
 		sidebarShown: shown,
 		sidebarWidth: width,
+		asideWidth:   state.asideWidth(),
 		groupsOpen:   groupsOpen,
 		filesOpen:    filesOpen,
 		historyLimit: historyPage,
@@ -316,6 +328,9 @@ func newWindow(repo *git.Repo, src source) *window {
 		fileMatches:  map[int]bool{},
 		selFile:      -1,
 		selHunk:      -1,
+		asideFor:     -1,
+		asideAt:      -1,
+		asideMore:    map[string]bool{},
 		prs:          map[source]*pullState{},
 		analyses:     map[source]*analysisState{},
 	}
@@ -325,6 +340,7 @@ func newWindow(repo *git.Repo, src source) *window {
 	}
 	w.loadAnalysis(src)
 	w.dragWidth = w.sidebarWidth
+	w.asideDrag = w.asideWidth
 	w.list.Key = func(i int) any { return w.key(&w.rows[i]) }
 	w.list.Header = func(i int) bool { return w.rows[i].kind == rowHeader }
 	return w
