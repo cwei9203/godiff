@@ -344,24 +344,17 @@ func categoryIcon(category string) (*ui.SVG, categoryAccent) {
 }
 
 // groupCategory is the category of a group of the review: which part of the
-// system its change touches, of PRD §6.2's sixteen.
-//
-// TODO(category): read it off the group once the analysis carries it, as
-// Group.Category set by the grouping under way, and drop the empty string that
-// has every group fall back to the mark of how it was made. This function is
-// the one place to change.
+// system its change touches, of PRD §6.2's sixteen. A group the analysis says
+// nothing about is empty, and keeps the mark of how the group was made.
 func groupCategory(g *agent.Group) string {
-	return ""
+	return string(g.Category)
 }
 
 // groupMissing lists the paths a group holds that are no longer in the diff,
-// which the review keeps as missing.
-//
-// TODO(missing): return g.Missing once the analysis carries it, so the tree
-// lists those paths, weak and out of reach. This function is the one place to
-// change.
+// which the review keeps as missing: the tree lists them, weak and out of
+// reach.
 func groupMissing(g *agent.Group) []string {
-	return nil
+	return g.Missing
 }
 
 // groupMark is the icon and the tone that mark a group: those of its category
