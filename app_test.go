@@ -96,6 +96,9 @@ func newTestWindow(t *testing.T, dir string) (*window, *ui.Tester) {
 	w := newWindow(repo, source{})
 	w.settings = defaultSettings()
 	w.sidebarShown, w.sidebarWidth = true, sidebarDefault
+	// The sections of the sidebar are the store's, which tests change.
+	w.groupsOpen, w.filesOpen = true, true
+	t.Cleanup(func() { state.setSections(true, true) })
 	w.load()
 	w.loadHistory()
 	w.loadUser()

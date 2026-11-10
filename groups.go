@@ -450,6 +450,12 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			dels += f.Deletions
 		}
 	}
+	collapse := func(want bool) {
+		for _, i := range files {
+			w.files[i].collapsed = want
+		}
+		w.rowsDirty = true
+	}
 	ui.Column(c).Padding(20, 2, 0).Gap(4).Background(pal.appBg).Children(func() {
 		ui.Row(c).Gap(8).Children(func() {
 			svg, accent := groupMark(g)
@@ -467,6 +473,9 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 				ui.Span{Text: "+" + thousands(adds), Color: pal.addText},
 				ui.Span{Text: " −" + thousands(dels), Color: pal.delText},
 			).FontSize(12).FontWeight(600).Shrink(0)
+			// The same bar the sidebar shows this group's progress with, so
+			// that both read alike.
+			ui.Progress(c, ratio(viewed, len(files))).Width(groupProgressWidth).Shrink(0).AlignSelf(ui.Center)
 			ui.Spacer(c)
 			count := ui.Textf(c, "%d/%d viewed", viewed, len(files)).FontSize(12).TextColor(t.TextMuted).Shrink(0)
 			if viewed == len(files) && viewed > 0 {
@@ -483,16 +492,48 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 				b.Background(pal.hover)
 			}
 			if b.Clicked() {
-				for _, i := range files {
-					w.files[i].collapsed = !allCollapsed
+				collapse(!allCollapsed)
+			}
+			// Every file of the review: the button beside it reaches this
+			// group alone, so with one group this would say the same.
+			if len(w.groups) > 1 {
+				everyCollapsed := w.allCollapsed()
+				label := "Collapse all"
+				if everyCollapsed {
+					label = "Expand all"
 				}
-				w.rowsDirty = true
+				ab := ui.ButtonBase(c).Padding(3, 8).Radius(6).Label(label).Children(func() {
+					ui.Text(c, label).FontSize(12).FontWeight(600).TextColor(t.TextMuted)
+				})
+				if ab.Hovered() {
+					ab.Background(pal.hover)
+				}
+				if ab.Clicked() {
+					for _, f := range w.files {
+						f.collapsed = !everyCollapsed
+					}
+					w.rowsDirty = true
+				}
 			}
 		})
 		if g.summary != "" {
 			ui.Text(c, g.summary).FontSize(13).TextColor(t.Text.Alpha(0.8)).Selectable().Padding(0, 0, 0, 23)
 		}
 	})
+}
+
+// groupProgressWidth is how wide a group's progress shows in a heading of
+// the surface.
+const groupProgressWidth = 80
+
+// allCollapsed reports whether every file of the review is collapsed.
+func (w *window) allCollapsed() bool {
+	for _, f := range w.files {
+		if !f.collapsed {
+			return false
+		}
+	}
+	return len(w.files) > 0
 }
 
 // aiNote is a note of the agent's review on a file, or on a line of it.
