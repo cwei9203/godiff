@@ -3,7 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -27,7 +28,7 @@ type analysisState struct {
 	// changed since.
 	fingerprints map[string]string
 	running      bool
-	progress     string
+	progress     agent.Progress
 	started      time.Time
 	err          string
 	cancel       context.CancelFunc
@@ -72,10 +73,90 @@ func (w *window) showSummary() bool {
 	return st != nil && (st.result != nil || st.running || st.err != "" || st.offered)
 }
 
-// analysisKey names a source for the reviews saved.
-func analysisKey(root string, src source) string {
-	kind := map[sourceKind]string{sourceWorkingTree: "worktree", sourceCommit: "commit", sourceBranch: "branch", sourcePull: "pull"}[src.kind]
-	sum := sha1.Sum([]byte(root + "\x00" + kind + ":" + src.ref))
+// thinkingStart is the step the card shows before the agent's first: it is
+// started before the agent is found.
+var thinkingStart = agent.Progress{Kind: agent.ProgressThinking, Detail: "Starting…"}
+
+// analysisKeyInput is everything an analysis is made of. Change any of it,
+// and the analysis of it is another analysis: another prompt or contract, as
+// another model, in another language, or of other files.
+type analysisKeyInput struct {
+	SchemaVersion int
+	PromptVersion string
+	Agent         string // the command, claude or codex
+	Model         string // "" for the agent's own default
+	Locale        string // BCP 47, "" for the agent's own
+	Root          string // the repository
+	Source        string // the change, as kind:ref
+	Fingerprints  map[string]string
+}
+
+// analysisKey identifies an analysis, as a hash of what made it. The files
+// enter it by path and content fingerprint, sorted, so that neither the
+// order nor the shape of the diff changes it. What is left out — the agent's
+// version, its login — does not change the review: a new CLI is no reason to
+// throw away an analysis already paid for.
+func analysisKey(in analysisKeyInput) string {
+	h := sha256.New()
+	field := func(s string) {
+		h.Write([]byte(s))
+		h.Write([]byte{0})
+	}
+	field(strconv.Itoa(in.SchemaVersion))
+	field(in.PromptVersion)
+	field(in.Agent + "/" + cmp.Or(in.Model, "default"))
+	field(in.Locale)
+	field(in.Root)
+	field(in.Source)
+	paths := make([]string, 0, len(in.Fingerprints))
+	for p := range in.Fingerprints {
+		paths = append(paths, p)
+	}
+	slices.Sort(paths)
+	for _, p := range paths {
+		field(p)
+		field(in.Fingerprints[p])
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
+
+// analysisKeyOf keys an analysis as it stands now: what an agent and model
+// the settings chose would make would be keyed so. An analysis keyed to
+// anything else is another analysis, not this one.
+func (w *window) analysisKeyOf(src source, a *agent.Analysis, fingerprints map[string]string) string {
+	return analysisKey(analysisKeyInput{
+		SchemaVersion: agent.SchemaVersion,
+		PromptVersion: agent.PromptVersion,
+		// A setting left automatic takes the agent and model the analysis
+		// was made with: those are the ones it chose.
+		Agent:        cmp.Or(w.settings.AIAgent, a.Agent),
+		Model:        cmp.Or(w.settings.AIModel, a.Model),
+		Locale:       cmp.Or(analysisLocale(), a.Locale),
+		Root:         w.repo.Root,
+		Source:       strconv.Itoa(int(src.kind)) + ":" + src.ref,
+		Fingerprints: fingerprints,
+	})
+}
+
+// analysisLocale is the language a review is written in: the machine's, as
+// the settings do not name one yet.
+func analysisLocale() string {
+	for _, key := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		v := strings.TrimSpace(os.Getenv(key))
+		if v == "" {
+			continue
+		}
+		v, _, _ = strings.Cut(v, ".")
+		return strings.ReplaceAll(v, "_", "-")
+	}
+	return ""
+}
+
+// analysisSlot names the place the review of a source is saved: one per
+// source, so that it is found before the diff is loaded, with its key
+// inside to tell whether it is the review that would run now.
+func analysisSlot(root string, src source) string {
+	sum := sha256.Sum256([]byte(root + "\x00" + strconv.Itoa(int(src.kind)) + ":" + src.ref))
 	return hex.EncodeToString(sum[:])
 }
 
@@ -85,11 +166,15 @@ func analysisPath(root string, src source) string {
 	if state.path == "" {
 		return ""
 	}
-	return filepath.Join(filepath.Dir(state.path), "analyses", analysisKey(root, src)+".json")
+	return filepath.Join(filepath.Dir(state.path), "analyses", analysisSlot(root, src)+".json")
 }
 
 type savedAnalysis struct {
-	Analysis     *agent.Analysis   `json:"analysis"`
+	Analysis *agent.Analysis `json:"analysis"`
+	// Key is the analysisKey of what made the analysis: one saved under
+	// another key — by another prompt, model or language, or by a version
+	// before keys — is no review of what would run now.
+	Key          string            `json:"key,omitempty"`
 	Fingerprints map[string]string `json:"fingerprints"`
 }
 
@@ -113,11 +198,20 @@ func (w *window) loadAnalysis(src source) {
 		if json.Unmarshal(data, &saved) != nil || saved.Analysis == nil || len(saved.Analysis.Groups) == 0 {
 			return
 		}
+		a := saved.Analysis
+		// An analysis of another contract, or one keyed as neither this
+		// prompt, this agent, this model, this language nor these files
+		// would be, is not a review of what runs now. It is no review at
+		// all rather than a stale one, and the next run writes over it.
+		if a.SchemaVersion != agent.SchemaVersion || saved.Key == "" || saved.Key != w.analysisKeyOf(src, a, saved.Fingerprints) {
+			return
+		}
+		a.Normalize()
 		w.update(func() {
 			if st.result != nil || st.running {
 				return
 			}
-			st.result, st.fingerprints = saved.Analysis, saved.Fingerprints
+			st.result, st.fingerprints = a, saved.Fingerprints
 			st.folded = true
 			if w.source == src {
 				w.regroupSoon()
@@ -126,11 +220,14 @@ func (w *window) loadAnalysis(src source) {
 	})
 }
 
-func saveAnalysis(path string, a *agent.Analysis, fingerprints map[string]string) {
+// saveAnalysis writes an analysis where its source's review is kept, with
+// its key, so that it is read only while it is the review that would run.
+func saveAnalysis(path, key string, a *agent.Analysis, fingerprints map[string]string) {
 	if path == "" {
 		return
 	}
-	data, err := json.Marshal(savedAnalysis{Analysis: a, Fingerprints: fingerprints})
+	a.Normalize()
+	data, err := json.Marshal(savedAnalysis{Analysis: a, Key: key, Fingerprints: fingerprints})
 	if err != nil {
 		return
 	}
@@ -178,7 +275,10 @@ func (w *window) runAnalysis() {
 	name := w.settings.AIAgent
 	path := analysisPath(w.repo.Root, src)
 	ctx, cancel := context.WithCancel(context.Background())
-	st.running, st.err, st.progress, st.started, st.cancel, st.folded, st.offered = true, "", "Starting…", time.Now(), cancel, false, false
+	st.running, st.err, st.started, st.cancel, st.folded, st.offered = true, "", time.Now(), cancel, false, false
+	st.progress = thinkingStart
+	st.agent = ""
+	req.Locale = analysisLocale()
 	w.rowsDirty = true
 	w.list.ScrollTo(0, ui.Start)
 	w.background(func() {
@@ -202,16 +302,29 @@ func (w *window) runAnalysis() {
 		if base != "" && head != "" {
 			req.Commits = w.repo.Subjects(base, head, 100)
 		}
-		last := ""
-		an, err := runAgent(ctx, a, req, func(s string) {
-			if s == last {
+		last := agent.Progress{}
+		an, err := runAgent(ctx, a, req, func(p agent.Progress) {
+			if p.Kind == last.Kind && p.Detail == last.Detail && slices.Equal(p.Paths, last.Paths) {
 				return
 			}
-			last = s
-			w.update(func() { st.progress = s })
+			last = p
+			w.update(func() { st.progress = p })
 		})
 		if err == nil {
-			saveAnalysis(path, an, fingerprints)
+			// The revision the review covers: a new commit is a review of
+			// a change that has moved on.
+			rev := head
+			switch {
+			case rev != "":
+			case src.kind == sourceCommit:
+				rev = src.ref
+			default:
+				rev = "HEAD"
+			}
+			if sha, rerr := w.repo.Resolve(rev); rerr == nil {
+				an.HeadSHA = sha
+			}
+			saveAnalysis(path, w.analysisKeyOf(src, an, fingerprints), an, fingerprints)
 		}
 		w.update(func() {
 			st.running, st.cancel = false, nil
@@ -329,7 +442,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 				if who == "" {
 					who = "The agent"
 				}
-				ui.Text(c, who+": "+st.progress).FontSize(12).TextColor(t.TextMuted).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+				ui.Text(c, who+": "+st.progress.Detail).FontSize(12).TextColor(t.TextMuted).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 				elapsed := w.now.Sub(st.started).Truncate(time.Second)
 				ui.Text(c, elapsed.String()).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 				c.After(time.Second)

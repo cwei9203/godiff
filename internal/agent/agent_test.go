@@ -38,6 +38,14 @@ func TestParse(t *testing.T) {
 	if !slices.Equal(g.FilePaths, []string{"src/greet.go", "src/greet_test.go"}) || len(g.FileNotes) != 1 || len(g.LineNotes) != 1 {
 		t.Errorf("first group %+v", g)
 	}
+	// A path the change does not hold is kept, marked missing, rather than
+	// lost; a note on a path nothing else claims is the agent's invention.
+	if !slices.Equal(g.Missing, []string{"invented.go"}) {
+		t.Errorf("missing %v", g.Missing)
+	}
+	if g.Category != CategoryOther || a.SchemaVersion != SchemaVersion {
+		t.Errorf("category %q, schema %d", g.Category, a.SchemaVersion)
+	}
 	// A path in two groups stays in the first.
 	if !slices.Equal(a.Groups[1].FilePaths, []string{"pnpm-lock.yaml"}) {
 		t.Errorf("second group %+v", a.Groups[1])
@@ -51,6 +59,65 @@ func TestParse(t *testing.T) {
 	}
 	if _, err := parse("I could not do it.", files); err == nil {
 		t.Error("no error for an answer without JSON")
+	}
+}
+
+func TestFitMissing(t *testing.T) {
+	files := []File{
+		{Path: "src/new_name.go", OldPath: "src/old_name.go", Status: 'R'},
+		{Path: "src/greet.go", Status: 'M'},
+	}
+	a := &Analysis{Groups: []Group{
+		{Key: "moved", Label: "Moved", Category: "nonsense",
+			FilePaths: []string{"src/old_name.go", "src/vanished.go"},
+			FileNotes: []FileNote{
+				{Path: "src/vanished.go", Text: "Gone since the review."},
+				{Path: "src/invented.go", Text: "No group claims this file."},
+			}},
+		{Key: "all-gone", Label: "All gone", FilePaths: []string{"src/elsewhere.go"}},
+	}}
+	fixed, err := fit(a, files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A file renamed since the analysis is found under its name now.
+	if g := fixed.Groups[0]; !slices.Equal(g.FilePaths, []string{"src/new_name.go"}) || !slices.Equal(g.Missing, []string{"src/vanished.go"}) {
+		t.Errorf("renamed group %+v", g)
+	}
+	// A note on a file that left the change stays; one on a file the answer
+	// never listed goes. An unknown category falls back to other.
+	if g := fixed.Groups[0]; len(g.FileNotes) != 1 || g.FileNotes[0].Path != "src/vanished.go" || g.Category != CategoryOther {
+		t.Errorf("notes %+v, category %q", g.FileNotes, g.Category)
+	}
+	// A group whose files all left is kept, marked, not skipped.
+	if len(fixed.Groups) != 3 {
+		t.Fatalf("groups %+v", fixed.Groups)
+	}
+	if g := fixed.Groups[1]; g.Key != "all-gone" || len(g.FilePaths) != 0 || !slices.Equal(g.Missing, []string{"src/elsewhere.go"}) {
+		t.Errorf("gone group %+v", g)
+	}
+	// The file the analysis left out gathers at the end.
+	if last := fixed.Groups[2]; last.Key != "other-changes" || !slices.Equal(last.FilePaths, []string{"src/greet.go"}) {
+		t.Errorf("other group %+v", last)
+	}
+}
+
+func TestCategories(t *testing.T) {
+	if len(Categories) != 16 {
+		t.Fatalf("%d categories", len(Categories))
+	}
+	for _, c := range Categories {
+		if !c.Valid() {
+			t.Errorf("%q is not valid", c)
+		}
+	}
+	if Category("").Valid() || Category("widgets").Valid() {
+		t.Error("an unknown category is valid")
+	}
+	a := &Analysis{Groups: []Group{{Key: "a"}, {Key: "b", Category: CategoryData}}}
+	a.Normalize()
+	if a.SchemaVersion != SchemaVersion || a.Groups[0].Category != CategoryOther || a.Groups[1].Category != CategoryData {
+		t.Errorf("%+v", a)
 	}
 }
 
@@ -122,6 +189,7 @@ func TestRun(t *testing.T) {
 		noArgs   []string
 		env      string
 		progress string
+		kind     ProgressKind
 	}{
 		{
 			agent: "claude",
@@ -131,6 +199,7 @@ func TestRun(t *testing.T) {
 			model:    "claude-test",
 			args:     []string{"-p", "--json-schema", "--permission-mode", "dontAsk", "Bash(git show:*)"},
 			progress: "Reading greet.go",
+			kind:     ProgressReading,
 		},
 		{
 			agent: "codex",
@@ -139,6 +208,7 @@ func TestRun(t *testing.T) {
 			last:     answer,
 			args:     []string{"exec", "--sandbox", "read-only", "--output-schema", "-"},
 			progress: "Running git show abc:src/greet.go",
+			kind:     ProgressThinking,
 		},
 		{
 			agent: "opencode",
@@ -150,6 +220,7 @@ func TestRun(t *testing.T) {
 			noArgs:   []string{"--agent"},
 			env:      `OPENCODE_CONFIG_CONTENT={"permission":{"edit":"deny","bash":"deny","webfetch":"deny"}}`,
 			progress: `Searching for "Hello"`,
+			kind:     ProgressThinking,
 		},
 		{
 			// OpenCode 2 runs the explore agent, with the model last used
@@ -163,6 +234,7 @@ func TestRun(t *testing.T) {
 			model:    "deepseek/deepseek-flash#max",
 			args:     []string{"run", "--format", "json", "--agent", "explore", "--model", "deepseek/deepseek-flash#max"},
 			progress: "Retrying…",
+			kind:     ProgressThinking,
 		},
 		{
 			agent: "pi",
@@ -171,6 +243,7 @@ func TestRun(t *testing.T) {
 			model:    "pi-model",
 			args:     []string{"-p", "--mode", "json", "--tools", "read,grep,find,ls", "--append-system-prompt"},
 			progress: "Reading greet.go",
+			kind:     ProgressReading,
 		},
 	} {
 		if tc.name == "" {
@@ -192,7 +265,11 @@ func TestRun(t *testing.T) {
 			}
 			a, _ := ByName(tc.agent)
 			var steps []string
-			an, err := Run(context.Background(), a, Request{Title: "Greet", Files: files, Dir: t.TempDir(), Rev: "abc"}, func(s string) { steps = append(steps, s) })
+			var kinds []ProgressKind
+			an, err := Run(context.Background(), a, Request{Title: "Greet", Files: files, Dir: t.TempDir(), Rev: "abc"}, func(p Progress) {
+				steps = append(steps, p.Detail)
+				kinds = append(kinds, p.Kind)
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -201,6 +278,9 @@ func TestRun(t *testing.T) {
 			}
 			if !slices.Contains(steps, tc.progress) {
 				t.Errorf("progress %q, want %q", steps, tc.progress)
+			}
+			if !slices.Contains(kinds, tc.kind) {
+				t.Errorf("kinds %q, want %q", kinds, tc.kind)
 			}
 			args, _ := os.ReadFile(filepath.Join(dir, "args"))
 			for _, want := range tc.args {

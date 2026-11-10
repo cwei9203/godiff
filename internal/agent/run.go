@@ -22,11 +22,37 @@ import (
 // stop one sooner.
 const timeout = 20 * time.Minute
 
+// ProgressKind is what an agent is doing, in the few kinds a surface can say
+// in its own language and its own words. Which command of which CLI it runs
+// to do it is not a kind: that is Detail, for a log.
+type ProgressKind string
+
+const (
+	// ProgressThinking is the agent working out the review.
+	ProgressThinking ProgressKind = "thinking"
+	// ProgressReading is the agent reading the files of Paths.
+	ProgressReading ProgressKind = "reading"
+	// ProgressOrganizing is the agent writing the review.
+	ProgressOrganizing ProgressKind = "organizing"
+)
+
+// Progress is a step of a run, told as it happens.
+type Progress struct {
+	Kind ProgressKind
+	// Step counts the steps of the run, from 1.
+	Step int
+	// Paths are the files the step reads, for ProgressReading.
+	Paths []string
+	// Detail is the step in English, for a log or a surface that has no
+	// words of its own for the kind.
+	Detail string
+}
+
 // Run asks an agent to review a change, reporting what it does as it goes,
 // and returns its analysis.
-func Run(ctx context.Context, a Agent, req Request, progress func(string)) (*Analysis, error) {
+func Run(ctx context.Context, a Agent, req Request, progress func(Progress)) (*Analysis, error) {
 	if progress == nil {
-		progress = func(string) {}
+		progress = func(Progress) {}
 	}
 	bin, err := shellenv.LookPath(a.Name)
 	if err != nil {
@@ -133,7 +159,7 @@ func Run(ctx context.Context, a Agent, req Request, progress func(string)) (*Ana
 	if err != nil {
 		return nil, err
 	}
-	progress("Starting " + a.Label + "…")
+	r.report(thinking("Starting " + a.Label + "…"))
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("could not start %s: %w", a.Label, err)
 	}
@@ -168,7 +194,7 @@ func Run(ctx context.Context, a Agent, req Request, progress func(string)) (*Ana
 		}
 		return nil, fmt.Errorf("%s failed: %s", a.Label, msg)
 	}
-	progress("Organizing the review…")
+	r.report(organizing("Organizing the review…"))
 	var an *Analysis
 	if r.structured != nil {
 		var parsed Analysis
@@ -183,7 +209,9 @@ func Run(ctx context.Context, a Agent, req Request, progress func(string)) (*Ana
 	}
 	an.Agent = a.Name
 	an.Model = r.model
+	an.Locale = req.Locale
 	an.GeneratedAt = time.Now()
+	an.Normalize()
 	return an, nil
 }
 
@@ -191,8 +219,10 @@ func Run(ctx context.Context, a Agent, req Request, progress func(string)) (*Ana
 type runner struct {
 	agent    Agent
 	req      *Request
-	progress func(string)
+	progress func(Progress)
 	model    string
+	// step counts the steps reported, from 1.
+	step int
 	// The answer: its text, or the object an agent validated itself.
 	final      string
 	structured json.RawMessage
@@ -201,6 +231,19 @@ type runner struct {
 	// lastEvent is the type of the event read last.
 	lastEvent string
 }
+
+// report tells a step, numbering it.
+func (r *runner) report(p Progress) {
+	r.step++
+	p.Step = r.step
+	r.progress(p)
+}
+
+// thinking is a step of the agent working out the review, in its own way.
+func thinking(detail string) Progress { return Progress{Kind: ProgressThinking, Detail: detail} }
+
+// organizing is the step of the agent writing the review.
+func organizing(detail string) Progress { return Progress{Kind: ProgressOrganizing, Detail: detail} }
 
 func (r *runner) line(data []byte) {
 	if len(bytes.TrimSpace(data)) == 0 || data[0] != '{' {
@@ -248,12 +291,10 @@ func (r *runner) claude(data []byte) {
 			switch c.Type {
 			case "tool_use":
 				if c.Name != "StructuredOutput" {
-					r.progress(toolStep(c.Name, c.Input))
+					r.report(toolStep(c.Name, c.Input))
 				}
-			case "text":
-				r.progress("Thinking…")
-			case "thinking":
-				r.progress("Thinking…")
+			case "text", "thinking":
+				r.report(thinking("Thinking…"))
 			}
 		}
 	case "result":
@@ -287,14 +328,14 @@ func (r *runner) codex(data []byte) {
 	switch ev.Type {
 	case "item.started":
 		if ev.Item.Type == "command_execution" {
-			r.progress("Running " + shortCommand(ev.Item.Command))
+			r.report(thinking("Running " + shortCommand(ev.Item.Command)))
 		}
 	case "item.completed":
 		switch ev.Item.Type {
 		case "agent_message":
 			r.final = ev.Item.Text
 		case "reasoning":
-			r.progress("Thinking…")
+			r.report(thinking("Thinking…"))
 		}
 	case "error":
 		r.err = errorMessage(ev.Message)
@@ -331,17 +372,17 @@ func (r *runner) opencode(data []byte) {
 	switch ev.Type {
 	case "step_start":
 		if retry {
-			r.progress("Retrying…")
+			r.report(thinking("Retrying…"))
 		} else {
-			r.progress("Thinking…")
+			r.report(thinking("Thinking…"))
 		}
 	case "reasoning":
-		r.progress("Thinking…")
+		r.report(thinking("Thinking…"))
 	case "tool_use":
-		r.progress(toolStep(ev.Part.Tool, ev.Part.State.Input))
+		r.report(toolStep(ev.Part.Tool, ev.Part.State.Input))
 	case "text":
 		r.final = ev.Part.Text
-		r.progress("Thinking…")
+		r.report(thinking("Thinking…"))
 	case "error":
 		r.err = ev.Error.Message
 		if r.err == "" {
@@ -371,7 +412,7 @@ func (r *runner) pi(data []byte) {
 	}
 	switch ev.Type {
 	case "tool_execution_start":
-		r.progress(toolStep(ev.ToolName, ev.Args))
+		r.report(toolStep(ev.ToolName, ev.Args))
 	case "message_end":
 		m := ev.Message
 		if m.Role != "assistant" {
@@ -393,12 +434,13 @@ func (r *runner) pi(data []byte) {
 		if text.Len() > 0 {
 			r.final = text.String()
 		}
-		r.progress("Thinking…")
+		r.report(thinking("Thinking…"))
 	}
 }
 
-// toolStep describes a tool call: Reading main.go, Searching for "foo".
-func toolStep(tool string, input json.RawMessage) string {
+// toolStep tells a tool call: reading main.go, searching for "foo". The
+// agents name their tools their own way; this is where they become one kind.
+func toolStep(tool string, input json.RawMessage) Progress {
 	var in map[string]any
 	json.Unmarshal(input, &in)
 	str := func(keys ...string) string {
@@ -413,25 +455,34 @@ func toolStep(tool string, input json.RawMessage) string {
 	if path != "" {
 		path = filepath.Base(path)
 	}
+	reading := func(paths ...string) Progress {
+		p := Progress{Kind: ProgressReading, Paths: paths}
+		if len(paths) == 0 {
+			p.Detail = "Reading files"
+			return p
+		}
+		p.Detail = "Reading " + paths[0]
+		return p
+	}
 	switch strings.ToLower(tool) {
 	case "read", "view":
 		if path != "" {
-			return "Reading " + path
+			return reading(path)
 		}
-		return "Reading files"
+		return reading()
 	case "grep", "search":
 		if p := str("pattern", "query"); p != "" {
-			return fmt.Sprintf("Searching for %q", p)
+			return thinking(fmt.Sprintf("Searching for %q", p))
 		}
-		return "Searching"
+		return thinking("Searching")
 	case "glob", "find", "ls", "list":
-		return "Looking through the files"
+		return thinking("Looking through the files")
 	case "bash", "shell", "exec":
 		if c := str("command", "cmd"); c != "" {
-			return "Running " + shortCommand(c)
+			return thinking("Running " + shortCommand(c))
 		}
 	}
-	return "Using " + tool
+	return thinking("Using " + tool)
 }
 
 // shortCommand is a command as its first line, without the shell codex
