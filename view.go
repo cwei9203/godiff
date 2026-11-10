@@ -410,9 +410,15 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	}
 }
 
-// welcome is the window shown without a repository.
+// welcome is the window shown without a repository: it opens one, of the
+// recent ones or of a folder.
 type welcome struct {
 	err error
+	// list is the recent repositories, and choice the one the keys are on,
+	// -1 for none.
+	list    ui.ListState
+	choice  int
+	focused bool
 }
 
 func (v *welcome) view(c *ui.Context) {
@@ -421,17 +427,86 @@ func (v *welcome) view(c *ui.Context) {
 	c.Root().Background(pal.appBg)
 	bar := c.TitleBar()
 	ui.Box(c).Height(max(bar.Height, 40)).DragWindow().FillWidth()
-	title := "Open a Git repository"
-	detail := "Run godiff from a Git repository in Terminal, or choose File → Open Folder… to open one."
+	title := "Godiff"
+	detail := "Review the changes of a repository, a commit, a branch, or a pull request."
+	mono := false
 	if v.err != nil && !errors.Is(v.err, git.ErrNotRepository) {
-		title, detail = "Unable to read repository", errorText(v.err)
+		title, detail, mono = "Unable to read repository", errorText(v.err), true
 	} else if v.err != nil {
 		title = "No Git repository found"
-		detail = "Godiff was opened outside a Git repository. Run godiff from inside a repository, or choose File → Open Folder… to open one."
+		detail = "Godiff was opened outside a Git repository. Run godiff from inside one, or open a folder below."
 	}
-	emptyPanel(c, pal, title, detail, func() {
-		if ui.PrimaryButton(c, "Open Folder…").Clicked() {
-			openFolder()
-		}
+	recent := state.recent()
+	ui.Column(c).Grow(1).Center().Padding(24).Children(func() {
+		ui.Column(c).Width(560).Gap(12).Children(func() {
+			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+				ui.Icon(c, iconFileDiff).FontSize(24).TextColor(pal.ref)
+				ui.Text(c, title).FontSize(19).Bold().SingleLine()
+			})
+			line := ui.Text(c, detail).FontSize(13).TextColor(t.TextMuted).MaxWidth(500)
+			if mono {
+				line.Font("SF Mono, Menlo, monospace").Selectable()
+			}
+			open := ui.PrimaryButton(c, "Open Folder…").AlignSelf(ui.Start)
+			if open.Clicked() {
+				openFolder()
+			}
+			if len(recent) == 0 {
+				open.AutoFocus()
+				ui.Text(c, "No repositories opened yet — open a folder, or run godiff inside one.").
+					FontSize(12).TextColor(t.TextMuted).MaxWidth(500).Padding(4, 0, 0)
+				return
+			}
+			ui.Text(c, "Recent").FontSize(11).FontWeight(700).TextColor(t.TextMuted).Padding(8, 0, 0)
+			v.list.Key = func(i int) any { return recent[i] }
+			v.list.Label = func(i int) string { return filepath.Base(recent[i]) }
+			ui.List(c, &v.list, len(recent), func(i int) {
+				v.row(c, pal, i, recent[i])
+			}).MaxHeight(240).Gap(2).Focusable().FocusRing(false).Label("Recent repositories")
+			if !v.focused && v.list.Focus(c) {
+				v.focused = true
+			}
+			if v.list.Shortcut(c, 0, ui.KeyDown) {
+				v.choice = min(v.choice+1, len(recent)-1)
+				v.list.ScrollIntoView(v.choice)
+			}
+			if v.list.Shortcut(c, 0, ui.KeyUp) {
+				v.choice = max(v.choice-1, 0)
+				v.list.ScrollIntoView(v.choice)
+			}
+			if v.choice >= 0 && v.list.Shortcut(c, 0, ui.KeyEnter) {
+				go openRecent(recent[v.choice])
+			}
+		})
+	})
+}
+
+// row is a repository of the recent ones: its name, where it is, and an
+// arrow into it.
+func (v *welcome) row(c *ui.Context, pal *palette, i int, root string) {
+	t := c.Theme()
+	chosen := i == v.choice
+	focused := v.list.FocusWithin(c)
+	row := ui.Row(c).MinHeight(42).Padding(6, 10).Gap(10).Radius(8).MinWidth(0).Cursor(ui.CursorPointer)
+	color, muted := t.Text, t.TextMuted
+	switch {
+	case chosen && focused:
+		row.Background(t.Accent)
+		color, muted = t.AccentText, t.AccentText.Alpha(0.8)
+	case chosen:
+		row.Background(ui.RGBA(127, 127, 127, 0.14))
+	case row.Hovered():
+		row.Background(ui.RGBA(127, 127, 127, 0.08))
+	}
+	if row.Clicked() {
+		v.choice = i
+		go openRecent(root)
+	}
+	row.TextColor(color).Children(func() {
+		ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
+			ui.Text(c, filepath.Base(root)).FontSize(13).FontWeight(600).SingleLine().Tooltip(root)
+			ui.Text(c, abbreviateHome(filepath.Dir(root))).FontSize(11).SingleLine().TextColor(muted)
+		})
+		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(muted).Shrink(0)
 	})
 }
