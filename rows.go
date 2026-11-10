@@ -245,7 +245,7 @@ func (w *window) buildRows() {
 	w.placed = map[any]bool{}
 	group := -1
 	for fi, f := range w.files {
-		if !w.fileVisible(fi) {
+		if !w.fileVisible(fi) || !w.inScope(fi) {
 			continue
 		}
 		idx := int32(fi)

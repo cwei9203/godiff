@@ -161,6 +161,12 @@ type window struct {
 	// The groups of the files: by kind, or as an agent's review has them.
 	groupPref groupMode
 	groups    []fileGroup
+	// scope is the part of the review the surface shows: all of it, one
+	// group's files, or one file's. It is not kept between windows.
+	scope scope
+	// summaryOpen shows the agent's review whole in a scope narrower than
+	// every change, where it folds to one line.
+	summaryOpen bool
 	// notes are the notes of the agent's review, by path, and noteSel the
 	// one gone to last.
 	notes   map[string][]*aiNote

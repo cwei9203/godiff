@@ -82,12 +82,12 @@ func TestGroupAside(t *testing.T) {
 	}
 	snapshot(t, tt, "aside")
 
-	// The aside heads the block of the second group once it shows.
-	// The surface is short here, so that a block scrolls to the top.
+	// The aside heads the block of the second group once it shows alone:
+	// the surface is short here, so that a block scrolls to the top.
 	tt.SetSize(1600, 560)
 	tt.Frame()
 	tt.Frame()
-	w.revealGroup(1)
+	w.showGroup(1)
 	tt.Frame()
 	tt.Frame()
 	if gi := w.topGroup(); gi != 1 {

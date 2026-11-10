@@ -165,6 +165,11 @@ func (w *window) buildTree() {
 		if !w.fileVisible(i) {
 			continue
 		}
+		if w.scope.kind == scopeOneGroup && f.group != w.scope.group {
+			// A group shown alone lists its own files: the others have no
+			// row to go to.
+			continue
+		}
 		if f.group >= 0 && f.group < len(w.groups) {
 			byGroup[f.group] = append(byGroup[f.group], i)
 		} else {
@@ -174,6 +179,9 @@ func (w *window) buildTree() {
 	var roots []string
 	for gi, files := range byGroup {
 		g := w.groups[gi]
+		if w.scope.kind == scopeOneGroup && gi != w.scope.group {
+			continue
+		}
 		// A group whose paths the diff no longer holds still shows them.
 		if len(files) == 0 && len(g.missing) == 0 {
 			continue
@@ -494,14 +502,15 @@ const (
 	groupsMaxHeight = 6 * groupRowHeight
 )
 
-// groupsSection shows the groups of the files, which come first in the
-// sidebar: a row takes the surface to its group, as the group's heading
-// there does.
+// groupsSection shows every change, then the groups of the files, which
+// come first in the sidebar: a row shows its part of the review alone, and
+// the row shown again goes back to every change.
 func (w *window) groupsSection(c *ui.Context, pal *palette) {
 	t := c.Theme()
 	active := -1
-	if w.current >= 0 && w.current < len(w.files) {
-		active = w.files[w.current].group
+	switch w.scope.kind {
+	case scopeOneGroup, scopeOneFile:
+		active = w.scope.group
 	}
 	ui.Column(c).Shrink(0).Gap(1).Children(func() {
 		open, toggled := sectionHead(c, t, "Groups", len(w.groups), &w.groupsOpen, "Collapse the groups")
@@ -512,12 +521,70 @@ func (w *window) groupsSection(c *ui.Context, pal *palette) {
 			return
 		}
 		// The rows and the gaps between them, up to where they scroll.
-		height := min(float32(len(w.groups))*(groupRowHeight+1), groupsMaxHeight)
+		height := min(float32(len(w.groups)+1)*(groupRowHeight+1), groupsMaxHeight)
 		ui.Scroll(c).Shrink(0).Height(height).Children(func() {
 			ui.Column(c).Gap(1).Children(func() {
+				w.allChangesRow(c, pal)
 				for gi := range w.groups {
 					w.groupSectionRow(c, pal, gi, gi == active)
 				}
+			})
+		})
+	})
+}
+
+// allChangesRow heads the groups: every change, with how many files it holds
+// and how far it was reviewed. In a narrower scope it reads as the row the
+// one chosen comes from, not as the row chosen.
+func (w *window) allChangesRow(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	files, viewed, adds, dels := 0, 0, 0, 0
+	for i, f := range w.files {
+		if !w.fileVisible(i) {
+			continue
+		}
+		files++
+		if w.isViewed(f) {
+			viewed++
+		}
+		if countable(f) {
+			adds += f.Additions
+			dels += f.Deletions
+		}
+	}
+	all := w.scope.all()
+	row := ui.Row(c).Height(groupRowHeight).Padding(0, 8, 0, 4).Gap(6).Radius(6).AlignItems(ui.Center).
+		Label("All changes")
+	switch {
+	case all:
+		row.Background(t.Accent.Alpha(0.14).Over(pal.headerBg))
+	case row.Hovered():
+		row.Background(t.Accent.Alpha(0.07).Over(pal.headerBg))
+	}
+	if row.Clicked() {
+		w.showAll()
+	}
+	row.Children(func() {
+		// Level with the arrows of the groups under it.
+		ui.Box(c).Size(12, 12).Shrink(0)
+		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(1).Children(func() {
+			ui.Row(c).Gap(4).Children(func() {
+				ui.Icon(c, iconFileDiff).FontSize(13).TextColor(t.TextMuted).Shrink(0)
+				name := ui.Text(c, "All changes").FontSize(14).FontWeight(600).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+				if !all {
+					name.TextColor(t.TextMuted)
+				}
+			})
+			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+				ui.RichText(c,
+					ui.Span{Text: plural(files, "file") + " · ", Color: t.TextMuted},
+					ui.Span{Text: "+" + compact(adds), Color: pal.addText},
+					ui.Span{Text: " −" + compact(dels), Color: pal.delText},
+				).Font(w.codeFont()).FontSize(10).FontWeight(600).Shrink(0)
+				ui.Spacer(c)
+				ui.Textf(c, "%d/%d", viewed, files).Font(w.codeFont()).FontSize(10).FontWeight(600).
+					TextColor(t.TextMuted).Shrink(0).Tooltip("Viewed files")
+				ui.Progress(c, ratio(viewed, files)).Width(44).Shrink(0)
 			})
 		})
 	})
@@ -583,8 +650,10 @@ func (w *window) groupSectionRow(c *ui.Context, pal *palette, gi int, active boo
 	case row.Hovered():
 		row.Background(t.Accent.Alpha(0.07).Over(pal.headerBg))
 	}
-	if row.Pressed() {
-		w.revealGroup(gi)
+	if row.Clicked() {
+		// A group shows alone, and the group shown again goes back to every
+		// change.
+		w.showGroup(gi)
 	}
 	row.Children(func() {
 		tip := "Hide the files of " + g.label
@@ -644,7 +713,7 @@ func (w *window) filesSection(c *ui.Context, pal *palette) {
 	t := c.Theme()
 	files := 0
 	for i := range w.files {
-		if w.fileVisible(i) {
+		if w.fileVisible(i) && w.inScope(i) {
 			files++
 		}
 	}
@@ -722,8 +791,13 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 		if row.Clicked() && !n.missing {
 			if n.dir {
 				w.closedDirs[key] = !w.closedDirs[key]
+				choose(key)
+				return
 			}
+			// A file shows alone, and the file shown again goes back to
+			// every change.
 			choose(key)
+			w.showFile(n.file)
 		}
 		muted := t.TextMuted
 		if selected && focused {
@@ -804,6 +878,21 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			}
 			ui.Text(c, statusLetter(f)).Font(w.codeFont()).FontSize(11).FontWeight(700).TextColor(letter).
 				Width(12).TextAlign(ui.Center).Shrink(0).Tooltip(f.Status.Label())
+			if f.group >= 0 && f.group < len(w.groups) {
+				// The mark of the group the file belongs to, so that the files
+				// say where they come from while the groups stand apart.
+				g := &w.groups[f.group]
+				svg, accent := groupMark(g)
+				color := categoryColor(accent, t, pal)
+				if accent == accentMuted {
+					color = muted
+				}
+				if selected && focused {
+					color = t.AccentText
+				}
+				ui.Icon(c, svg).FontSize(10).TextColor(color).Shrink(0).
+					Label("In group " + g.label).Tooltip("Group " + g.label)
+			}
 		})
 	}).Grow(1).Padding(2, 8).Gap(1).Focusable().FocusRing(false).Label("Changed files")
 

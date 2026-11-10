@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/egoist/godiff/internal/agent"
 	"github.com/egoist/godiff/internal/diff"
 	"github.com/egoist/godiff/internal/highlight"
 	"github.com/egoist/mygo/ui"
@@ -111,8 +112,15 @@ func (w *window) diffList(c *ui.Context) {
 	}
 }
 
-// revealFile scrolls the surface to a file's card.
+// revealFile scrolls the surface to a file's card. A file outside the
+// scope shown, as a match of the find bar may be, widens the surface to
+// every change first, so that its card is there to scroll to.
 func (w *window) revealFile(i int) {
+	if !w.inScope(i) {
+		w.scope = allScope()
+		w.rowsDirty = true
+		w.buildTree()
+	}
 	if w.rowsDirty {
 		w.buildRows()
 	}
@@ -136,6 +144,12 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 		w.pullHeader(c, pal).Margin(12, 0, 0)
 		return
 	case rowSummary:
+		if !w.scope.all() && !w.summaryOpen {
+			// The card summarizes every change, not the part shown: it folds
+			// to a line that opens it again.
+			w.summaryLine(c, pal)
+			return
+		}
 		w.summaryCard(c, pal).Margin(12, 0, 0)
 		return
 	case rowGroup:
@@ -170,6 +184,53 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 		ui.Box(c).Height(4).Background(pal.codeBg).
 			BorderWidth(0, 1, 1, 1).BorderColor(pal.cardBorder).Radius(0, 0, cardRadius, cardRadius)
 	}
+}
+
+// summaryLine is the agent's review folded to one line, as a scope
+// narrower than every change shows it: the card tells of every change, not
+// of the part shown. The line opens the card again.
+func (w *window) summaryLine(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	st := w.analyses[w.source]
+	what := ""
+	switch {
+	case st == nil:
+	case st.running:
+		what = " · reviewing"
+	case st.err != "":
+		what = " · review failed"
+	case st.result != nil:
+		a := st.result
+		by := a.Agent
+		if ag, ok := agent.ByName(a.Agent); ok {
+			by = ag.Label
+		}
+		if a.Model != "" {
+			by += " · " + a.Model
+		}
+		if since := relativeTime(w.now, a.GeneratedAt); since != "" {
+			by += " · " + since
+		}
+		what = " · " + by
+	default:
+		what = " · not run"
+	}
+	b := ui.ButtonBase(c).Height(34).Padding(0, 12, 0, 10).Gap(8).Margin(12, 0, 0).Radius(cardRadius).
+		Background(pal.headerBg).Border(1, t.Accent.Alpha(0.3)).Label("AI Review" + what).
+		Tooltip("Show the review of every change")
+	if b.Hovered() {
+		b.Background(pal.hover.Over(pal.headerBg))
+	}
+	if b.Clicked() {
+		w.summaryOpen = true
+	}
+	b.Children(func() {
+		ui.Icon(c, iconSparkle).FontSize(13).TextColor(t.Accent).Shrink(0)
+		ui.Text(c, "AI Review").FontSize(13).FontWeight(600).SingleLine().Shrink(0)
+		ui.Text(c, what).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
+		ui.Spacer(c)
+		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(t.TextMuted).Shrink(0)
+	})
 }
 
 // card is a row inside a file's card, between its sides.
@@ -228,6 +289,30 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		}
 	})
 	h.Children(func() {
+		if f.group >= 0 && f.group < len(w.groups) {
+			// Where the file belongs, so that a card says it too: the
+			// breadcrumb goes up a step, to the group from the file alone and
+			// to every change from a group.
+			g := &w.groups[f.group]
+			svg, accent := groupMark(g)
+			tip := "Show the group " + g.label
+			if w.scope.kind == scopeOneGroup {
+				tip = "Show every change (\u2318\u21e7A)"
+			}
+			crumb := ui.ButtonBase(c).Height(22).Padding(0, 7, 0, 6).Gap(5).Radius(6).Shrink(0).
+				Label("Group " + g.label).Tooltip(tip)
+			if crumb.Hovered() {
+				crumb.Background(pal.hover)
+			}
+			if crumb.Clicked() {
+				w.scopeUp(f.group)
+			}
+			crumb.Children(func() {
+				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)
+				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().MaxWidth(120)
+				ui.Icon(c, iconChevronRight).FontSize(10).TextColor(t.TextMuted).Shrink(0)
+			})
+		}
 		toggle := ui.ButtonBase(c).Gap(8).Grow(1).Shrink(1).MinWidth(0).Height(46).Label(f.Path).Tooltip(f.Path)
 		if toggle.Clicked() {
 			f.collapsed = !collapsed
