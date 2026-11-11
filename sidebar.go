@@ -258,13 +258,6 @@ func thousands(n int) string {
 	return s
 }
 
-func lines(n int, what string) string {
-	if n == 1 {
-		return "1 " + what + " line"
-	}
-	return thousands(n) + " " + what + " lines"
-}
-
 // countable reports whether a file's lines were counted.
 func countable(f *fileState) bool {
 	return !f.Binary && !f.Directory && !f.TooLarge
@@ -302,7 +295,7 @@ func (w *window) sidebar(c *ui.Context) {
 		ui.Column(c).Padding(2, 10, 8).Children(func() {
 			switch w.tab {
 			case 0:
-				if searchInput(c, &w.filter, "Filter files", &w.filterFocus, &w.typing) {
+				if searchInput(c, &w.filter, msg().FilterFiles(), &w.filterFocus, &w.typing) {
 					w.matchesFor = "\x00"
 					w.buildTree()
 					w.rowsDirty = true
@@ -369,9 +362,9 @@ func (w *window) tabControl(c *ui.Context) bool {
 
 // sidebarToggle shows and hides the sidebar.
 func (w *window) sidebarToggle(c *ui.Context) {
-	tip := "Hide sidebar (⌘⇧B)"
+	tip := msg().HideSidebar()
 	if !w.sidebarShown {
-		tip = "Show sidebar (⌘⇧B)"
+		tip = msg().ShowSidebar()
 	}
 	if iconButton(c, iconSidebar, tip).Clicked() {
 		w.toggleSidebar()
@@ -466,7 +459,7 @@ func (w *window) fileTree(c *ui.Context) {
 		case w.loading && len(w.files) == 0:
 			box.title, box.detail = "Loading…", abbreviateHome(w.repo.Root)
 		case strings.TrimSpace(w.filter) != "":
-			box.title, box.detail = textNoMatchFiles, strings.TrimSpace(w.filter)
+			box.title, box.detail = textNoMatchFiles(), strings.TrimSpace(w.filter)
 		}
 		emptyState(c, pal, box)
 		return
@@ -566,8 +559,8 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 				// A path the review groups, which the diff no longer holds.
 				ui.Icon(c, iconXCircle).FontSize(12).TextColor(muted).Shrink(0)
 				ui.Text(c, n.name).Font(w.codeFont()).FontSize(12).TextColor(muted).SingleLine().Grow(1).Shrink(1).MinWidth(0).Tooltip(n.path)
-				ui.Text(c, "Not in this diff").FontSize(10).TextColor(muted).Shrink(0).
-					Tooltip("The review groups this path, which this diff no longer holds.")
+				ui.Text(c, msg().NotInDiff()).FontSize(10).TextColor(muted).Shrink(0).
+					Tooltip(msg().NotInDiffTip())
 				return
 			}
 			f := w.files[n.file]
@@ -588,7 +581,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			if countable(f) && (f.Additions > 0 || f.Deletions > 0) {
 				ui.Textf(c, "+%s -%s", compact(f.Additions), compact(f.Deletions)).
 					Font(w.codeFont()).FontSize(10).FontWeight(600).TextColor(muted).Shrink(0).
-					Tooltip(lines(f.Additions, "added") + ", " + lines(f.Deletions, "removed"))
+					Tooltip(msg().ChangedLinesTip(f.Additions, f.Deletions))
 			}
 			letter := statusColor(f.Status, pal, t)
 			switch {
@@ -706,9 +699,9 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 		}
 	}
 	row.Children(func() {
-		tip := "Hide the files of " + g.label
+		tip := msg().HideGroupFiles(g.label)
 		if !open {
-			tip = "Show the files of " + g.label
+			tip = msg().ShowGroupFiles(g.label)
 		}
 		// The chevron says which way the fold goes, and takes no click of its
 		// own: a click on it is a click on the row, one fold per click.
@@ -731,10 +724,10 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 				ui.Text(c, g.label).FontSize(13).FontWeight(600).SingleLine().Grow(1).Shrink(1).
 					MinWidth(0).Tooltip(g.summary)
 				if g.critical {
-					ui.Icon(c, iconAlert).FontSize(11).TextColor(careTone(pal)).Shrink(0).Tooltip("Needs care")
+					ui.Icon(c, iconAlert).FontSize(11).TextColor(careTone(pal)).Shrink(0).Tooltip(msg().NeedsCare())
 				}
 				count := ui.Textf(c, "%d/%d", viewed, len(files)).Font(w.codeFont()).FontSize(10).
-					FontWeight(600).TextColor(t.TextMuted).Shrink(0).Tooltip("Viewed files")
+					FontWeight(600).TextColor(t.TextMuted).Shrink(0).Tooltip(msg().ViewedFilesTip())
 				if viewed == len(files) && len(files) > 0 {
 					count.TextColor(pal.viewed)
 				}
@@ -938,7 +931,7 @@ func (w *window) sidebarFooter(c *ui.Context, pal *palette) {
 	}
 	ui.Row(c).MinHeight(40).Padding(6, 10).Gap(8).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 		if counted && w.tab == 0 {
-			ui.Row(c).Gap(6).Tooltip("Total change: " + lines(adds, "added") + ", " + lines(dels, "removed")).Children(func() {
+			ui.Row(c).Gap(6).Tooltip(msg().TotalChangeTip(adds, dels)).Children(func() {
 				ui.Text(c, "Total:").FontSize(11).FontWeight(600).TextColor(t.TextMuted)
 				ui.Text(c, "+"+thousands(adds)).Font(w.codeFont()).FontSize(11).FontWeight(600).TextColor(pal.addText)
 				ui.Text(c, "-"+thousands(dels)).Font(w.codeFont()).FontSize(11).FontWeight(600).TextColor(pal.delText)
@@ -993,19 +986,17 @@ func (w *window) foldAllRow(c *ui.Context, pal *palette) {
 	ui.Row(c).Padding(0, 10, 4, 12).Gap(6).AlignItems(ui.Center).Children(func() {
 		groups := len(w.groups)
 		if groups == 0 {
-			ui.Textf(c, "%s", plural(len(w.files), "file")).FontSize(11).TextColor(t.TextMuted).Grow(1)
+			ui.Text(c, msg().FilesCount(len(w.files))).FontSize(11).TextColor(t.TextMuted).Grow(1).SingleLine()
 		} else {
-			ui.RichText(c,
-				ui.Span{Text: plural(groups, "group"), Color: t.TextMuted},
-				ui.Span{Text: " · " + plural(len(w.files), "file"), Color: t.TextMuted},
-			).FontSize(11).Grow(1).Shrink(1).SingleLine()
+			ui.Text(c, msg().GroupsFiles(groups, len(w.files))).FontSize(11).TextColor(t.TextMuted).
+				Grow(1).Shrink(1).SingleLine()
 		}
 		for _, b := range []struct {
 			label, tip string
 			fold       bool
 		}{
-			{"Fold all", "Fold every group and folder", true},
-			{"Unfold all", "Unfold every group and folder", false},
+			{msg().FoldAll(), msg().FoldAllTip(), true},
+			{msg().UnfoldAll(), msg().UnfoldAllTip(), false},
 		} {
 			b := b
 			btn := ui.ButtonBase(c).Padding(2, 6).Radius(5).Label(b.tip).Tooltip(b.tip)
@@ -1044,18 +1035,19 @@ func (w *window) foldAll(fold bool) {
 		w.revealedAt = w.now
 	}
 	w.rowsDirty = true
-	verb := "Folded all "
-	if !fold {
-		verb = "Unfolded all "
-	}
-	w.offerUndo(verb+w.foldedWhat(), func() { w.refold(before) })
+	w.offerUndo(foldedAll(fold, len(w.groups), len(w.files)), func() { w.refold(before) })
 }
 
-// foldedWhat says how much a fold of the whole tree took: its groups, or its
-// files where the rules group none.
-func (w *window) foldedWhat() string {
-	if n := len(w.groups); n > 0 {
-		return plural(n, "group")
+// foldedAll says what a fold of the whole tree took, for the bar of an undo:
+// its groups, or its files where the rules group none.
+func foldedAll(fold bool, groups, files int) string {
+	switch {
+	case fold && groups > 0:
+		return msg().FoldedAllGroups(groups)
+	case fold:
+		return msg().FoldedAllFiles(files)
+	case groups > 0:
+		return msg().UnfoldedAllGroups(groups)
 	}
-	return plural(len(w.files), "file")
+	return msg().UnfoldedAllFiles(files)
 }

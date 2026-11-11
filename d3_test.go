@@ -26,13 +26,13 @@ func TestToolbarNarrows(t *testing.T) {
 	} {
 		tt.SetSize(c.width, 720)
 		tt.Frame()
-		if got := tt.HasText(textFind + " (⌘F)"); got != c.search {
+		if got := tt.HasText(textFind() + " (⌘F)"); got != c.search {
 			t.Errorf("%d wide: search %v, want %v", c.width, got, c.search)
 		}
 		if got := tt.HasText("Copy review comments"); got != c.count {
 			t.Errorf("%d wide: the comments %v, want %v", c.width, got, c.count)
 		}
-		for _, keep := range []string{textView, "Hide sidebar (⌘⇧B)"} {
+		for _, keep := range []string{textView(), "Hide sidebar (⌘⇧B)"} {
 			if !tt.HasText(keep) {
 				t.Errorf("%d wide: %q went with them", c.width, keep)
 			}
@@ -149,7 +149,7 @@ func TestUndoFoldAll(t *testing.T) {
 	if !undoShown(tt) {
 		t.Fatalf("no undo in the bar: %q", tt.Texts())
 	}
-	if err := tt.Click(textUndo); err != nil {
+	if err := tt.Click(textUndo()); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -185,7 +185,7 @@ func TestUndoMarkAllViewed(t *testing.T) {
 	if w.undo == nil {
 		t.Fatal("marking them viewed offers no undo")
 	}
-	if err := tt.Click(textUndo); err != nil {
+	if err := tt.Click(textUndo()); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -272,7 +272,7 @@ func TestUndoBarKeepsTheLastAction(t *testing.T) {
 // undoShown reports whether the bar of an undo is on screen. It looks for the
 // bar's own word exactly: the path of a test's repository holds the name of the
 // test, and a test named after an undo would find itself.
-func undoShown(tt *ui.Tester) bool { return slices.Contains(tt.Texts(), textUndo) }
+func undoShown(tt *ui.Tester) bool { return slices.Contains(tt.Texts(), textUndo()) }
 
 // TestPaletteHasTheCommands checks the commands the bar holds, and that the
 // ones the review does not have yet are there and do nothing.
@@ -349,7 +349,7 @@ func TestAICardThreeStates(t *testing.T) {
 	w.regroup()
 	w.list.ScrollTo(0, ui.Start)
 	tt.Frame()
-	if !tt.HasText(textReviewWithAI) {
+	if !tt.HasText(textReviewWithAI()) {
 		t.Fatalf("the offered card has no button to review: %q", tt.Texts())
 	}
 	if tt.HasText(textStop) || tt.HasText(textReviewAgain) {
@@ -366,7 +366,7 @@ func TestAICardThreeStates(t *testing.T) {
 	if !tt.HasText(textStop) {
 		t.Fatalf("the card at work cannot be stopped: %q", tt.Texts())
 	}
-	if tt.HasText(textReviewWithAI) || tt.HasText(textReviewAgain) {
+	if tt.HasText(textReviewWithAI()) || tt.HasText(textReviewAgain) {
 		t.Error("the card at work carries the actions of another state")
 	}
 	if !tt.HasText(textOrganizing) {
@@ -387,7 +387,7 @@ func TestAICardThreeStates(t *testing.T) {
 	if !tt.HasText(textReviewAgain) {
 		t.Fatalf("the card of a review cannot review again: %q", tt.Texts())
 	}
-	if tt.HasText(textReviewWithAI) || tt.HasText(textStop) {
+	if tt.HasText(textReviewWithAI()) || tt.HasText(textStop) {
 		t.Error("the card of a review carries the actions of another state")
 	}
 	// Where the review comes from shows in the card, as its note.
@@ -450,7 +450,7 @@ func TestTabWalksThePanels(t *testing.T) {
 			return "main"
 		case "The agent's output", "Stop", "Hide the agent's output":
 			return "drawer"
-		case textRepo, textFind + " (⌘F)", textView, "Hide sidebar (⌘⇧B)":
+		case textRepo(), textFind() + " (⌘F)", textView(), "Hide sidebar (⌘⇧B)":
 			return "bar"
 		}
 		return ""
@@ -575,7 +575,7 @@ func TestResetReviewState(t *testing.T) {
 	if w.undo == nil {
 		t.Fatal("the reset offers no undo")
 	}
-	if err := tt.Click(textUndo); err != nil {
+	if err := tt.Click(textUndo()); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

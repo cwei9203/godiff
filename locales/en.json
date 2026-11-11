@@ -1,0 +1,354 @@
+{
+  "@@locale": "en",
+
+  "toolbarFind": "Find in diffs",
+  "@toolbarFind": {
+    "description": "The toolbar's search button, and the placeholder of the bar it opens: the search over the diffs."
+  },
+  "viewMenu": "View",
+  "@viewMenu": {
+    "description": "The toolbar's menu of what the review shows, and the menu bar's View menu."
+  },
+  "viewMenuTip": "What the review shows: the diff's layout, the file view, the theme, the wrapping, the whitespace, the groups",
+  "@viewMenuTip": {
+    "description": "The tooltip of the toolbar's View menu."
+  },
+  "diffMenu": "Diff",
+  "@diffMenu": {
+    "description": "The menu bar's View menu: the submenu of how the diff is laid out and drawn."
+  },
+  "layoutSplit": "Split",
+  "@layoutSplit": {
+    "description": "View menu: the two halves of a changed line, side by side."
+  },
+  "layoutUnified": "Unified",
+  "@layoutUnified": {
+    "description": "View menu: the two halves of a changed line, one under the other."
+  },
+  "viewOneFile": "One file at a time",
+  "@viewOneFile": {
+    "description": "View menu: the review shows one file, with the steps to the file before it and the one after it."
+  },
+  "viewStack": "All files stacked",
+  "@viewStack": {
+    "description": "View menu: the review shows every file, one under the other."
+  },
+  "themeMenu": "Theme",
+  "@themeMenu": {
+    "description": "View menu: the submenu of the colors of the surface."
+  },
+  "themeSystem": "Match system",
+  "@themeSystem": {
+    "description": "Theme submenu: the surface takes the colors of the system's appearance."
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Theme submenu: the surface is light."
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Theme submenu: the surface is dark."
+  },
+  "wordWrap": "Word wrap",
+  "@wordWrap": {
+    "description": "View menu: long lines wrap rather than scroll."
+  },
+  "showWhitespace": "Show whitespace changes",
+  "@showWhitespace": {
+    "description": "View menu: a changed line shows the spaces and tabs it changed."
+  },
+  "groupMenu": "Group files",
+  "@groupMenu": {
+    "description": "View menu: the submenu of how the files are grouped."
+  },
+  "groupNone": "No groups",
+  "@groupNone": {
+    "description": "Group files submenu: the files show in one list."
+  },
+  "groupByKind": "By kind",
+  "@groupByKind": {
+    "description": "Group files submenu: the rules group the files by what they are, as docs or tests."
+  },
+  "groupByAI": "By an AI review",
+  "@groupByAI": {
+    "description": "Group files submenu: an agent groups the files by what the change does."
+  },
+  "copyComments": "Copy review comments",
+  "@copyComments": {
+    "description": "The toolbar's button showing how many comments the review holds: a press copies them."
+  },
+  "copyCommentsTip": "Copy review comments as Markdown",
+  "@copyCommentsTip": {
+    "description": "The tooltip of the toolbar's comments button."
+  },
+  "hideSidebar": "Hide sidebar (⌘⇧B)",
+  "@hideSidebar": {
+    "description": "The toolbar's button hiding the sidebar, with the keys that do."
+  },
+  "showSidebar": "Show sidebar (⌘⇧B)",
+  "@showSidebar": {
+    "description": "The toolbar's button showing the sidebar, with the keys that do."
+  },
+  "switchRepo": "Switch repository",
+  "@switchRepo": {
+    "description": "The toolbar's repository switcher, and the accessible name of its menu."
+  },
+
+  "filterFiles": "Filter files",
+  "@filterFiles": {
+    "description": "The sidebar's search field, over the paths of the files reviewed."
+  },
+  "foldAll": "Fold all",
+  "@foldAll": {
+    "description": "The sidebar's button folding every group and every folder of the tree."
+  },
+  "unfoldAll": "Unfold all",
+  "@unfoldAll": {
+    "description": "The sidebar's button opening every group and every folder of the tree."
+  },
+  "foldAllTip": "Fold every group and folder",
+  "@foldAllTip": {
+    "description": "The tooltip of the sidebar's Fold all button."
+  },
+  "unfoldAllTip": "Unfold every group and folder",
+  "@unfoldAllTip": {
+    "description": "The tooltip of the sidebar's Unfold all button."
+  },
+  "filesCount": "{count, plural, =0 {No files} one {# file} other {# files}}",
+  "@filesCount": {
+    "description": "How many files the sidebar lists, above the tree.",
+    "placeholders": {
+      "count": { "type": "int", "example": "3" }
+    }
+  },
+  "groupsFiles": "{groups, plural, one {# group} other {# groups}} · {files, plural, =0 {No files} one {# file} other {# files}}",
+  "@groupsFiles": {
+    "description": "How many groups, and how many files, the sidebar lists above the tree.",
+    "placeholders": {
+      "groups": { "type": "int", "example": "4" },
+      "files": { "type": "int", "example": "9" }
+    }
+  },
+  "notInDiff": "Not in this diff",
+  "@notInDiff": {
+    "description": "A file tree row: the review groups a path that this diff no longer holds."
+  },
+  "notInDiffTip": "The review groups this path, which this diff no longer holds.",
+  "@notInDiffTip": {
+    "description": "The tooltip of the Not in this diff row of the tree."
+  },
+  "noMatchingFiles": "No matching files",
+  "@noMatchingFiles": {
+    "description": "The sidebar's tree, while the search over the paths matches no file."
+  },
+  "noMatchingDiffs": "No matches in diffs",
+  "@noMatchingDiffs": {
+    "description": "The review, while the search over the lines matches nothing."
+  },
+
+  "groupViewed": "{viewed}/{total} viewed",
+  "@groupViewed": {
+    "description": "A group's heading: how many of its files were marked viewed.",
+    "placeholders": {
+      "viewed": { "type": "int", "example": "2" },
+      "total": { "type": "int", "example": "5" }
+    }
+  },
+  "viewedFilesTip": "Viewed files",
+  "@viewedFilesTip": {
+    "description": "The tooltip of the count of viewed files in the sidebar's tree."
+  },
+  "foldGroup": "Fold",
+  "@foldGroup": {
+    "description": "A group's heading: the button folding its files away."
+  },
+  "unfoldGroup": "Unfold",
+  "@unfoldGroup": {
+    "description": "A group's heading: the button opening its files again."
+  },
+  "foldGroupTip": "Fold or unfold {group}",
+  "@foldGroupTip": {
+    "description": "The tooltip of a group's band, which folds the group.",
+    "placeholders": {
+      "group": { "type": "String", "example": "Docs" }
+    }
+  },
+  "hideGroupFiles": "Hide the files of {group}",
+  "@hideGroupFiles": {
+    "description": "The tooltip of a group's chevron in the tree, which folds its files away.",
+    "placeholders": {
+      "group": { "type": "String", "example": "Docs" }
+    }
+  },
+  "showGroupFiles": "Show the files of {group}",
+  "@showGroupFiles": {
+    "description": "The tooltip of a group's chevron in the tree, which opens its files again.",
+    "placeholders": {
+      "group": { "type": "String", "example": "Docs" }
+    }
+  },
+  "needsCare": "Needs care",
+  "@needsCare": {
+    "description": "The badge of a group, or of a file, the agent's review asks to look at."
+  },
+
+  "viewed": "Viewed",
+  "@viewed": {
+    "description": "The file card's checkbox marking the file read, which folds it."
+  },
+  "collapseAll": "Collapse All",
+  "@collapseAll": {
+    "description": "The file card's menu: every file's card folds."
+  },
+  "expandAll": "Expand All",
+  "@expandAll": {
+    "description": "The file card's menu: every file's card opens."
+  },
+  "expandLines": "Expand all",
+  "@expandLines": {
+    "description": "The button of a gap of unchanged lines: all of them show."
+  },
+  "copyPath": "Copy path",
+  "@copyPath": {
+    "description": "The file card's button copying the file's path, and its menu item."
+  },
+  "openInEditor": "Open in editor",
+  "@openInEditor": {
+    "description": "The file card's button opening the file in the editor the settings name, and its menu item."
+  },
+  "comment": "Comment",
+  "@comment": {
+    "description": "The button beside a line of the diff, writing a comment on it."
+  },
+  "commentTip": "Comment on this line",
+  "@commentTip": {
+    "description": "The tooltip of the button beside a line of the diff."
+  },
+  "changedLinesTip": "{added, plural, one {# added line} other {# added lines}}, {removed, plural, one {# removed line} other {# removed lines}}",
+  "@changedLinesTip": {
+    "description": "The tooltip of a file's counts of added and removed lines.",
+    "placeholders": {
+      "added": { "type": "int", "example": "12" },
+      "removed": { "type": "int", "example": "3" }
+    }
+  },
+  "totalChangeTip": "Total change: {added, plural, one {# added line} other {# added lines}}, {removed, plural, one {# removed line} other {# removed lines}}",
+  "@totalChangeTip": {
+    "description": "The tooltip of the sidebar's footer, which counts the lines of every file shown.",
+    "placeholders": {
+      "added": { "type": "int", "example": "120" },
+      "removed": { "type": "int", "example": "34" }
+    }
+  },
+
+  "previousFile": "Previous file ([)",
+  "@previousFile": {
+    "description": "The button stepping to the file before the one shown alone, with the key that does."
+  },
+  "nextFile": "Next file (])",
+  "@nextFile": {
+    "description": "The button stepping to the file after the one shown alone, with the key that does."
+  },
+  "filePosition": "File {at} of {total}",
+  "@filePosition": {
+    "description": "The tooltip of the place of the file shown among the files reviewed.",
+    "placeholders": {
+      "at": { "type": "int", "example": "3" },
+      "total": { "type": "int", "example": "7" }
+    }
+  },
+  "nextUnviewed": "Next unviewed file",
+  "@nextUnviewed": {
+    "description": "The button stepping to the first file not viewed yet, round from the one shown."
+  },
+  "everyFileViewed": "Every file is viewed",
+  "@everyFileViewed": {
+    "description": "The review says this where no file is left unread."
+  },
+  "resetReview": "Reset the review",
+  "@resetReview": {
+    "description": "The button putting the review back where it began: nothing viewed, every group open."
+  },
+
+  "undo": "Undo",
+  "@undo": {
+    "description": "The bar of an undo: the button putting back what the last one-tap action changed."
+  },
+  "undoDismiss": "Undo (Esc to dismiss)",
+  "@undoDismiss": {
+    "description": "The tooltip of the bar of an undo."
+  },
+  "foldedAllGroups": "{count, plural, one {Folded all # group} other {Folded all # groups}}",
+  "@foldedAllGroups": {
+    "description": "The bar of an undo, after the whole tree folded: how many groups it folded.",
+    "placeholders": {
+      "count": { "type": "int", "example": "4" }
+    }
+  },
+  "foldedAllFiles": "{count, plural, one {Folded all # file} other {Folded all # files}}",
+  "@foldedAllFiles": {
+    "description": "The bar of an undo, after the whole tree folded: how many files it folded, where the rules group none.",
+    "placeholders": {
+      "count": { "type": "int", "example": "9" }
+    }
+  },
+  "unfoldedAllGroups": "{count, plural, one {Unfolded all # group} other {Unfolded all # groups}}",
+  "@unfoldedAllGroups": {
+    "description": "The bar of an undo, after the whole tree opened: how many groups it opened.",
+    "placeholders": {
+      "count": { "type": "int", "example": "4" }
+    }
+  },
+  "unfoldedAllFiles": "{count, plural, one {Unfolded all # file} other {Unfolded all # files}}",
+  "@unfoldedAllFiles": {
+    "description": "The bar of an undo, after the whole tree opened: how many files it opened, where the rules group none.",
+    "placeholders": {
+      "count": { "type": "int", "example": "9" }
+    }
+  },
+  "markedAllViewed": "{count, plural, one {Marked all # file viewed} other {Marked all # files viewed}}",
+  "@markedAllViewed": {
+    "description": "The bar of an undo, after every file was marked viewed.",
+    "placeholders": {
+      "count": { "type": "int", "example": "9" }
+    }
+  },
+
+  "noRepository": "No Git repository found",
+  "@noRepository": {
+    "description": "The window shown when nothing is reviewed: no Git repository was found."
+  },
+  "noRepositoryDetail": "Godiff was opened outside a Git repository. Run godiff from inside one, or open a folder below.",
+  "@noRepositoryDetail": {
+    "description": "Why the window shown without a repository has none, and what to do about it."
+  },
+  "aiReview": "AI Review",
+  "@aiReview": {
+    "description": "The card of the agent's review of the changes."
+  },
+  "notAnalyzed": "Not started",
+  "@notAnalyzed": {
+    "description": "The card of the agent's review, before it ran: there is no analysis yet."
+  },
+  "aiReviewOffered": "A coding agent on this machine can summarize these changes, group the files by intent and note what deserves attention. It reads, never writes, and starts only when you ask.",
+  "@aiReviewOffered": {
+    "description": "The card of the agent's review, before it ran: what an agent would do, and that it waits to be asked."
+  },
+  "reviewWithAI": "Review with AI",
+  "@reviewWithAI": {
+    "description": "The card's button starting the agent's review."
+  },
+  "dismiss": "Dismiss",
+  "@dismiss": {
+    "description": "The button closing a card or a notice that the app shows unasked, as the offered review."
+  },
+
+  "languageMenu": "Language",
+  "@languageMenu": {
+    "description": "The View menu's submenu of the language the interface shows."
+  },
+  "followSystem": "Follow the System",
+  "@followSystem": {
+    "description": "The Language submenu: the interface takes the language of the system's languages."
+  }
+}

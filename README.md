@@ -117,14 +117,19 @@ with codiff's names, and apply to open windows as the file changes:
     "sidebarPosition": "left",     // or "right"
     "showWhitespace": false,
     "theme": "system",             // or "light", "dark"
+    "uiLocale": "",                // "en", "zh-Hans"; empty follows the system's languages
     "wordWrap": false
   }
 }
 ```
 
+**View → Language** switches the interface's language (`uiLocale`), at once and
+without a restart: the words live in `locales/en.json` and
+`locales/zh-Hans.json`, and MyGo's own controls follow them. A review is written
+in another language, `summaryLocale`, which stands on its own.
+
 Files open in `$GODIFF_EDITOR` or `editorCommand` (`{file}`, `{line}` and
 `{repo}` are replaced), else VS Code, else the app the system opens them with.
-
 Pull requests need no token to be read when they are public; to comment
 and review, or to read private ones, sign in with the GitHub CLI (`gh auth
 login`), or set `githubToken` or `$GH_TOKEN`.
