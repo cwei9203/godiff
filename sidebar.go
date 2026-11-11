@@ -314,6 +314,9 @@ func (w *window) sidebar(c *ui.Context) {
 				searchInput(c, &w.pullsFilter, "Filter pull requests", &w.filterFocus, &w.typing)
 			}
 		})
+		if w.tab == 0 {
+			w.foldAllRow(c, pal)
+		}
 		switch w.tab {
 		case 0:
 			w.fileTree(c)
@@ -1005,4 +1008,63 @@ func (w *window) sidebarResizer(c *ui.Context, pal *palette) {
 			w.dragWidth = w.sidebarWidth
 		}
 	})
+}
+
+// foldAllRow is the pair of buttons that fold the whole tree at once, or open
+// it whole: one reading of the change, or its shape alone.
+func (w *window) foldAllRow(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	fold := func(want bool) func() {
+		return func() { w.foldAll(want) }
+	}
+	ui.Row(c).Padding(0, 10, 4, 12).Gap(6).AlignItems(ui.Center).Children(func() {
+		groups := len(w.groups)
+		if groups == 0 {
+			ui.Textf(c, "%s", plural(len(w.files), "file")).FontSize(11).TextColor(t.TextMuted).Grow(1)
+		} else {
+			ui.RichText(c,
+				ui.Span{Text: plural(groups, "group"), Color: t.TextMuted},
+				ui.Span{Text: " · " + plural(len(w.files), "file"), Color: t.TextMuted},
+			).FontSize(11).Grow(1).Shrink(1).SingleLine()
+		}
+		for _, b := range []struct {
+			label, tip string
+			fold       bool
+		}{
+			{"Collapse", "Collapse every group and folder", true},
+			{"Expand", "Expand every group and folder", false},
+		} {
+			b := b
+			btn := ui.ButtonBase(c).Padding(2, 6).Radius(5).Label(b.tip).Tooltip(b.tip)
+			if btn.Hovered() {
+				btn.Background(pal.hover)
+			}
+			btn.Children(func() {
+				ui.Text(c, b.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
+			})
+			if btn.Clicked() {
+				fold(b.fold)()
+			}
+		}
+	})
+}
+
+// foldAll folds every group and every folder of the tree, and the cards of
+// every file where the surface stacks them; unfold opens them whole. The file
+// read keeps its place, as a fold is no navigation.
+func (w *window) foldAll(fold bool) {
+	for key, n := range w.treeItems {
+		if n != nil && n.dir {
+			w.closedDirs[key] = fold
+		}
+	}
+	if !w.oneFile() {
+		file, chosen := w.current, w.treeSel
+		for _, f := range w.files {
+			f.collapsed = fold
+		}
+		w.current, w.treeSel = file, chosen
+		w.revealedAt = w.now
+	}
+	w.rowsDirty = true
 }

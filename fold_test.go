@@ -419,3 +419,47 @@ func TestFoldSnapshots(t *testing.T) {
 	tt.Frame()
 	snapshot(t, tt, "fold-expanded")
 }
+
+// TestFoldAll folds the whole tree at once, and opens it whole: every group
+// and every folder with it, and in the stacked surface every file's card.
+func TestFoldAll(t *testing.T) {
+	w, tt := kindWindow(t)
+	tt.Frame()
+	open := len(w.visibleTree())
+	if err := tt.Click("Collapse"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	for key, n := range w.treeItems {
+		if n != nil && n.dir && !w.closedDirs[key] {
+			t.Errorf("%s stayed open", key)
+		}
+	}
+	if got, want := len(w.visibleTree()), len(w.groups); got != want {
+		// The tree of closed groups lists the groups alone.
+		t.Errorf("the folded tree lists %d rows, want %d", got, want)
+	}
+	for i, f := range w.files {
+		if !f.collapsed {
+			t.Errorf("%s stayed open", f.Path)
+		}
+		_ = i
+	}
+	if err := tt.Click("Expand"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	for key, n := range w.treeItems {
+		if n != nil && n.dir && w.closedDirs[key] {
+			t.Errorf("%s stayed folded", key)
+		}
+	}
+	if got := len(w.visibleTree()); got != open {
+		t.Errorf("the opened tree lists %d rows, want the %d it began with", got, open)
+	}
+	for _, f := range w.files {
+		if f.collapsed {
+			t.Errorf("%s stayed folded", f.Path)
+		}
+	}
+}
