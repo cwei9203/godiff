@@ -60,6 +60,102 @@ func (w *window) inScope(i int) bool {
 	return true
 }
 
+// the file view of the settings: one file at a time, or every file
+// stacked one under the other.
+const (
+	fileViewOne   = "one"
+	fileViewStack = "stack"
+)
+
+// oneFile reports whether the surface shows one file at a time, rather
+// than every file of the scope one under the other.
+func (w *window) oneFile() bool { return w.settings.FileView != fileViewStack }
+
+// viewFiles lists the files the file view may show, in the order they
+// show: those of the scope that pass the filter.
+func (w *window) viewFiles() []int {
+	var out []int
+	for i := range w.files {
+		if w.fileVisible(i) && w.inScope(i) {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+// shownFile is the file the surface shows alone: the one chosen while it
+// is of the scope, else the first of it, -1 for none.
+func (w *window) shownFile() int {
+	first := -1
+	for i := range w.files {
+		if !w.fileVisible(i) || !w.inScope(i) {
+			continue
+		}
+		if first < 0 {
+			first = i
+		}
+		if i == w.current {
+			return i
+		}
+	}
+	return first
+}
+
+// fileNav is where the file shown stands among those the file view may
+// show, 1-based, and how many there are.
+func (w *window) fileNav() (at, total int) {
+	files := w.viewFiles()
+	if len(files) == 0 {
+		return 0, 0
+	}
+	return slices.Index(files, w.shownFile()) + 1, len(files)
+}
+
+// canStep reports whether a file comes before (dir -1) or after (dir 1)
+// the one shown: the ends of the file view stop there, they do not go
+// round.
+func (w *window) canStep(dir int) bool {
+	at, total := w.fileNav()
+	return at > 0 && at+dir >= 1 && at+dir <= total
+}
+
+// stepFile shows the file before (dir -1) or after (dir 1) the one shown,
+// within the scope.
+func (w *window) stepFile(dir int) {
+	if !w.canStep(dir) {
+		return
+	}
+	files := w.viewFiles()
+	i := files[slices.Index(files, w.shownFile())+dir]
+	w.current = i
+	w.selFile, w.selHunk, w.noteSel = -1, -1, nil
+	w.revealedAt = w.now
+	w.rowsDirty = true
+	w.selectTreeFile(i)
+}
+
+// setFileView shows one file at a time (mode fileViewOne), or every file
+// stacked (mode fileViewStack), and keeps the choice in the settings.
+func (w *window) setFileView(mode string) {
+	if mode != fileViewOne && mode != fileViewStack {
+		mode = fileViewOne
+	}
+	if w.settings.FileView == mode {
+		return
+	}
+	w.settings.FileView = mode
+	w.selFile, w.selHunk = -1, -1
+	w.rowsDirty = true
+	// The rows of the other view start from the top of the file shown.
+	w.shownFor = -1
+	w.list.ScrollTo(0, ui.Start)
+	cfg.Update(func(s *Settings) { s.FileView = mode })
+}
+
+// summaryFolded reports whether the agent's review folds to one line: it
+// summarizes every change, not the part of the review shown.
+func (w *window) summaryFolded() bool { return w.oneFile() || !w.scope.all() }
+
 // fileGroup is a group of the files, which show together.
 type fileGroup struct {
 	key, label string
@@ -1214,6 +1310,11 @@ func (w *window) revealNote(n *aiNote) {
 	if f := w.files[fi]; f.collapsed && !w.forceOpen(fi) {
 		f.collapsed = false
 	}
+	// The file gone to is the one shown, before the rows are laid out:
+	// the file view lays out that file's rows alone.
+	w.current = fi
+	w.noteSel = n
+	w.selFile, w.selHunk = -1, -1
 	w.rowsDirty = true
 	w.buildRows()
 	for i := range w.rows {
@@ -1222,9 +1323,6 @@ func (w *window) revealNote(n *aiNote) {
 			break
 		}
 	}
-	w.noteSel = n
-	w.selFile, w.selHunk = -1, -1
-	w.current = fi
 	w.revealedAt = w.now
 	w.selectTreeFile(fi)
 }

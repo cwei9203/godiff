@@ -82,6 +82,7 @@ const (
 	rowGroup                  // the header of a group of files
 	rowThread                 // a review thread of the pull request
 	rowAINote                 // a note of the agent's review
+	rowFileNav                // the way to the file before and after, one file at a time
 )
 
 // row is a row of the diff surface.
@@ -243,9 +244,18 @@ func (w *window) buildRows() {
 		rows = append(rows, row{kind: rowSummary})
 	}
 	w.placed = map[any]bool{}
+	// One file at a time: the rows of that file alone, under the way to
+	// the others.
+	shown := -1
+	if w.oneFile() {
+		shown = w.shownFile()
+		if shown >= 0 {
+			rows = append(rows, row{kind: rowFileNav, file: int32(shown)})
+		}
+	}
 	group := -1
 	for fi, f := range w.files {
-		if !w.fileVisible(fi) || !w.inScope(fi) {
+		if !w.fileVisible(fi) || !w.inScope(fi) || (shown >= 0 && fi != shown) {
 			continue
 		}
 		idx := int32(fi)
@@ -436,7 +446,7 @@ func (w *window) appendComments(rows []row, idx int32, f *fileState, l *diff.Lin
 // key returns the identity of a row.
 func (w *window) key(r *row) rowKey {
 	switch r.kind {
-	case rowCommit, rowPull, rowSummary:
+	case rowCommit, rowPull, rowSummary, rowFileNav:
 		return rowKey{kind: r.kind}
 	case rowGroup:
 		return rowKey{kind: rowGroup, gap: r.gap}

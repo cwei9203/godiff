@@ -161,6 +161,7 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 				w.reviewButton(c, pal)
 			}
 			w.groupControl(c, pal)
+			w.fileViewControl(c, pal)
 			w.layoutControl(c, pal)
 		}
 	})
@@ -172,6 +173,30 @@ func chip(c *ui.Context, pal *palette, svg *ui.SVG, label string, color ui.Color
 		Border(1, ui.RGBA(127, 127, 127, 0.12)).TextColor(color).Shrink(1).MinWidth(0).MaxWidth(240).Children(func() {
 		ui.Icon(c, svg).FontSize(12)
 		ui.Text(c, label).FontSize(12).FontWeight(600).SingleLine()
+	})
+}
+
+// fileViewControl switches between one file at a time and every file
+// stacked, beside the layout it pairs with. The button names the view it
+// goes to, and says the one it leaves in its tooltip.
+func (w *window) fileViewControl(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	name, svg, tip := "All files", iconFileDiff, "Showing one file at a time. Show every file, one under the other"
+	next := fileViewStack
+	if !w.oneFile() {
+		name, svg, tip = "One file", iconFile, "Showing every file, one under the other. Show one file at a time"
+		next = fileViewOne
+	}
+	b := ui.ButtonBase(c).Height(28).Padding(0, 7).Gap(5).Radius(7).TextColor(t.TextMuted).Label(name).Tooltip(tip)
+	if b.Hovered() {
+		b.Background(ui.RGBA(127, 127, 127, 0.13))
+	}
+	if b.Clicked() {
+		w.setFileView(next)
+	}
+	b.Children(func() {
+		ui.Icon(c, svg).FontSize(15)
+		ui.Text(c, name).FontSize(11).FontWeight(600)
 	})
 }
 
@@ -396,6 +421,12 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	}
 	if c.Shortcut(0, ui.KeyJ) || c.Shortcut(ui.Ctrl, ui.KeyDown) {
 		w.nextHunk(1)
+	}
+	if w.oneFile() && c.Shortcut(0, ui.KeyBracketLeft) {
+		w.stepFile(-1)
+	}
+	if w.oneFile() && c.Shortcut(0, ui.KeyBracketRight) {
+		w.stepFile(1)
 	}
 	if c.Shortcut(0, ui.KeyK) || c.Shortcut(ui.Ctrl, ui.KeyUp) {
 		w.nextHunk(-1)

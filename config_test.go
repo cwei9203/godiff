@@ -61,6 +61,9 @@ func TestSettingsDefaults(t *testing.T) {
 	if s.MaxFiles != maxFilesDefault {
 		t.Errorf("MaxFiles: %d, want %d", s.MaxFiles, maxFilesDefault)
 	}
+	if s.FileView != fileViewOne {
+		t.Errorf("FileView: %q, want one file at a time", s.FileView)
+	}
 	// Normalizing what the defaults hold changes nothing.
 	s.normalize()
 	if !s.GroupingEnabled || !s.OverallSummary || s.SummaryExpanded || !s.Notes || s.MaxFiles != maxFilesDefault {
@@ -137,6 +140,26 @@ func TestSettingsNormalize(t *testing.T) {
 			},
 		},
 		{
+			name: "a file view that is none",
+			in:   Settings{FileView: "all of them"},
+			check: func(s Settings) error {
+				if s.FileView != fileViewOne {
+					return fmt.Errorf("FileView %q, want %s", s.FileView, fileViewOne)
+				}
+				return nil
+			},
+		},
+		{
+			name: "every file stacked, as asked",
+			in:   Settings{FileView: fileViewStack},
+			check: func(s Settings) error {
+				if s.FileView != fileViewStack {
+					return fmt.Errorf("FileView %q, want %s", s.FileView, fileViewStack)
+				}
+				return nil
+			},
+		},
+		{
 			name: "switches turned off stay off",
 			in:   Settings{GroupingEnabled: false, OverallSummary: false, Notes: false, SummaryExpanded: true},
 			check: func(s Settings) error {
@@ -167,6 +190,7 @@ func TestSettingsRoundTrip(t *testing.T) {
 	want.Notes = false
 	want.SummaryLocale = "zh-CN"
 	want.MaxFiles = 500
+	want.FileView = fileViewStack
 	writer := &config{path: path, settings: want}
 	writer.write(want)
 
@@ -214,6 +238,9 @@ func TestSettingsLoadKeepsDefaults(t *testing.T) {
 	if s.SummaryLocale != "" {
 		t.Errorf("SummaryLocale %q, want the interface's", s.SummaryLocale)
 	}
+	if s.FileView != fileViewOne {
+		t.Errorf("FileView %q, want one file at a time", s.FileView)
+	}
 
 	// A switch written off is read off.
 	off := `{"settings": {"groupingEnabled": false, "overallSummary": false, "notes": false, "summaryExpanded": true}}`
@@ -243,7 +270,7 @@ func TestSettingsFileNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"groupingEnabled", "overallSummary", "summaryExpanded", "notes", "summaryLocale", "maxFiles"} {
+	for _, key := range []string{"groupingEnabled", "overallSummary", "summaryExpanded", "notes", "summaryLocale", "maxFiles", "fileView"} {
 		if !strings.Contains(data, `"`+key+`"`) {
 			t.Errorf("no %q in %s", key, data)
 		}

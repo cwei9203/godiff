@@ -140,6 +140,12 @@ func buildMenu() *mygo.Menu {
 				{Label: "By Kind", Click: inWindow(func(w *window) { w.chooseGrouping(groupKind) })},
 				{Label: "By AI Review", Click: inWindow(func(w *window) { w.chooseGrouping(groupAI) })},
 			}},
+			{Label: "Show One File at a Time", Submenu: []*mygo.MenuItem{
+				{ID: "fileview-one", Label: "One File", Type: mygo.MenuItemRadio, Checked: s.FileView != fileViewStack,
+					Click: setting(func(s *Settings) { s.FileView = fileViewOne })},
+				{ID: "fileview-stack", Label: "All Files", Type: mygo.MenuItemRadio, Checked: s.FileView == fileViewStack,
+					Click: setting(func(s *Settings) { s.FileView = fileViewStack })},
+			}},
 			{Label: "AI Agent", Submenu: agentMenuItems(s)},
 			{Label: "AI Review", Submenu: reviewMenuItems(s)},
 			mygo.Separator(),
@@ -202,6 +208,8 @@ func syncMenu(s Settings) {
 	set("wrap", s.WordWrap)
 	set("whitespace", s.ShowWhitespace)
 	set("copyOnClose", s.CopyCommentsOnClose)
+	set("fileview-one", s.FileView != fileViewStack)
+	set("fileview-stack", s.FileView == fileViewStack)
 	set("grouping", s.GroupingEnabled)
 	set("overallSummary", s.OverallSummary)
 	set("summaryExpanded", s.SummaryExpanded)

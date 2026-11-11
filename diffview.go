@@ -76,9 +76,32 @@ func (f *fileState) metrics() fileMetrics {
 func (w *window) diffList(c *ui.Context) {
 	t := c.Theme()
 	pal := paletteFor(t)
+	shown := w.current
+	if w.oneFile() {
+		shown = w.shownFile()
+		if shown != w.shownFor {
+			// The file chosen changed, and the rows still show the one
+			// before: as a match of the find bar or a note goes there.
+			w.rowsDirty = true
+		}
+	}
 	if w.rowsDirty {
 		w.updateMatches()
 		w.buildRows()
+	}
+	if w.oneFile() && shown != w.shownFor {
+		// The file shown alone replaces the rows of the one before: they
+		// start at its top, or at the match of the find bar in it.
+		w.shownFor = shown
+		if shown >= 0 && shown != w.current {
+			// The file chosen left the surface, as a filter hides it: the
+			// one that took its place is the one shown.
+			w.current = shown
+			w.selectTreeFile(shown)
+		}
+		if !w.matchRow() {
+			w.list.ScrollTo(0, ui.Start)
+		}
 	}
 	// The aside lists the group at the top of the surface. It sits beside
 	// the list rather than in it: a row holds only its own height, and
@@ -112,6 +135,75 @@ func (w *window) diffList(c *ui.Context) {
 	}
 }
 
+// matchRow scrolls the row of the match the find bar is on into the middle
+// of the surface, and reports whether it found it.
+func (w *window) matchRow() bool {
+	if !w.searching() || w.match < 0 || w.match >= len(w.matches) {
+		return false
+	}
+	m := w.matches[w.match]
+	for i := range w.rows {
+		r := &w.rows[i]
+		if int(r.file) != m.file {
+			continue
+		}
+		if m.hunk < 0 && r.kind == rowHeader {
+			w.list.ScrollTo(i, ui.Start)
+			return true
+		}
+		if r.kind == rowLine && r.hunk == m.hunk && (r.a == m.line || r.b == m.line) {
+			w.list.ScrollTo(i, ui.Center)
+			return true
+		}
+	}
+	return false
+}
+
+// fileNavRow heads the file shown alone: the way to the file before it and
+// the one after it, where it stands among the files of the scope, its name,
+// and the group it belongs to.
+func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
+	t := c.Theme()
+	f := w.files[idx]
+	at, total := w.fileNav()
+	ui.Row(c).Height(34).Padding(0, 6).Gap(8).Margin(12, 0, 0).Radius(cardRadius).
+		Border(1, pal.cardBorder).Background(pal.headerBg).Children(func() {
+		step := func(svg *ui.SVG, turn, dir int, tip string) {
+			b := ui.ButtonBase(c).Size(26, 26).Radius(6).Center().Label(tip).Tooltip(tip).FocusRing(false).
+				Disabled(!w.canStep(dir))
+			if !w.canStep(dir) {
+				b.Opacity(0.4)
+			} else if b.Hovered() {
+				b.Background(pal.hover)
+			}
+			b.Children(func() { ui.Icon(c, svg).FontSize(15).TextColor(t.TextMuted).Rotate(float32(turn)) })
+			if b.Clicked() {
+				w.stepFile(dir)
+			}
+		}
+		step(iconChevronRight, 180, -1, "Previous file (\u005b)")
+		ui.Text(c, fmt.Sprintf("%d / %d", at, total)).Font(w.codeFont()).FontSize(12).FontWeight(600).
+			TextColor(t.TextMuted).Shrink(0).Tooltip(fmt.Sprintf("File %d of %d", at, total))
+		ui.Row(c).Gap(5).Grow(1).Shrink(1).MinWidth(0).Children(func() {
+			fileIcon(c, f, 13)
+			ui.RichText(c,
+				ui.Span{Text: f.Dir(), Color: t.TextMuted},
+				ui.Span{Text: f.Name(), Color: t.Text, Weight: 600},
+			).Font(w.codeFont()).FontSize(12).SingleLine().Shrink(1).MinWidth(0)
+		})
+		if f.group >= 0 && f.group < len(w.groups) {
+			g := &w.groups[f.group]
+			svg, accent := groupMark(g)
+			ui.Row(c).Gap(5).Padding(3, 8).Radius(11).Background(pal.pill).Shrink(1).MinWidth(0).
+				Label("In group " + g.label).Tooltip("Group " + g.label).Children(func() {
+				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)
+				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
+			})
+		}
+		step(iconChevronRight, 0, 1, "Next file (\u005d)")
+	})
+}
+
 // revealFile scrolls the surface to a file's card. A file outside the
 // scope shown, as a match of the find bar may be, widens the surface to
 // every change first, so that its card is there to scroll to.
@@ -121,6 +213,9 @@ func (w *window) revealFile(i int) {
 		w.rowsDirty = true
 		w.buildTree()
 	}
+	// The file gone to is the one shown, before the rows are laid out: the
+	// file view lays out that file's rows alone.
+	w.current = i
 	if w.rowsDirty {
 		w.buildRows()
 	}
@@ -130,7 +225,6 @@ func (w *window) revealFile(i int) {
 			break
 		}
 	}
-	w.current = i
 	w.revealedAt = time.Now()
 }
 
@@ -144,7 +238,7 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 		w.pullHeader(c, pal).Margin(12, 0, 0)
 		return
 	case rowSummary:
-		if !w.scope.all() && !w.summaryOpen {
+		if w.summaryFolded() && !w.summaryOpen {
 			// The card summarizes every change, not the part shown: it folds
 			// to a line that opens it again.
 			w.summaryLine(c, pal)
@@ -154,6 +248,9 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 		return
 	case rowGroup:
 		w.groupRow(c, pal, int(r.gap))
+		return
+	case rowFileNav:
+		w.fileNavRow(c, pal, int(r.file))
 		return
 	}
 	f := w.files[r.file]
