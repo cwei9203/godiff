@@ -46,11 +46,17 @@ func (w *window) view(c *ui.Context) {
 			w.sidebarResizer(c, pal)
 		}
 		ui.Column(c).Grow(1).MinWidth(0).Background(pal.appBg).Children(func() {
+			// The bar comes last in the tree, and so last for Tab: the keys
+			// go from the tree to the review, to the drawer, and to the bar,
+			// never around the review to reach its own toolbar.
+			ui.Column(c).Grow(1).MinWidth(0).Padding(titleBarHeight, 0, 0, 0).Children(func() {
+				reviewBuilt = w.mainArea(c, pal)
+				// The drawer of a repair stays at the bottom of the review:
+				// it hosts the agent's process, not a part of the diff.
+				w.fixDrawer(c, pal)
+			})
+			w.undoBar(c, pal)
 			w.toolbar(c, pal)
-			reviewBuilt = w.mainArea(c, pal)
-			// The drawer of a repair stays at the bottom of the review:
-			// it hosts the agent's process, not a part of the diff.
-			w.fixDrawer(c, pal)
 		})
 		if w.sidebarShown && right {
 			w.sidebarResizer(c, pal)
@@ -85,7 +91,23 @@ func (w *window) view(c *ui.Context) {
 // debugFrames logs the views that take long to build.
 var debugFrames = os.Getenv("GODIFF_DEBUG") != ""
 
-// toolbar is the bar along the top of the review, which drags the window.
+// The widths below which the toolbar drops a control: the comments first, the
+// search next, so that the View menu and the sidebar's own switch are what a
+// narrow window keeps, as the review's own layout matters most when the room is
+// small.
+const (
+	toolbarComments = 940
+	toolbarSearch   = 820
+)
+
+// toolbar is the bar along the top of the review, which drags the window: the
+// repository reviewed and where the review stands, then the few controls that
+// are not a choice kept in the settings.
+//
+// Four of them, and no more: the search, the comments, one View menu holding
+// every switch of the surface, and the sidebar's switch. What the review shows
+// is a choice of the settings, so it lives in the menu whose items say where
+// each stands; the native menus hold the same items over the same settings.
 func (w *window) toolbar(c *ui.Context, pal *palette) {
 	t := c.Theme()
 	bar := c.TitleBar()
@@ -98,11 +120,9 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 	if !sidebarRight {
 		right += bar.Right
 	}
-	ui.Row(c).Height(titleBarHeight).Padding(0, right, 0, left).Gap(8).Shrink(0).DragWindow().
-		BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Background(pal.surface.Alpha(0.6)).Children(func() {
-		if !w.sidebarShown {
-			w.sidebarToggle(c)
-		}
+	width, _ := c.Size()
+	ui.Row(c).Absolute().Top(0).Left(0).Right(0).Height(titleBarHeight).Padding(0, right, 0, left).Gap(8).
+		DragWindow().BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Background(pal.surface.Alpha(0.6)).Children(func() {
 		// The repository: its name, and where it is, and the way to
 		// another one: the folders of late, or one to pick.
 		w.repoSwitcher(c, pal)
@@ -131,39 +151,115 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 		}
 		ui.Spacer(c)
 		if !w.commitOpen {
-			// Find, the comments, and the layout.
-			if iconButton(c, iconSearch, "Find in diffs (⌘F)").Clicked() {
-				w.finding = !w.finding
-			}
-			n := w.pendingComments()
-			copied := time.Since(w.copiedAt) < 2*time.Second
-			cb := ui.ButtonBase(c).Height(28).Padding(0, 8).Gap(5).Radius(7).TextColor(t.TextMuted).
-				Label("Copy review comments").Tooltip("Copy review comments as Markdown").Disabled(n == 0)
-			if n == 0 {
-				cb.Opacity(0.5)
-			}
-			if cb.Hovered() {
-				cb.Background(ui.RGBA(127, 127, 127, 0.13))
-			}
-			if cb.Clicked() {
-				w.copyComments()
-				c.After(2 * time.Second)
-			}
-			cb.Children(func() {
-				if copied {
-					ui.Icon(c, iconCheck).FontSize(15).TextColor(pal.viewed)
-				} else {
-					ui.Icon(c, iconComment).FontSize(15)
+			if width >= toolbarSearch {
+				if iconButton(c, iconSearch, textFind+" (⌘F)").Clicked() {
+					w.finding = !w.finding
 				}
-				ui.Textf(c, "%d", n).Font(w.codeFont()).FontSize(11).FontWeight(700)
-			})
+			}
+			if width >= toolbarComments {
+				w.commentsButton(c, pal)
+			}
 			if w.source.kind == sourcePull {
 				w.reviewButton(c, pal)
 			}
-			w.groupControl(c, pal)
-			w.fileViewControl(c, pal)
-			w.layoutControl(c, pal)
 		}
+		w.viewMenu(c, pal)
+		w.sidebarToggle(c)
+	})
+}
+
+// commentsButton is the count of the review's comments, which copies them as
+// Markdown.
+func (w *window) commentsButton(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	n := w.pendingComments()
+	copied := time.Since(w.copiedAt) < 2*time.Second
+	cb := ui.ButtonBase(c).Height(28).Padding(0, 8).Gap(5).Radius(7).TextColor(t.TextMuted).
+		Label("Copy review comments").Tooltip("Copy review comments as Markdown").Disabled(n == 0)
+	if n == 0 {
+		cb.Opacity(0.5)
+	}
+	if cb.Hovered() {
+		cb.Background(pal.surfaceHover)
+	}
+	if cb.Clicked() {
+		w.copyComments()
+		c.After(2 * time.Second)
+	}
+	cb.Children(func() {
+		if copied {
+			ui.Icon(c, iconCheck).FontSize(15).TextColor(pal.viewed)
+		} else {
+			ui.Icon(c, iconComment).FontSize(15)
+		}
+		ui.Textf(c, "%d", n).Font(w.codeFont()).FontSize(11).FontWeight(700)
+	})
+}
+
+// viewMenu is the one control the surface's own switches live in: the diff's
+// layout, the file view, the theme, the wrapping, the whitespace, and how the
+// files group. Every item shows where it stands, and writes the settings the
+// native menus write too.
+func (w *window) viewMenu(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	s := w.settings
+	set := w.applySetting
+	b := ui.MenuButton(c, "", func(m *ui.Menu) {
+		if m.Item(textLayoutSplit).Checked(s.DiffStyle == "split").Chosen() {
+			set(func(s *Settings) { s.DiffStyle = "split" })
+		}
+		if m.Item(textLayoutUnified).Checked(s.DiffStyle == "unified").Chosen() {
+			set(func(s *Settings) { s.DiffStyle = "unified" })
+		}
+		m.Separator()
+		if m.Item(textOneFile).Checked(s.FileView != fileViewStack).Chosen() {
+			set(func(s *Settings) { s.FileView = fileViewOne })
+		}
+		if m.Item(textStack).Checked(s.FileView == fileViewStack).Chosen() {
+			set(func(s *Settings) { s.FileView = fileViewStack })
+		}
+		m.Separator()
+		m.Submenu(textTheme, func(m *ui.Menu) {
+			if m.Item(textThemes).Checked(s.Theme == "system").Chosen() {
+				set(func(s *Settings) { s.Theme = "system" })
+			}
+			if m.Item(textLight).Checked(s.Theme == "light").Chosen() {
+				set(func(s *Settings) { s.Theme = "light" })
+			}
+			if m.Item(textDark).Checked(s.Theme == "dark").Chosen() {
+				set(func(s *Settings) { s.Theme = "dark" })
+			}
+		})
+		if m.Item(textWrap).Checked(s.WordWrap).Chosen() {
+			set(func(s *Settings) { s.WordWrap = !s.WordWrap })
+		}
+		if m.Item(textSpace).Checked(s.ShowWhitespace).Chosen() {
+			set(func(s *Settings) { s.ShowWhitespace = !s.ShowWhitespace })
+		}
+		m.Separator()
+		m.Submenu(textGroup, func(m *ui.Menu) {
+			modes := []struct {
+				label string
+				mode  groupMode
+			}{
+				{textNoGroup, groupNone},
+				{textByKind, groupKind},
+				{textByAI, groupAI},
+			}
+			for _, it := range modes {
+				if m.Item(it.label).Checked(w.grouping() == it.mode).Chosen() {
+					w.chooseGrouping(it.mode)
+				}
+			}
+		})
+	}).Height(28).Padding(0, 8).Gap(5).Radius(7).Label(textView).Tooltip("What the review shows: the diff's layout, the file view, the theme, the wrapping, the whitespace, the groups")
+	if b.Hovered() {
+		b.Background(pal.surfaceHover)
+	}
+	b.Children(func() {
+		ui.Icon(c, iconEye).FontSize(15).TextColor(t.TextMuted)
+		ui.Text(c, textView).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
+		ui.Icon(c, iconChevronDown).FontSize(10).TextColor(t.TextMuted).Shrink(0)
 	})
 }
 
@@ -174,61 +270,6 @@ func chip(c *ui.Context, pal *palette, svg *ui.SVG, label string, color ui.Color
 		ui.Icon(c, svg).FontSize(12)
 		ui.Text(c, label).FontSize(12).FontWeight(600).SingleLine()
 	})
-}
-
-// fileViewControl switches between one file at a time and every file
-// stacked, beside the layout it pairs with. The button names the view it
-// goes to, and says the one it leaves in its tooltip.
-func (w *window) fileViewControl(c *ui.Context, pal *palette) {
-	t := c.Theme()
-	name, svg, tip := "All files", iconFileDiff, "Showing one file at a time. Show every file, one under the other"
-	next := fileViewStack
-	if !w.oneFile() {
-		name, svg, tip = "One file", iconFile, "Showing every file, one under the other. Show one file at a time"
-		next = fileViewOne
-	}
-	b := ui.ButtonBase(c).Height(28).Padding(0, 7).Gap(5).Radius(7).TextColor(t.TextMuted).Label(name).Tooltip(tip)
-	if b.Hovered() {
-		b.Background(ui.RGBA(127, 127, 127, 0.13))
-	}
-	if b.Clicked() {
-		w.setFileView(next)
-	}
-	b.Children(func() {
-		ui.Icon(c, svg).FontSize(15)
-		ui.Text(c, name).FontSize(11).FontWeight(600)
-	})
-}
-
-// layoutControl switches between split and unified diffs.
-func (w *window) layoutControl(c *ui.Context, pal *palette) {
-	t := c.Theme()
-	choice := 0
-	if !w.split() {
-		choice = 1
-	}
-	seg := ui.SegmentedBase(c, &choice, 2)
-	seg.Track.Padding(2).Gap(2).Radius(8).Background(ui.RGBA(127, 127, 127, 0.1)).Label("Diff layout").Children(func() {
-		for i, it := range []struct {
-			icon *ui.SVG
-			name string
-		}{{iconSplit, "Split"}, {iconUnified, "Unified"}} {
-			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
-			if i == choice {
-				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
-			}
-			s.OnClick(func() {
-				split := i == 0
-				if split != w.split() {
-					toggleLayout()
-					w.settings.DiffStyle = map[bool]string{true: "split", false: "unified"}[split]
-					w.rowsDirty = true
-				}
-			})
-			s.Children(func() { ui.Icon(c, it.icon).FontSize(15) })
-		}
-	})
-
 }
 
 // mainArea shows the review, the commit view, or why there is nothing,
@@ -298,48 +339,49 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 	}
 	switch {
 	case w.loadErr != nil && w.source.kind == sourcePull:
-		emptyPanel(c, pal, "Unable to open the pull request", errorText(w.loadErr), func() {
-			if ui.Button(c, "Try Again").Clicked() {
-				w.load()
-			}
-		})
+		emptyState(c, pal, emptyBox{title: "Unable to open the pull request", detail: errorText(w.loadErr), mono: true,
+			actions: func() {
+				if ui.Button(c, "Try Again").Clicked() {
+					w.load()
+				}
+			}})
 	case w.loadErr != nil:
-		emptyPanel(c, pal, "Unable to read repository", errorText(w.loadErr), nil)
+		emptyState(c, pal, emptyBox{title: "Unable to read repository", detail: errorText(w.loadErr), mono: true})
 	case slow:
 		thinking(c, w.loadStatus)
 	case waiting && len(w.files) == 0:
 		ui.Box(c).Grow(1)
 	case len(w.files) == 0:
-		title, detail := "No local changes", abbreviateHome(w.repo.Root)
+		title, detail := textNoChanges, abbreviateHome(w.repo.Root)
 		switch w.source.kind {
 		case sourceCommit:
-			title, detail = "No changes in commit", shortHash(w.source.ref)
+			title, detail = textNoCommits, shortHash(w.source.ref)
 		case sourceBranch:
-			title, detail = "No changes", w.source.ref
+			title, detail = textNoBranch, w.source.ref
 		case sourcePull:
-			title, detail = "No changes in pull request", w.source.ref
+			title, detail = textNoPullFiles, w.source.ref
 		}
-		emptyPanel(c, pal, title, detail, func() {
+		emptyState(c, pal, emptyBox{title: title, detail: detail, mono: true, actions: func() {
 			if w.source.kind == sourceWorkingTree && len(w.history) > 0 {
 				if ui.Button(c, "Show History").Clicked() {
 					w.tab, w.sidebarShown = 1, true
 				}
 			}
-		})
+		}})
 	default:
 		if w.rowsDirty {
 			w.updateMatches()
 			w.buildRows()
 		}
 		if len(w.rows) == 0 {
-			title, detail := "No matching files", strings.TrimSpace(w.filter)
+			title, detail := textNoMatchFiles, strings.TrimSpace(w.filter)
 			if w.searching() {
-				title, detail = "No matches in diffs", strings.TrimSpace(w.query)
+				title, detail = textNoMatchDiffs, strings.TrimSpace(w.query)
 			}
 			if detail == "" {
 				detail = "Whitespace-only changes hidden"
 			}
-			emptyPanel(c, pal, title, detail, nil)
+			emptyState(c, pal, emptyBox{title: title, detail: detail, mono: w.searching()})
 			return false
 		}
 		w.diffList(c)
@@ -368,23 +410,6 @@ func (w *window) commitMessage(c *ui.Context, pal *palette) ui.Element {
 	})
 }
 
-// emptyPanel says why there is nothing to show.
-func emptyPanel(c *ui.Context, pal *palette, title, detail string, actions func()) {
-	t := c.Theme()
-	ui.Column(c).Grow(1).Center().Padding(24).Children(func() {
-		ui.Column(c).MaxWidth(520).Padding(28).Gap(10).Radius(16).Background(pal.surface).Border(1, pal.border).AlignItems(ui.Center).Children(func() {
-			ui.Icon(c, iconFileDiff).FontSize(28).TextColor(t.TextMuted)
-			ui.Text(c, title).FontSize(15).Bold().TextAlign(ui.Center)
-			if detail != "" {
-				ui.Text(c, detail).FontSize(13).Font("SF Mono, Menlo, monospace").TextColor(t.TextMuted).TextAlign(ui.Center).Selectable()
-			}
-			if actions != nil {
-				ui.Row(c).Gap(8).Margin(6, 0, 0).Children(actions)
-			}
-		})
-	})
-}
-
 // thinkingDelay is how long a load goes before the window says so.
 const thinkingDelay = 200 * time.Millisecond
 
@@ -403,7 +428,7 @@ func thinking(c *ui.Context, status string) {
 
 // shortcuts handles the window's keys that the menus do not.
 func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
-	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyP) {
+	if c.Shortcut(ui.Cmd, ui.KeyK) {
 		w.paletteOpen = !w.paletteOpen
 		w.paletteRow = 0
 	}
@@ -411,7 +436,16 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	// had the focus in the last frame.
 	typing := w.typing
 	w.typing = false
-	if w.commitOpen || w.paletteOpen || w.dialogOpen || w.help || typing || !reviewBuilt || (w.pr != nil && w.pr.submitOpen) {
+	if w.paletteOpen {
+		return
+	}
+	// The bar of an undo goes on Escape, and only the bar: what would take
+	// the key next keeps it.
+	if w.undo != nil && !typing && c.Shortcut(0, ui.KeyEscape) {
+		w.dismissUndo()
+		return
+	}
+	if w.commitOpen || w.dialogOpen || w.help || typing || !reviewBuilt || (w.pr != nil && w.pr.submitOpen) {
 		return
 	}
 	if c.Shortcut(0, ui.KeyJ) || c.Shortcut(ui.Ctrl, ui.KeyDown) {
@@ -493,20 +527,20 @@ func (v *welcome) view(c *ui.Context) {
 	recent := state.recent()
 	ui.Column(c).Grow(1).Center().Padding(24).Children(func() {
 		ui.Column(c).Width(560).Gap(12).Children(func() {
-			ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
-				ui.Icon(c, iconFileDiff).FontSize(24).TextColor(pal.ref)
-				ui.Text(c, title).FontSize(19).Bold().SingleLine()
-			})
-			line := ui.Text(c, detail).FontSize(13).TextColor(t.TextMuted).MaxWidth(500)
-			if mono {
-				line.Font("SF Mono, Menlo, monospace").Selectable()
+			// A repository again, or what kept one from opening: the same
+			// voice every empty surface of the app has.
+			head := emptyBox{shape: emptyBare, icon: iconFileDiff, title: title, detail: detail, mono: mono}
+			head.actions = func() {
+				open := ui.PrimaryButton(c, "Open Folder…")
+				if open.Clicked() {
+					openFolder()
+				}
+				if len(recent) == 0 {
+					open.AutoFocus()
+				}
 			}
-			open := ui.PrimaryButton(c, "Open Folder…").AlignSelf(ui.Start)
-			if open.Clicked() {
-				openFolder()
-			}
+			ui.Column(c).AlignItems(ui.Start).Children(func() { emptyWords(c, pal, head) })
 			if len(recent) == 0 {
-				open.AutoFocus()
 				ui.Text(c, "No repositories opened yet — open a folder, or run godiff inside one.").
 					FontSize(12).TextColor(t.TextMuted).MaxWidth(500).Padding(4, 0, 0)
 				return
@@ -514,9 +548,10 @@ func (v *welcome) view(c *ui.Context) {
 			ui.Text(c, "Recent").FontSize(11).FontWeight(700).TextColor(t.TextMuted).Padding(8, 0, 0)
 			v.list.Key = func(i int) any { return recent[i] }
 			v.list.Label = func(i int) string { return filepath.Base(recent[i]) }
-			ui.List(c, &v.list, len(recent), func(i int) {
+			list := ui.List(c, &v.list, len(recent), func(i int) {
 				v.row(c, pal, i, recent[i])
-			}).MaxHeight(240).Gap(2).Focusable().FocusRing(false).Label("Recent repositories")
+			}).MaxHeight(240).Gap(2).Focusable().Label("Recent repositories")
+			focusRing(list, pal, 6)
 			if !v.focused && v.list.Focus(c) {
 				v.focused = true
 			}
@@ -597,7 +632,7 @@ func (w *window) repoSwitcher(c *ui.Context, pal *palette) {
 		if m.Item("Close Repository").Chosen() {
 			closeRepository(w)
 		}
-	}).Height(38)
+	}).Height(38).Label(textRepo)
 	b.Children(func() {
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Column(c).Gap(1).Shrink(1).MinWidth(0).Children(func() {

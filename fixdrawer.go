@@ -563,15 +563,16 @@ func (w *window) fixResult(c *ui.Context, st *fixState) {
 // fixLog is the agent's output, in one font, following its end unless the
 // user scrolled away from it.
 func (w *window) fixLog(c *ui.Context, pal *palette, st *fixState) {
-	t := c.Theme()
 	n := st.ring.lines()
 	st.log.Key = func(i int) any { return st.ring.line(i).seq }
 	st.log.FollowEnd = true
-	ui.List(c, &st.log, n, func(i int) {
+	log := ui.List(c, &st.log, n, func(i int) {
 		ui.Text(c, st.ring.line(i).text).Font(w.codeFont()).FontSize(11).MinHeight(16).SingleLine().Padding(0, 12)
-	}).Height(fixLogHeight).Background(pal.codeBg).Label("The agent's output").Children(func() {
+	}).Height(fixLogHeight).Background(pal.codeBg).Focusable().Label("The agent's output").Children(func() {
 		if n == 0 {
-			ui.Text(c, "Waiting for the agent's output…").FontSize(11).TextColor(t.TextMuted).Padding(10, 12)
+			emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconCommand, title: "Waiting for the agent's output…"})
 		}
 	})
+	// The drawer is a place the keys go, like the review and the tree.
+	focusRing(log, pal, 0)
 }

@@ -167,7 +167,11 @@ func TestReview(t *testing.T) {
 
 func TestUnified(t *testing.T) {
 	w, tt := newTestWindow(t, testRepo(t))
-	if err := tt.Click("Unified"); err != nil {
+	// The layout of the diff is a choice of the View menu now.
+	if err := tt.Click("View"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("Unified"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

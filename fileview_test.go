@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -106,31 +107,35 @@ func TestFileViewStackShowsEveryFile(t *testing.T) {
 	if got := countRows(w, rowFileNav); got != 0 {
 		t.Errorf("%d navigation bars, want none", got)
 	}
-	if !tt.HasText("One file") {
-		t.Errorf("the toolbar does not offer one file at a time: %q", tt.Texts())
+	if !tt.HasText(textView) {
+		t.Errorf("the toolbar has no View menu: %q", tt.Texts())
 	}
 }
 
-// TestFileViewToolbarSwitches checks the switch beside the layout: it names
-// the view the click goes to, and the click shows it.
-func TestFileViewToolbarSwitches(t *testing.T) {
+// TestFileViewMenuSwitches checks the View menu's file view: the item says
+// which view it goes to, and the click shows it, in the window and in the
+// settings both.
+func TestFileViewMenuSwitches(t *testing.T) {
 	w, tt := fileViewWindow(t)
 	keepFileView(t)
 	tt.Frame()
-	if !tt.HasText("All files") {
-		t.Fatalf("no switch to every file in %q", tt.Texts())
+	if err := tt.Click(textView); err != nil {
+		t.Fatal(err)
 	}
-	if err := tt.Click("All files"); err != nil {
+	if !slices.Contains(tt.Menu(), textStack) {
+		t.Fatalf("the View menu has no file view: %q", tt.Menu())
+	}
+	if err := tt.ChooseMenuItem(textStack); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	if w.oneFile() || cfg.Get().FileView != fileViewStack {
 		t.Errorf("one file %v, the settings say %q", w.oneFile(), cfg.Get().FileView)
 	}
-	if !tt.HasText("One file") {
-		t.Errorf("the switch does not offer one file at a time: %q", tt.Texts())
+	if err := tt.Click(textView); err != nil {
+		t.Fatal(err)
 	}
-	if err := tt.Click("One file"); err != nil {
+	if err := tt.ChooseMenuItem(textOneFile); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

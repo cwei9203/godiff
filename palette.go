@@ -15,6 +15,9 @@ type command struct {
 	hint  string // a description, or the shortcut
 	keys  string
 	run   func()
+	// soon is a command the review does not have yet: it shows, and does
+	// nothing, rather than pretending it is not there.
+	soon bool
 }
 
 // commands lists the command bar's actions, in its order.
@@ -23,13 +26,13 @@ func (w *window) commands() []command {
 	if w.current >= 0 && w.current < len(w.files) {
 		selected = w.files[w.current].Path
 	}
-	layout := "Switch to Unified"
+	layout := "Switch to unified"
 	if !w.split() {
-		layout = "Switch to Split"
+		layout = "Switch to split"
 	}
-	wrap := "Enable Word Wrap"
+	wrap := "Turn wrapping on"
 	if w.settings.WordWrap {
-		wrap = "Disable Word Wrap"
+		wrap = "Turn wrapping off"
 	}
 	// Going to the notes of the agent's review, when there are.
 	notes := func(dir int) func() {
@@ -38,9 +41,9 @@ func (w *window) commands() []command {
 		}
 		return func() { w.nextNote(dir) }
 	}
-	whitespace := "Show Whitespace Changes"
+	whitespace := "Show whitespace changes"
 	if w.settings.ShowWhitespace {
-		whitespace = "Hide Whitespace Changes"
+		whitespace = "Hide whitespace changes"
 	}
 	// Writing the task file asks for the comments there are: with none, the
 	// command has nothing to do and is left out of the bar.
@@ -56,61 +59,78 @@ func (w *window) commands() []command {
 			fixComments = w.openFixDialog
 		}
 	}
+	// The keys of the files not viewed yet and of the notes trade places
+	// with the file view: one file at a time, n steps the files and the
+	// notes take ⌥n; every file stacked and n stays the notes'.
+	unviewedKeys, noteKeys, noteBack := "", "N", "⇧N"
+	stepNext, stepPrev := "", ""
+	if w.oneFile() {
+		unviewedKeys, noteKeys, noteBack = "N", "⌥N", "⌥⇧N"
+		stepNext, stepPrev = "]", "["
+	}
 	return []command{
-		{title: "Focus File Filter", keys: "⌘P", run: w.focusFilter},
-		{title: "Find in Diffs", keys: "⌘F", run: func() { w.finding = true }},
-		{title: "Open Commit", hint: "Review a commit", run: func() { w.openDialog(dialogCommit) }},
-		{title: "Open Branch", hint: "Compare with a branch", run: func() { w.openDialog(dialogBranch) }},
-		{title: "Open Pull Request", hint: "Review a pull request on GitHub", run: func() { w.openDialog(dialogPull) }},
-		{title: "Open Folder", keys: "⌘O", run: openFolder},
-		{title: "Show File Tree", run: func() { w.tab, w.sidebarShown = 0, true }},
-		{title: "Show History", run: func() { w.tab, w.sidebarShown = 1, true }},
-		{title: "Show Pull Requests", keys: "⌘3", run: w.showPulls},
+		{title: "Focus file filter", keys: "⌘P", run: w.focusFilter},
+		{title: "Find in diffs", keys: "⌘F", run: func() { w.finding = true }},
+		{title: "Open commit", hint: "Review a commit", run: func() { w.openDialog(dialogCommit) }},
+		{title: "Open branch", hint: "Compare with a branch", run: func() { w.openDialog(dialogBranch) }},
+		{title: "Open pull request", hint: "Review a pull request on GitHub", run: func() { w.openDialog(dialogPull) }},
+		{title: "Open folder", keys: "⌘O", run: openFolder},
+		{title: "Show file tree", keys: "⌘1", run: func() { w.tab, w.sidebarShown = 0, true }},
+		{title: "Show history", keys: "⌘2", run: func() { w.tab, w.sidebarShown = 1, true }},
+		{title: "Show pull requests", keys: "⌘3", run: w.showPulls},
+		{title: "Next unviewed file", hint: "The first file not viewed yet, round from this one", keys: unviewedKeys, run: func() { w.stepUnviewed(1) }},
 		{title: "Review with AI", hint: w.agentHint(), keys: "⌘⇧I", run: w.reviewWithAI},
-		{title: "Stop the AI Review", run: w.stopAnalysis},
-		{title: "Next AI Note", keys: "N", run: notes(1)},
-		{title: "Previous AI Note", keys: "⇧N", run: notes(-1)},
-		{title: "Group Files by Kind", run: func() { w.chooseGrouping(groupKind) }},
-		{title: "Group Files by AI Review", run: func() { w.chooseGrouping(groupAI) }},
-		{title: "Ungroup Files", run: func() { w.chooseGrouping(groupNone) }},
-		{title: "Show Uncommitted Changes", run: func() { w.setSource(w.launchWorkTree()) }},
+		{title: "Stop the AI review", run: w.stopAnalysis},
+		{title: "Next AI note", keys: noteKeys, run: notes(1)},
+		{title: "Previous AI note", keys: noteBack, run: notes(-1)},
+		{title: "Group files by kind", run: func() { w.chooseGrouping(groupKind) }},
+		{title: "Group files by AI review", run: func() { w.chooseGrouping(groupAI) }},
+		{title: "Ungroup files", run: func() { w.chooseGrouping(groupNone) }},
+		{title: "Show uncommitted changes", run: func() { w.setSource(w.launchWorkTree()) }},
 		{title: "Commit…", run: func() {
 			if w.source.kind == sourceWorkingTree && !w.commitOpen {
 				w.toggleCommit()
 			}
 		}},
-		{title: "Copy Review Comments", run: w.copyComments},
-		{title: "Export Review Task", hint: ".review/REVIEW.md, for an agent", run: exportTask},
-		{title: "Fix Review Comments…", hint: w.fixHint(), run: fixComments},
-		{title: "Submit Review", hint: "Approve, comment or request changes", run: w.openSubmit},
-		{title: "Open Pull Request on GitHub", run: w.openPullOnGitHub},
-		{title: "Copy Review Comments and Close", run: func() {
+		{title: "Copy review comments", run: w.copyComments},
+		{title: "Export review task", hint: ".review/REVIEW.md, for an agent", run: exportTask},
+		{title: "Fix comments with an agent", hint: w.fixHint(), run: fixComments},
+		{title: "Submit review", hint: "Approve, comment or request changes", run: w.openSubmit},
+		{title: "Open pull request on GitHub", run: w.openPullOnGitHub},
+		{title: "Copy review comments and close", run: func() {
 			w.copyComments()
 			if w.win != nil {
 				w.win.Close()
 			}
 		}},
-		{title: "Toggle Viewed", hint: selected, run: func() {
+		{title: "Toggle viewed", hint: selected, run: func() {
 			if w.current >= 0 && w.current < len(w.files) {
 				f := w.files[w.current]
 				w.setViewed(f, !w.isViewed(f))
 			}
 		}},
-		{title: "Open File in Editor", hint: selected, keys: "⌘⇧O", run: w.openCurrent},
-		{title: "Toggle Sidebar", keys: "⌘⇧B", run: w.toggleSidebar},
-		{title: "Collapse All Files", run: func() { w.setAllCollapsed(true) }},
-		{title: "Expand All Files", run: func() { w.setAllCollapsed(false) }},
-		{title: "Toggle Diff Layout", hint: layout, run: toggleLayout},
-		{title: "Toggle Word Wrap", hint: wrap, keys: "⌥Z", run: toggleWrap},
-		{title: "Toggle Whitespace", hint: whitespace, run: func() {
+		{title: "Mark all viewed", hint: "Every file of the review, with an undo", run: w.markAllViewed},
+		{title: "Reset review state", hint: "Nothing viewed, everything open", run: w.resetReviewState},
+		{title: "Next file", hint: "One file at a time", keys: stepNext, run: func() { w.stepFile(1) }},
+		{title: "Previous file", hint: "One file at a time", keys: stepPrev, run: func() { w.stepFile(-1) }},
+		{title: "Open file in editor", hint: selected, keys: "⌘⇧O", run: w.openCurrent},
+		{title: "Toggle sidebar", keys: "⌘⇧B", run: w.toggleSidebar},
+		{title: "Fold all", hint: "Every group and every folder", run: func() { w.foldAll(true) }},
+		{title: "Unfold all", hint: "Every group and every folder", run: func() { w.foldAll(false) }},
+		{title: "Show one file at a time", run: func() { w.setFileView(fileViewOne) }},
+		{title: "Show all files", run: func() { w.setFileView(fileViewStack) }},
+		{title: "Toggle diff layout", hint: layout, run: toggleLayout},
+		{title: "Toggle word wrap", hint: wrap, keys: "⌥Z", run: toggleWrap},
+		{title: "Toggle whitespace", hint: whitespace, run: func() {
 			cfg.Update(func(s *Settings) { s.ShowWhitespace = !s.ShowWhitespace })
 		}},
-		{title: "Increase Code Font Size", keys: "⌘+", run: func() { changeFontSize(1) }},
-		{title: "Decrease Code Font Size", keys: "⌘-", run: func() { changeFontSize(-1) }},
-		{title: "Reset Code Font Size", keys: "⌘0", run: func() { changeFontSize(0) }},
-		{title: "Open Config File", run: openConfig},
-		{title: "Refresh Changes", keys: "⌘R", run: w.refresh},
-		{title: "Keyboard Shortcuts", keys: "⇧?", run: func() { w.help = true }},
+		{title: "Increase code font size", keys: "⌘+", run: func() { changeFontSize(1) }},
+		{title: "Decrease code font size", keys: "⌘-", run: func() { changeFontSize(-1) }},
+		{title: "Reset code font size", keys: "⌘0", run: func() { changeFontSize(0) }},
+		{title: "Settings", hint: textSettingsSoon, soon: true},
+		{title: "Open config file", run: openConfig},
+		{title: "Refresh changes", keys: "⌘R", run: w.refresh},
+		{title: "Keyboard shortcuts", keys: "⇧?", run: func() { w.help = true }},
 	}
 }
 
@@ -182,7 +202,9 @@ func (w *window) palette(c *ui.Context) {
 	q := strings.TrimSpace(w.paletteQuery)
 	var cmds []command
 	for _, cmd := range w.commands() {
-		if cmd.run != nil && fuzzyMatch(cmd.title, q) {
+		// A command that is not there yet shows, so that it is no secret:
+		// it is dimmed, and does nothing.
+		if (cmd.run != nil || cmd.soon) && fuzzyMatch(cmd.title, q) {
 			cmds = append(cmds, cmd)
 		}
 	}
@@ -193,7 +215,7 @@ func (w *window) palette(c *ui.Context) {
 		w.paletteRow = 0
 	}
 	run := func(i int) {
-		if i < 0 || i >= len(cmds) {
+		if i < 0 || i >= len(cmds) || cmds[i].soon {
 			return
 		}
 		w.paletteOpen = false
@@ -204,9 +226,11 @@ func (w *window) palette(c *ui.Context) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.12)).Justify(ui.Start).Padding(120, 0, 0, 0)
 		panel.Width(560).MaxHeight(440).Radius(16).Background(pal.surface).Border(1, pal.border).
 			Shadow(0, 20, 60, 0, ui.RGBA(0, 0, 0, 0.28)).Clip().Label("Command bar")
-		ui.Row(c).Padding(10, 14).Gap(10).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
+		var field ui.Element
+		search := ui.Row(c).Padding(4, 10).Gap(10).Radius(8).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
 			ui.Icon(c, iconCommand).FontSize(16).TextColor(t.TextMuted)
 			input := ui.TextInputBase(c, &w.paletteQuery).Placeholder("Type a command…").Label("Command").FontSize(15).Grow(1).AutoFocus()
+			field = input
 			if input.Changed() {
 				w.paletteRow = 0
 			}
@@ -222,26 +246,33 @@ func (w *window) palette(c *ui.Context) {
 				run(w.paletteRow)
 			}
 		})
+		// The field the keys type into takes the review's ring, as every
+		// place they go does.
+		focusRingWhen(search, field.FocusVisible(), pal, 8)
 		w.paletteList.Key = func(i int) any { return cmds[i].title }
 		ui.List(c, &w.paletteList, len(cmds), func(i int) {
 			cmd := cmds[i]
 			item := ui.Row(c).MinHeight(34).Padding(6, 10).Gap(8).Radius(8).Cursor(ui.CursorPointer)
-			if item.Hovered() && w.paletteMoved(item) {
+			if !cmd.soon && item.Hovered() && w.paletteMoved(item) {
 				w.paletteRow = i
 			}
-			if i == w.paletteRow {
+			if i == w.paletteRow && !cmd.soon {
 				item.Background(t.Accent).TextColor(t.AccentText)
 			}
 			if item.Clicked() {
 				run(i)
 			}
 			item.Children(func() {
-				ui.Text(c, cmd.title).FontSize(13).Shrink(0)
+				title := ui.Text(c, cmd.title).FontSize(13).Shrink(0)
+				if cmd.soon {
+					title.TextColor(t.TextMuted)
+				}
 				if cmd.hint != "" {
 					hint := ui.Text(c, cmd.hint).FontSize(12).SingleLine().Shrink(1).MinWidth(0)
-					if i != w.paletteRow {
+					switch {
+					case cmd.soon, i != w.paletteRow:
 						hint.TextColor(t.TextMuted)
-					} else {
+					default:
 						hint.Opacity(0.8)
 					}
 				}
@@ -257,7 +288,7 @@ func (w *window) palette(c *ui.Context) {
 			})
 		}).Padding(6).MaxHeight(380).Children(func() {
 			if len(cmds) == 0 {
-				ui.Text(c, "No matching commands").FontSize(13).TextColor(t.TextMuted).Padding(12)
+				emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconCommand, title: textNoCommands, detail: q})
 			}
 		})
 	})

@@ -44,24 +44,25 @@ func (w *window) pullsView(c *ui.Context) {
 		}
 	})
 	if len(list) == 0 {
-		ui.Column(c).Grow(1).Center().Padding(16).Gap(8).Children(func() {
-			switch {
-			case w.pullsErr != nil:
-				ui.Text(c, errorText(w.pullsErr)).FontSize(12).TextColor(t.TextMuted).TextAlign(ui.Center)
-				if ui.Button(c, "Try Again").Clicked() {
-					w.loadPulls()
-				}
-			case !w.pullsLoaded:
-				ui.Text(c, "Loading pull requests…").FontSize(12).TextColor(t.TextMuted)
-			case q != "":
-				ui.Text(c, "No matching pull requests").FontSize(12).TextColor(t.TextMuted)
-			default:
-				ui.Text(c, "No open pull requests").FontSize(12).TextColor(t.TextMuted)
-			}
+		box := emptyBox{shape: emptySmall, icon: iconPull, title: "No open pull requests", actions: func() {
 			if ui.Button(c, "Open Pull Request…").Clicked() {
 				w.openDialog(dialogPull)
 			}
-		})
+		}}
+		switch {
+		case w.pullsErr != nil:
+			box.title, box.detail = "Unable to list the pull requests", errorText(w.pullsErr)
+			box.actions = func() {
+				if ui.Button(c, "Try Again").Clicked() {
+					w.loadPulls()
+				}
+			}
+		case !w.pullsLoaded:
+			box.title, box.detail = "Loading pull requests…", ""
+		case q != "":
+			box.title, box.detail = textNoPulls, q
+		}
+		emptyState(c, pal, box)
 		return
 	}
 	current := -1
@@ -80,7 +81,7 @@ func (w *window) pullsView(c *ui.Context) {
 	}
 	w.pullsList.Key = func(i int) any { return list[i].Number }
 	w.pullsList.Label = func(i int) string { return list[i].Title }
-	ui.List(c, &w.pullsList, len(list), func(i int) {
+	rows := ui.List(c, &w.pullsList, len(list), func(i int) {
 		focused := w.pullsList.FocusWithin(c)
 		p := list[i]
 		row := ui.Row(c).Gap(8).Padding(6, 8).Radius(6).AlignItems(ui.Start).Role(ui.RoleButton).Label(p.Title)
@@ -129,7 +130,8 @@ func (w *window) pullsView(c *ui.Context) {
 				})
 			})
 		})
-	}).Grow(1).Padding(2, 8).Gap(1).Focusable().FocusRing(false).Label("Pull requests")
+	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label("Pull requests")
+	focusRing(rows, pal, 6)
 	if w.pullsList.Shortcut(c, 0, ui.KeyDown) {
 		open(current + 1)
 	}
