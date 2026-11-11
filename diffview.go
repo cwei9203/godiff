@@ -106,7 +106,7 @@ func (w *window) diffList(c *ui.Context) {
 	// The review is a place the keys go, as the tree and the drawer are: Tab
 	// stops on it before the buttons of its cards.
 	changes := ui.List(c, &w.list, len(w.rows), func(i int) { w.diffRow(c, pal, i, w.list.FocusWithin(c)) }).
-		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Focusable().Label("Changes")
+		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Focusable().Label(msg().ChangesLabel())
 	focusRing(changes, pal, 0)
 
 	// The file at the top follows the scrolling, and the tree with it.
@@ -186,7 +186,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 			g := &w.groups[f.group]
 			svg, accent := groupMark(g)
 			ui.Row(c).Gap(5).Padding(3, 8).Radius(radiusChip).Background(pal.pill).Shrink(1).MinWidth(0).
-				Label("In group " + g.label).Tooltip("Group " + g.label).Children(func() {
+				Label(msg().InGroup(g.label)).Tooltip(msg().GroupTip(g.label)).Children(func() {
 				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)
 				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 			})
@@ -303,9 +303,9 @@ func (w *window) summaryLine(c *ui.Context, pal *palette) {
 	switch {
 	case st == nil:
 	case st.running:
-		what = " · reviewing"
+		what = msg().Reviewing()
 	case st.err != "":
-		what = " · review failed"
+		what = msg().ReviewFailedSuffix()
 	case st.result != nil:
 		a := st.result
 		by := a.Agent
@@ -320,11 +320,11 @@ func (w *window) summaryLine(c *ui.Context, pal *palette) {
 		}
 		what = " · " + by
 	default:
-		what = " · not run"
+		what = msg().NotRun()
 	}
 	b := ui.ButtonBase(c).Height(lineGroup).Padding(0, 12, 0, 10).Gap(8).Margin(gapBlock, 0, 0).Radius(radiusCard).
-		Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Label("AI Review" + what).
-		Tooltip("Show the review of every change")
+		Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Label(textAIReview() + what).
+		Tooltip(msg().ReviewEveryChange())
 	if b.Hovered() {
 		b.Background(pal.surfaceHover)
 	}
@@ -333,7 +333,7 @@ func (w *window) summaryLine(c *ui.Context, pal *palette) {
 	}
 	b.Children(func() {
 		ui.Icon(c, iconSparkle).FontSize(13).TextColor(t.Accent).Shrink(0)
-		ui.Text(c, "AI Review").FontSize(13).FontWeight(600).SingleLine().Shrink(0)
+		ui.Text(c, textAIReview()).FontSize(13).FontWeight(600).SingleLine().Shrink(0)
 		ui.Text(c, what).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 		ui.Spacer(c)
 		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(t.TextMuted).Shrink(0)
@@ -404,7 +404,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 			g := &w.groups[f.group]
 			svg, accent := groupMark(g)
 			crumb := ui.ButtonBase(c).Height(22).Padding(0, 7, 0, 6).Gap(5).Radius(6).Shrink(0).
-				Label("Group " + g.label).Tooltip("Go to the group " + g.label)
+				Label(msg().GroupTip(g.label)).Tooltip(msg().GoToGroup(g.label))
 			if crumb.Hovered() {
 				crumb.Background(pal.hover)
 			}
@@ -449,7 +449,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 					ui.Span{Text: f.Name(), Color: pathColor, Weight: 600},
 				).Font(w.codeFont()).FontSize(13).SingleLine()
 				if f.OldPath != f.Path {
-					ui.Text(c, "from "+f.OldPath).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).SingleLine()
+					ui.Text(c, msg().RenamedFrom(f.OldPath)).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).SingleLine()
 				}
 			})
 		})
@@ -461,11 +461,11 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		}
 		if cp.Clicked() {
 			c.WriteClipboard(f.Path)
-			c.Toast("Copied " + f.Name())
+			c.Toast(msg().CopiedFile(f.Name()))
 		}
 		open := iconButton(c, iconOpen, msg().OpenInEditor()).Disabled(f.Status == diff.Deleted || f.Directory)
 		if f.Status == diff.Deleted {
-			open.Tooltip("Deleted files cannot be opened")
+			open.Tooltip(msg().DeletedCannotOpen())
 		}
 		if open.Clicked() {
 			w.openInEditor(f.Path, firstLine(f))
@@ -478,12 +478,12 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 			})
 		}
 		if f.Generated {
-			ui.Text(c, "Generated").FontSize(11).FontWeight(600).Padding(4, 9).Radius(radiusChip).
+			ui.Text(c, msg().GeneratedBadge()).FontSize(11).FontWeight(600).Padding(4, 9).Radius(radiusChip).
 				Background(pal.ref.Alpha(0.15)).TextColor(pal.ref).Shrink(0)
 		}
 		if n := w.openThreads(f.Path); n > 0 {
 			ui.Row(c).Gap(4).Padding(4, 9).Radius(radiusChip).Background(pal.pill).TextColor(t.TextMuted).Shrink(0).
-				Tooltip(plural(n, "unresolved thread")).Children(func() {
+				Tooltip(msg().UnresolvedThreads(n)).Children(func() {
 				ui.Icon(c, iconComment).FontSize(12)
 				ui.Text(c, itoa(n)).Font(w.codeFont()).FontSize(12).FontWeight(600)
 			})
@@ -582,22 +582,22 @@ func (w *window) gapRow(c *ui.Context, pal *palette, f *fileState, r *row) {
 			}
 			switch {
 			case n <= expandStep && first:
-				button(iconArrowUp, "Show the lines above", all)
+				button(iconArrowUp, msg().ShowLinesAbove(), all)
 			case n <= expandStep && last:
-				button(iconArrowDown, "Show the lines below", all)
+				button(iconArrowDown, msg().ShowLinesBelow(), all)
 			case n <= expandStep:
-				button(iconExpand, "Show the lines", all)
+				button(iconExpand, msg().ShowLines(), all)
 			default:
 				if !first {
-					button(iconArrowDown, fmt.Sprintf("Show %d more lines", expandStep), func() { expand(expandStep, 0) })
+					button(iconArrowDown, msg().ShowMoreLines(expandStep), func() { expand(expandStep, 0) })
 				}
 				if !last {
-					button(iconArrowUp, fmt.Sprintf("Show %d more lines", expandStep), func() { expand(0, expandStep) })
+					button(iconArrowUp, msg().ShowMoreLines(expandStep), func() { expand(0, expandStep) })
 				}
 			}
 		})
 		label := ui.ButtonBase(c).Padding(0, 12).Height(30).FocusRing(false).Disabled(!can).Children(func() {
-			text := fmt.Sprintf("%d unmodified lines", n)
+			text := msg().UnmodifiedLines(n)
 			if n == 1 {
 				text = "1 unmodified line"
 			}
@@ -771,10 +771,10 @@ func (w *window) lineCell(c *ui.Context, pal *palette, f *fileState, r *row, s l
 		w.addComment(f.Path, sd, s.num, s.num)
 	}
 	cell.ContextMenu(func(m *ui.Menu) {
-		if m.Item(fmt.Sprintf("Comment on Line %d", s.num)).Chosen() {
+		if m.Item(msg().CommentOnLineNumber(s.num)).Chosen() {
 			w.addComment(f.Path, sd, s.num, s.num)
 		}
-		if m.Item("Copy Line").Chosen() {
+		if m.Item(msg().CopyLine()).Chosen() {
 			c.WriteClipboard(s.text)
 		}
 		m.Separator()
@@ -782,10 +782,10 @@ func (w *window) lineCell(c *ui.Context, pal *palette, f *fileState, r *row, s l
 		if sd == sideOld {
 			line = 0
 		}
-		if m.Item("Open in Editor").Disabled(f.Status == diff.Deleted).Chosen() {
+		if m.Item(msg().OpenInEditor()).Disabled(f.Status == diff.Deleted).Chosen() {
 			w.openInEditor(f.Path, line)
 		}
-		if m.Item("Copy Path").Chosen() {
+		if m.Item(msg().CopyPath()).Chosen() {
 			c.WriteClipboard(f.Path)
 		}
 	})
@@ -889,12 +889,12 @@ func (w *window) commentRow(c *ui.Context, pal *palette, f *fileState, cm *comme
 				ui.Text(c, w.userName()).FontSize(12).Bold()
 				ui.Text(c, cm.label()).FontSize(11).TextColor(t.TextMuted)
 				ui.Spacer(c)
-				if iconButton(c, iconClose, "Delete comment").Size(24, 24).Clicked() {
+				if iconButton(c, iconClose, msg().DeleteComment()).Size(24, 24).Clicked() {
 					w.deleteComment(cm)
 				}
 			})
-			area := ui.TextAreaBase(c, &cm.text).Placeholder("Write a review comment…").MinHeight(64).Padding(8, 10).
-				FontSize(13).Label("Review comment")
+			area := ui.TextAreaBase(c, &cm.text).Placeholder(msg().WriteReviewComment()).MinHeight(64).Padding(8, 10).
+				FontSize(13).Label(msg().ReviewCommentLabel())
 			if cm.focus {
 				area.Focus()
 				cm.focus = false
@@ -937,7 +937,7 @@ func (w *window) commentRow(c *ui.Context, pal *palette, f *fileState, cm *comme
 // reads as the window opens.
 func (w *window) userName() string {
 	if w.user == "" {
-		return "Git user"
+		return msg().GitUser()
 	}
 	return w.user
 }
@@ -949,7 +949,7 @@ func (w *window) imageRow(c *ui.Context, pal *palette, f *fileState) {
 	pane := func(label string, img *ui.Bitmap, size int, bar ui.Color) {
 		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Padding(14).Gap(8).AlignItems(ui.Center).Children(func() {
 			if img == nil {
-				ui.Text(c, "No "+strings.ToLower(label)+" image").FontSize(12).TextColor(t.TextMuted)
+				ui.Text(c, msg().NoImage(strings.ToLower(label))).FontSize(12).TextColor(t.TextMuted)
 				return
 			}
 			iw, ih := img.Size()
@@ -966,13 +966,13 @@ func (w *window) imageRow(c *ui.Context, pal *palette, f *fileState) {
 	}
 	w.card(c, pal).AlignItems(ui.Stretch).Children(func() {
 		if f.Status != diff.Added && f.Status != diff.Untracked {
-			pane("Old", f.oldImage, f.oldSize, pal.delBar)
+			pane(msg().OldImage(), f.oldImage, f.oldSize, pal.delBar)
 		}
 		if f.Status != diff.Deleted && f.Status != diff.Added && f.Status != diff.Untracked {
 			ui.Box(c).Width(1).Background(pal.border)
 		}
 		if f.Status != diff.Deleted {
-			pane("New", f.newImage, f.newSize, pal.addBar)
+			pane(msg().NewImage(), f.newImage, f.newSize, pal.addBar)
 		}
 	})
 }

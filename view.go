@@ -71,7 +71,7 @@ func (w *window) view(c *ui.Context) {
 	w.reviewDialog(c)
 	if w.discarding != nil {
 		open := true
-		if choice := ui.AlertDialog(c, &open, "Discard this review comment?", "Its text will be lost.", "Cancel", "Discard"); choice == 1 {
+		if choice := ui.AlertDialog(c, &open, msg().DiscardCommentTitle(), msg().DiscardCommentDetail(), msg().Cancel(), msg().DiscardAction()); choice == 1 {
 			w.deleteComment(w.discarding)
 			w.discarding = nil
 		} else if !open {
@@ -127,14 +127,14 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 		// another one: the folders of late, or one to pick.
 		w.repoSwitcher(c, pal)
 		if w.branch != "" && w.source.kind != sourcePull {
-			chip(c, pal, iconBranch, w.branch, t.TextMuted).Tooltip("Branch " + w.branch)
+			chip(c, pal, iconBranch, w.branch, t.TextMuted).Tooltip(msg().BranchChip(w.branch))
 		}
 		switch w.source.kind {
 		case sourceCommit:
 			label := shortHash(w.source.ref)
 			chip(c, pal, iconCommit, label, pal.ref).Font(w.codeFont()).Tooltip(w.source.ref)
 		case sourceBranch:
-			chip(c, pal, iconBranch, "Local + branch vs "+w.source.ref, pal.ref)
+			chip(c, pal, iconBranch, msg().LocalBranch(w.source.ref), pal.ref)
 		case sourcePull:
 			repo, n := w.source.pull()
 			tip := repo.String()
@@ -147,7 +147,7 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 			}
 		}
 		if w.loading && len(w.files) > 0 {
-			ui.Spinner(c).Label("Loading").Size(14, 14)
+			ui.Spinner(c).Label(msg().Loading()).Size(14, 14)
 		}
 		ui.Spacer(c)
 		if !w.commitOpen {
@@ -286,13 +286,13 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 		ui.Row(c).Justify(ui.Center).Padding(8, 12, 0).Children(func() {
 			ui.Row(c).Gap(6).Padding(5, 6, 5, 12).Radius(16).Background(pal.viewed.Alpha(0.1).Over(pal.codeBg)).
 				Border(1, pal.viewed.Alpha(0.2)).Children(func() {
-				what := "Local changes detected,"
+				what := msg().LocalChangesDetected()
 				if w.source.kind == sourcePull {
-					what = "New commits were pushed,"
+					what = msg().NewCommitsPushed()
 				}
 				ui.Text(c, what).FontSize(13).FontWeight(600).TextColor(pal.viewed)
 				ref := ui.ButtonBase(c).FocusRing(true).Children(func() {
-					ui.Text(c, "refresh to see them.").FontSize(13).FontWeight(600).Underline().TextColor(pal.viewed)
+					ui.Text(c, msg().RefreshToSeeThem()).FontSize(13).FontWeight(600).Underline().TextColor(pal.viewed)
 				})
 				if ref.Clicked() {
 					w.refresh()
@@ -309,7 +309,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 	if len(w.files) > 0 && w.loadErr == nil && !groupsInSidebar {
 		w.groupChips(c, pal)
 	}
-	find := ui.FindBar(c, &w.finding, &w.query, len(w.matches), &w.match).Label("Find in diffs")
+	find := ui.FindBar(c, &w.finding, &w.query, len(w.matches), &w.match).Label(textFind())
 	if find.FocusWithin() {
 		w.typing = true
 	}
@@ -342,31 +342,31 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 	}
 	switch {
 	case w.loadErr != nil && w.source.kind == sourcePull:
-		emptyState(c, pal, emptyBox{title: "Unable to open the pull request", detail: errorText(w.loadErr), mono: true,
+		emptyState(c, pal, emptyBox{title: msg().UnableToOpenPull(), detail: errorText(w.loadErr), mono: true,
 			actions: func() {
-				if ui.Button(c, "Try Again").Clicked() {
+				if ui.Button(c, msg().TryAgain()).Clicked() {
 					w.load()
 				}
 			}})
 	case w.loadErr != nil:
-		emptyState(c, pal, emptyBox{title: "Unable to read repository", detail: errorText(w.loadErr), mono: true})
+		emptyState(c, pal, emptyBox{title: msg().UnableToReadRepo(), detail: errorText(w.loadErr), mono: true})
 	case slow:
 		thinking(c, w.loadStatus)
 	case waiting && len(w.files) == 0:
 		ui.Box(c).Grow(1)
 	case len(w.files) == 0:
-		title, detail := textNoChanges, abbreviateHome(w.repo.Root)
+		title, detail := textNoChanges(), abbreviateHome(w.repo.Root)
 		switch w.source.kind {
 		case sourceCommit:
-			title, detail = textNoCommits, shortHash(w.source.ref)
+			title, detail = textNoCommits(), shortHash(w.source.ref)
 		case sourceBranch:
-			title, detail = textNoBranch, w.source.ref
+			title, detail = textNoBranch(), w.source.ref
 		case sourcePull:
-			title, detail = textNoPullFiles, w.source.ref
+			title, detail = textNoPullFiles(), w.source.ref
 		}
 		emptyState(c, pal, emptyBox{title: title, detail: detail, mono: true, actions: func() {
 			if w.source.kind == sourceWorkingTree && len(w.history) > 0 {
-				if ui.Button(c, "Show History").Clicked() {
+				if ui.Button(c, msg().ShowHistory()).Clicked() {
 					w.tab, w.sidebarShown = 1, true
 				}
 			}
@@ -382,7 +382,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 				title, detail = textNoMatchDiffs(), strings.TrimSpace(w.query)
 			}
 			if detail == "" {
-				detail = "Whitespace-only changes hidden"
+				detail = msg().WhitespaceHidden()
 			}
 			emptyState(c, pal, emptyBox{title: title, detail: detail, mono: w.searching()})
 			return false
@@ -402,7 +402,7 @@ func (w *window) commitMessage(c *ui.Context, pal *palette) ui.Element {
 			ui.Avatar(c, cm.Author, nil).Size(26, 26)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
 				ui.Text(c, cm.Subject).FontSize(14).Bold().SingleLine().Selectable()
-				ui.Textf(c, "%s committed %s", cm.Author, relativeTime(w.now, cm.Time)).FontSize(11).TextColor(t.TextMuted).
+				ui.Text(c, msg().CommittedBy(cm.Author, relativeTime(w.now, cm.Time))).FontSize(11).TextColor(t.TextMuted).
 					Tooltip(cm.Email + " · " + cm.Time.Format("Mon Jan 2 15:04:05 2006"))
 			})
 			ui.Text(c, shortHash(cm.Hash)).Font(w.codeFont()).FontSize(12).TextColor(pal.ref).Selectable()
@@ -421,7 +421,7 @@ const thinkingDelay = 200 * time.Millisecond
 func thinking(c *ui.Context, status string) {
 	t := c.Theme()
 	if status == "" {
-		status = "Thinking…"
+		status = msg().Thinking()
 	}
 	ui.Column(c).Grow(1).Center().Children(func() {
 		label := ui.Text(c, status).Italic().FontSize(13).Font("SF Mono, Menlo, monospace").TextColor(t.TextMuted)
@@ -512,90 +512,127 @@ type welcome struct {
 	focused bool
 }
 
+// openFromWelcome opens a repository of the recent ones. It is a variable so
+// that a test can watch the key that opens one without a window.
+var openFromWelcome func(string)
+
+func init() { openFromWelcome = openRecent }
+
 func (v *welcome) view(c *ui.Context) {
 	t := c.Theme()
 	pal := paletteFor(t)
 	c.Root().Background(pal.appBg)
 	bar := c.TitleBar()
 	ui.Box(c).Height(max(bar.Height, 40)).DragWindow().FillWidth()
-	title := "Godiff"
-	detail := "Review the changes of a repository, a commit, a branch, or a pull request."
+	title, detail := msg().WelcomeTitle(), msg().WelcomeSubtitle()
 	mono := false
 	if v.err != nil && !errors.Is(v.err, git.ErrNotRepository) {
-		title, detail, mono = "Unable to read repository", errorText(v.err), true
+		title, detail, mono = msg().UnableToReadRepo(), errorText(v.err), true
 	} else if v.err != nil {
 		title, detail = textNoRepo(), textNoRepoDetail()
 	}
 	recent := state.recent()
-	ui.Column(c).Grow(1).Center().Padding(24).Children(func() {
-		ui.Column(c).Width(560).Gap(12).Children(func() {
-			// A repository again, or what kept one from opening: the same
-			// voice every empty surface of the app has.
-			head := emptyBox{shape: emptyBare, icon: iconFileDiff, title: title, detail: detail, mono: mono}
-			head.actions = func() {
-				open := ui.PrimaryButton(c, "Open Folder…")
-				if open.Clicked() {
-					openFolder()
-				}
+	// The column stands at the top, 48 below the title bar, so that the
+	// window reads as a page rather than as a panel floating in the middle.
+	// Only a window too short for it scrolls.
+	ui.Scroll(c).Grow(1).Children(func() {
+		ui.Column(c).AlignItems(ui.Center).Padding(48, 24, 32).Children(func() {
+			ui.Column(c).Width(520).AlignItems(ui.Start).Gap(18).Children(func() {
+				ui.Row(c).Gap(14).AlignItems(ui.Center).Children(func() {
+					if appIcon != nil {
+						ui.Image(c, appIcon).Size(44, 44).Radius(10)
+					} else {
+						ui.Icon(c, iconFileDiff).FontSize(36).TextColor(t.Accent)
+					}
+					ui.Column(c).Gap(2).Shrink(1).MinWidth(0).Children(func() {
+						ui.Text(c, title).FontSize(20).FontWeight(600).SingleLine()
+						description := ui.Text(c, detail).FontSize(13).TextColor(t.TextMuted).MaxLines(2)
+						if mono {
+							description.Font("SF Mono, Menlo, monospace").Selectable().MaxLines(3)
+						}
+					})
+				})
+				// With no repository opened yet, the card holds the one
+				// button: the empty state is a way in, not a line of text
+				// beside one.
 				if len(recent) == 0 {
-					open.AutoFocus()
+					ui.Column(c).FillWidth().Padding(20).Gap(12).Radius(radiusCard).
+						Background(pal.surface).Border(1, pal.border).Children(func() {
+						ui.Text(c, msg().WelcomeEmpty()).FontSize(13).TextColor(t.TextMuted)
+						open := ui.PrimaryButton(c, msg().OpenFolder()).Height(32).AlignSelf(ui.Start)
+						if open.Clicked() {
+							openFolder()
+						}
+						open.AutoFocus()
+					})
+				} else {
+					open := ui.PrimaryButton(c, msg().OpenFolder()).Height(32)
+					if open.Clicked() {
+						openFolder()
+					}
+					ui.Text(c, msg().Recent()).FontSize(11).FontWeight(700).TextColor(t.TextMuted)
+					v.list.Key = func(i int) any { return recent[i] }
+					v.list.Label = func(i int) string { return filepath.Base(recent[i]) }
+					ui.Column(c).FillWidth().Radius(radiusCard).Background(pal.surface).
+						Border(1, pal.border).Clip().Children(func() {
+						list := ui.List(c, &v.list, len(recent), func(i int) {
+							v.row(c, pal, i, recent[i], i == len(recent)-1)
+						}).Focusable().Label(msg().Recent())
+						focusRingWhen(list, v.list.FocusWithin(c), pal, radiusCard)
+						if !v.focused && v.list.Focus(c) {
+							v.focused = true
+						}
+						if v.list.Shortcut(c, 0, ui.KeyDown) {
+							v.choice = min(v.choice+1, len(recent)-1)
+							v.list.ScrollIntoView(v.choice)
+						}
+						if v.list.Shortcut(c, 0, ui.KeyUp) {
+							v.choice = max(v.choice-1, 0)
+							v.list.ScrollIntoView(v.choice)
+						}
+						if v.choice >= 0 && v.list.Shortcut(c, 0, ui.KeyEnter) {
+							go openFromWelcome(recent[v.choice])
+						}
+					})
 				}
-			}
-			ui.Column(c).AlignItems(ui.Start).Children(func() { emptyWords(c, pal, head) })
-			if len(recent) == 0 {
-				ui.Text(c, "No repositories opened yet — open a folder, or run godiff inside one.").
-					FontSize(12).TextColor(t.TextMuted).MaxWidth(500).Padding(4, 0, 0)
-				return
-			}
-			ui.Text(c, "Recent").FontSize(11).FontWeight(700).TextColor(t.TextMuted).Padding(8, 0, 0)
-			v.list.Key = func(i int) any { return recent[i] }
-			v.list.Label = func(i int) string { return filepath.Base(recent[i]) }
-			list := ui.List(c, &v.list, len(recent), func(i int) {
-				v.row(c, pal, i, recent[i])
-			}).MaxHeight(240).Gap(2).Focusable().Label("Recent repositories")
-			focusRing(list, pal, 6)
-			if !v.focused && v.list.Focus(c) {
-				v.focused = true
-			}
-			if v.list.Shortcut(c, 0, ui.KeyDown) {
-				v.choice = min(v.choice+1, len(recent)-1)
-				v.list.ScrollIntoView(v.choice)
-			}
-			if v.list.Shortcut(c, 0, ui.KeyUp) {
-				v.choice = max(v.choice-1, 0)
-				v.list.ScrollIntoView(v.choice)
-			}
-			if v.choice >= 0 && v.list.Shortcut(c, 0, ui.KeyEnter) {
-				go openRecent(recent[v.choice])
-			}
+				ui.Row(c).Gap(4).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, msg().WelcomeRunBefore()).FontSize(11).TextColor(t.TextMuted)
+					ui.Text(c, "godiff").Font("SF Mono, Menlo, monospace").FontSize(11).TextColor(t.TextMuted)
+					ui.Text(c, msg().WelcomeRunAfter()).FontSize(11).TextColor(t.TextMuted)
+				})
+			})
 		})
 	})
 }
 
 // row is a repository of the recent ones: its name, where it is, and an
-// arrow into it.
-func (v *welcome) row(c *ui.Context, pal *palette, i int, root string) {
+// arrow into it. last is the row the card's bottom edge closes.
+func (v *welcome) row(c *ui.Context, pal *palette, i int, root string, last bool) {
 	t := c.Theme()
 	chosen := i == v.choice
 	focused := v.list.FocusWithin(c)
-	row := ui.Row(c).MinHeight(42).Padding(6, 10).Gap(10).Radius(8).MinWidth(0).Cursor(ui.CursorPointer)
+	row := ui.Row(c).MinHeight(50).Padding(9, 14).Gap(10).MinWidth(0).Cursor(ui.CursorPointer).
+		Label(filepath.Base(root) + " " + filepath.Dir(root))
 	color, muted := t.Text, t.TextMuted
+	if !last {
+		row.BorderWidth(0, 0, 1, 0).BorderColor(pal.border)
+	}
 	switch {
 	case chosen && focused:
 		row.Background(pal.selection)
 	case chosen:
 		row.Background(pal.surfaceHover)
 	case row.Hovered():
-		row.Background(pal.hover)
+		row.Background(pal.surfaceHover)
 	}
 	if row.Clicked() {
 		v.choice = i
-		go openRecent(root)
+		go openFromWelcome(root)
 	}
 	row.TextColor(color).Children(func() {
 		ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
-			ui.Text(c, filepath.Base(root)).FontSize(13).FontWeight(600).SingleLine().Tooltip(root)
-			ui.Text(c, abbreviateHome(filepath.Dir(root))).FontSize(11).SingleLine().TextColor(muted)
+			ui.Text(c, filepath.Base(root)).FontSize(13).FontWeight(600).SingleLine()
+			ui.Text(c, abbreviateHome(filepath.Dir(root))).FontSize(11).SingleLine().TextColor(muted).Tooltip(root)
 		})
 		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(muted).Shrink(0)
 	})
@@ -622,16 +659,16 @@ func (w *window) repoSwitcher(c *ui.Context, pal *palette) {
 			}
 		}
 		if others == 0 {
-			m.Item("No other folder opened yet").Disabled(true)
+			m.Item(msg().NoOtherFolder()).Disabled(true)
 		}
 		m.Separator()
-		if m.Item("Open Folder…").Chosen() {
+		if m.Item(msg().OpenFolder()).Chosen() {
 			openFolder()
 		}
-		if m.Item("Reveal in Finder").Disabled(runtime.GOOS != "darwin").Chosen() {
+		if m.Item(msg().RevealInFinder()).Disabled(runtime.GOOS != "darwin").Chosen() {
 			revealInFinder(root)
 		}
-		if m.Item("Close Repository").Chosen() {
+		if m.Item(msg().CloseRepository()).Chosen() {
 			closeRepository(w)
 		}
 	}).Height(38).Label(textRepo())

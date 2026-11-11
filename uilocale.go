@@ -49,12 +49,19 @@ func languageChanged() {
 		mygo.App.SetMenu(buildMenu())
 	}
 	windowsMu.Lock()
-	defer windowsMu.Unlock()
 	for _, w := range windows {
 		if w.win != nil {
 			w.win.Update(func() { w.rowsDirty = true })
 		}
 	}
+	windowsMu.Unlock()
+	// The welcome page is a window of its own, outside the review's list:
+	// it says its words again too.
+	welcomeMu.Lock()
+	if welcomeWin != nil && !welcomeWin.IsDestroyed() {
+		welcomeWin.Update(func() {})
+	}
+	welcomeMu.Unlock()
 	retitleSettings()
 }
 

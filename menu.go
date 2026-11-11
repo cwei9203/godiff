@@ -56,7 +56,7 @@ var summaryLocales = []string{"", "en", "zh-CN", "ja", "de", "fr"}
 func summaryLocaleLabel(tag string) string {
 	switch tag {
 	case "":
-		return "The Reader's Language"
+		return msg().ReaderLanguage()
 	case "en":
 		return "English"
 	case "zh-CN":
@@ -95,26 +95,26 @@ func buildMenu() *mygo.Menu {
 			mygo.Separator(),
 			{Role: mygo.RoleQuit},
 		}},
-		{Label: "File", Submenu: []*mygo.MenuItem{
-			{Label: "Open Folder…", Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { openFolder() }},
-			{Label: "Open Recent", Submenu: recentMenuItems()},
-			{Label: "Switch Repository…", Click: func(*mygo.MenuItem, *mygo.Window) { go showWelcome(nil) }},
-			{Label: "Open Commit…", Accelerator: "CmdOrCtrl+Shift+C", Click: inWindow(func(w *window) { w.openDialog(dialogCommit) })},
-			{Label: "Open Branch…", Click: inWindow(func(w *window) { w.openDialog(dialogBranch) })},
-			{Label: "Open Pull Request…", Click: inWindow(func(w *window) { w.openDialog(dialogPull) })},
+		{Label: msg().FileMenu(), Submenu: []*mygo.MenuItem{
+			{Label: msg().OpenFolder(), Accelerator: "CmdOrCtrl+O", Click: func(*mygo.MenuItem, *mygo.Window) { openFolder() }},
+			{Label: msg().OpenRecentMenu(), Submenu: recentMenuItems()},
+			{Label: msg().SwitchRepository(), Click: func(*mygo.MenuItem, *mygo.Window) { go showWelcome(nil) }},
+			{Label: msg().OpenCommitMenu(), Accelerator: "CmdOrCtrl+Shift+C", Click: inWindow(func(w *window) { w.openDialog(dialogCommit) })},
+			{Label: msg().OpenBranchMenu(), Click: inWindow(func(w *window) { w.openDialog(dialogBranch) })},
+			{Label: msg().OpenPullMenu(), Click: inWindow(func(w *window) { w.openDialog(dialogPull) })},
 			mygo.Separator(),
-			{Label: "Commit…", Accelerator: "CmdOrCtrl+Shift+Enter", Click: inWindow(func(w *window) {
+			{Label: msg().CommitMenu(), Accelerator: "CmdOrCtrl+Shift+Enter", Click: inWindow(func(w *window) {
 				if w.source.kind == sourceWorkingTree && !w.commitOpen && len(w.files) > 0 {
 					w.toggleCommit()
 				}
 			})},
 			mygo.Separator(),
-			{Label: "Open File in Editor", Accelerator: "CmdOrCtrl+Shift+O", Click: inWindow(func(w *window) { w.openCurrent() })},
+			{Label: msg().OpenFileInEditor(), Accelerator: "CmdOrCtrl+Shift+O", Click: inWindow(func(w *window) { w.openCurrent() })},
 			mygo.Separator(),
-			{Label: "Close Repository", Accelerator: "CmdOrCtrl+Shift+W", Click: inWindow(func(w *window) { closeRepository(w) })},
+			{Label: msg().CloseRepository(), Accelerator: "CmdOrCtrl+Shift+W", Click: inWindow(func(w *window) { closeRepository(w) })},
 			{Role: mygo.RoleClose},
 		}},
-		{Label: "Edit", Submenu: []*mygo.MenuItem{
+		{Label: msg().EditMenu(), Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleUndo},
 			{Role: mygo.RoleRedo},
 			mygo.Separator(),
@@ -123,19 +123,19 @@ func buildMenu() *mygo.Menu {
 			{Role: mygo.RolePaste},
 			{Role: mygo.RoleSelectAll},
 			mygo.Separator(),
-			{Label: "Find in Diffs", Accelerator: "CmdOrCtrl+F", Click: inWindow(func(w *window) { w.finding = true })},
-			{Label: "Filter Files", Accelerator: "CmdOrCtrl+P", Click: inWindow(func(w *window) { w.focusFilter() })},
+			{Label: msg().FindInDiffsMenu(), Accelerator: "CmdOrCtrl+F", Click: inWindow(func(w *window) { w.finding = true })},
+			{Label: msg().FilterFilesMenu(), Accelerator: "CmdOrCtrl+P", Click: inWindow(func(w *window) { w.focusFilter() })},
 			mygo.Separator(),
-			{Label: "Copy Review Comments", Accelerator: "CmdOrCtrl+Shift+M", Click: inWindow(func(w *window) { w.copyComments() })},
+			{Label: msg().CopyReviewCommentsMenu(), Accelerator: "CmdOrCtrl+Shift+M", Click: inWindow(func(w *window) { w.copyComments() })},
 		}},
-		{Label: "View", Submenu: []*mygo.MenuItem{
-			{Label: "Command Bar…", Accelerator: "CmdOrCtrl+K", Click: inWindow(func(w *window) { w.paletteOpen = !w.paletteOpen })},
-			{Label: "Toggle Sidebar", Accelerator: "CmdOrCtrl+Shift+B", Click: inWindow(func(w *window) { w.toggleSidebar() })},
-			{Label: "Files", Accelerator: "CmdOrCtrl+1", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = 0, true })},
-			{Label: "History", Accelerator: "CmdOrCtrl+2", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = 1, true })},
-			{Label: "Pull Requests", Accelerator: "CmdOrCtrl+3", Click: inWindow(func(w *window) { w.showPulls() })},
+		{Label: msg().ViewMenu(), Submenu: []*mygo.MenuItem{
+			{Label: msg().CommandBarMenu(), Accelerator: "CmdOrCtrl+K", Click: inWindow(func(w *window) { w.paletteOpen = !w.paletteOpen })},
+			{Label: msg().ToggleSidebarMenu(), Accelerator: "CmdOrCtrl+Shift+B", Click: inWindow(func(w *window) { w.toggleSidebar() })},
+			{Label: msg().FilesTabMenu(), Accelerator: "CmdOrCtrl+1", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = 0, true })},
+			{Label: msg().HistoryTabMenu(), Accelerator: "CmdOrCtrl+2", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = 1, true })},
+			{Label: msg().PullRequestsTabMenu(), Accelerator: "CmdOrCtrl+3", Click: inWindow(func(w *window) { w.showPulls() })},
 			mygo.Separator(),
-			{Label: "Review with AI", Accelerator: "CmdOrCtrl+Shift+I", Click: inWindow(func(w *window) { w.reviewWithAI() })},
+			{Label: textReviewWithAI(), Accelerator: "CmdOrCtrl+Shift+I", Click: inWindow(func(w *window) { w.reviewWithAI() })},
 			{Label: textGroup(), Submenu: []*mygo.MenuItem{
 				{Label: textNoGroup(), Click: inWindow(func(w *window) { w.chooseGrouping(groupNone) })},
 				{Label: textByKind(), Click: inWindow(func(w *window) { w.chooseGrouping(groupKind) })},
@@ -147,8 +147,8 @@ func buildMenu() *mygo.Menu {
 				{ID: "fileview-stack", Label: textStack(), Type: mygo.MenuItemRadio, Checked: s.FileView == fileViewStack,
 					Click: setting(func(s *Settings) { s.FileView = fileViewStack })},
 			}},
-			{Label: "AI Agent", Submenu: agentMenuItems(s)},
-			{Label: "AI Review", Submenu: reviewMenuItems(s)},
+			{Label: msg().AiAgentMenu(), Submenu: agentMenuItems(s)},
+			{Label: msg().AiReviewMenu(), Submenu: reviewMenuItems(s)},
 			mygo.Separator(),
 			{Label: msg().DiffMenu(), Submenu: []*mygo.MenuItem{
 				{ID: "split", Label: textSplit(), Type: mygo.MenuItemRadio, Checked: s.DiffStyle == "split", Click: func(*mygo.MenuItem, *mygo.Window) {
@@ -163,16 +163,16 @@ func buildMenu() *mygo.Menu {
 					cfg.Update(func(s *Settings) { s.ShowWhitespace = !s.ShowWhitespace })
 				}},
 				mygo.Separator(),
-				{Label: "Collapse All Files", Click: inWindow(func(w *window) { w.setAllCollapsed(true) })},
-				{Label: "Expand All Files", Click: inWindow(func(w *window) { w.setAllCollapsed(false) })},
+				{Label: msg().CollapseAllFilesMenu(), Click: inWindow(func(w *window) { w.setAllCollapsed(true) })},
+				{Label: msg().ExpandAllFilesMenu(), Click: inWindow(func(w *window) { w.setAllCollapsed(false) })},
 			}},
-			{Label: "Font Size", Submenu: []*mygo.MenuItem{
-				{Label: "Bigger", Accelerator: "CmdOrCtrl+=", Click: func(*mygo.MenuItem, *mygo.Window) { changeFontSize(1) }},
-				{Label: "Smaller", Accelerator: "CmdOrCtrl+-", Click: func(*mygo.MenuItem, *mygo.Window) { changeFontSize(-1) }},
-				{Label: "Actual Size", Accelerator: "CmdOrCtrl+0", Click: func(*mygo.MenuItem, *mygo.Window) { changeFontSize(0) }},
+			{Label: msg().FontSizeMenu(), Submenu: []*mygo.MenuItem{
+				{Label: msg().BiggerText(), Accelerator: "CmdOrCtrl+=", Click: func(*mygo.MenuItem, *mygo.Window) { changeFontSize(1) }},
+				{Label: msg().SmallerText(), Accelerator: "CmdOrCtrl+-", Click: func(*mygo.MenuItem, *mygo.Window) { changeFontSize(-1) }},
+				{Label: msg().ActualSizeText(), Accelerator: "CmdOrCtrl+0", Click: func(*mygo.MenuItem, *mygo.Window) { changeFontSize(0) }},
 			}},
-			{Label: "Comments", Submenu: []*mygo.MenuItem{
-				{ID: "copyOnClose", Label: "Copy Comments on Close", Type: mygo.MenuItemCheckbox, Checked: s.CopyCommentsOnClose, Click: func(*mygo.MenuItem, *mygo.Window) {
+			{Label: msg().CommentsMenu(), Submenu: []*mygo.MenuItem{
+				{ID: "copyOnClose", Label: msg().CopyCommentsOnClose(), Type: mygo.MenuItemCheckbox, Checked: s.CopyCommentsOnClose, Click: func(*mygo.MenuItem, *mygo.Window) {
 					cfg.Update(func(s *Settings) { s.CopyCommentsOnClose = !s.CopyCommentsOnClose })
 				}},
 			}},
@@ -185,13 +185,13 @@ func buildMenu() *mygo.Menu {
 			mygo.Separator(),
 			{ID: "settings-view", Label: msg().SettingsMenuItem(), Click: func(*mygo.MenuItem, *mygo.Window) { openSettings() }},
 			mygo.Separator(),
-			{Label: "Refresh Changes", Accelerator: "CmdOrCtrl+R", Click: inWindow(func(w *window) { w.refresh() })},
+			{Label: msg().RefreshChangesMenu(), Accelerator: "CmdOrCtrl+R", Click: inWindow(func(w *window) { w.refresh() })},
 			mygo.Separator(),
 			{Role: mygo.RoleToggleFullScreen},
 		}},
 		{Role: mygo.RoleWindowMenu},
 		{Role: mygo.RoleHelp, Submenu: []*mygo.MenuItem{
-			{Label: "Keyboard Shortcuts", Click: inWindow(func(w *window) { w.help = true })},
+			{Label: msg().KeyboardShortcuts(), Click: inWindow(func(w *window) { w.help = true })},
 		}},
 	})
 	return appMenu
@@ -249,12 +249,12 @@ func applyTheme(s Settings) {
 // openFolder asks for a repository and opens it.
 func openFolder() {
 	go func() {
-		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: "Open a Git Repository", Directory: true})
+		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{Title: msg().OpenRepoTitle(), Directory: true})
 		if err != nil || len(paths) == 0 {
 			return
 		}
 		if err := openWindow(paths[0], source{kind: sourceWorkingTree}); err != nil {
-			mygo.Dialog.Error("Could not open the folder", errorText(err))
+			mygo.Dialog.Error(msg().CouldNotOpenFolder(), errorText(err))
 			return
 		}
 		closeWelcome()
@@ -273,7 +273,7 @@ func recentMenuItems() []*mygo.MenuItem {
 	if len(items) > 0 {
 		items = append(items, mygo.Separator())
 	}
-	return append(items, &mygo.MenuItem{Label: "Clear Menu", Disabled: len(items) == 0, Click: func(*mygo.MenuItem, *mygo.Window) {
+	return append(items, &mygo.MenuItem{Label: msg().ClearRecentMenu(), Disabled: len(items) == 0, Click: func(*mygo.MenuItem, *mygo.Window) {
 		state.clearRecent()
 		mygo.App.SetMenu(buildMenu())
 	}})
@@ -304,7 +304,7 @@ func revealInFinder(path string) {
 // openRecent opens a repository of File → Open Recent.
 func openRecent(root string) {
 	if err := openWindow(root, source{kind: sourceWorkingTree}); err != nil {
-		mygo.Dialog.Error("Could not open "+abbreviateHome(root), errorText(err))
+		mygo.Dialog.Error(msg().CouldNotOpen(abbreviateHome(root)), errorText(err))
 		return
 	}
 	closeWelcome()
@@ -329,7 +329,7 @@ func agentMenuItems(s Settings) []*mygo.MenuItem {
 		}
 	}
 	items := []*mygo.MenuItem{
-		{ID: "agent-", Label: "Automatic", Type: mygo.MenuItemRadio, Checked: s.AIAgent == "", Click: choose("")},
+		{ID: "agent-", Label: msg().Automatic(), Type: mygo.MenuItemRadio, Checked: s.AIAgent == "", Click: choose("")},
 		mygo.Separator(),
 	}
 	for _, a := range agent.All {
@@ -351,12 +351,12 @@ func reviewMenuItems(s Settings) []*mygo.MenuItem {
 			Click: func(*mygo.MenuItem, *mygo.Window) { cfg.Update(func(s *Settings) { s.SummaryLocale = chosen }) }})
 	}
 	return []*mygo.MenuItem{
-		switchItem("grouping", "Smart Grouping", s.GroupingEnabled, func(s *Settings) { s.GroupingEnabled = !s.GroupingEnabled }),
+		switchItem("grouping", msg().SmartGrouping(), s.GroupingEnabled, func(s *Settings) { s.GroupingEnabled = !s.GroupingEnabled }),
 		mygo.Separator(),
-		switchItem("overallSummary", "Overall Summary", s.OverallSummary, func(s *Settings) { s.OverallSummary = !s.OverallSummary }),
-		switchItem("summaryExpanded", "Expand the Summary", s.SummaryExpanded, func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded }),
-		switchItem("notes", "Notes on Files and Lines", s.Notes, func(s *Settings) { s.Notes = !s.Notes }),
+		switchItem("overallSummary", msg().OverallSummaryMenu(), s.OverallSummary, func(s *Settings) { s.OverallSummary = !s.OverallSummary }),
+		switchItem("summaryExpanded", msg().ExpandSummaryMenu(), s.SummaryExpanded, func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded }),
+		switchItem("notes", msg().NotesOnFilesMenu(), s.Notes, func(s *Settings) { s.Notes = !s.Notes }),
 		mygo.Separator(),
-		{Label: "Summary Language", Submenu: locales},
+		{Label: msg().SummaryLanguageMenu(), Submenu: locales},
 	}
 }

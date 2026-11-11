@@ -169,18 +169,57 @@ type fileGroup struct {
 	missing []string
 }
 
-// kind is a kind of file, as pulls.review's rules sort them.
-type kind struct{ key, label, summary string }
+// kind is a kind of file, as pulls.review's rules sort them. Its name and
+// summary are the catalog's, said in the interface's language.
+type kind struct{ key string }
 
 // kinds are the kinds of files, in the order their groups show.
 var kinds = []kind{
-	{"docs", "Docs", "Documentation updates."},
-	{"code", "Code", "Source changes."},
-	{"tests", "Tests", "Test coverage for the change."},
-	{"config", "Config", "Configuration changes."},
-	{"deps", "Dependencies", "Dependency version changes."},
-	{"generated", "Generated", "Generated or build output changes."},
-	{"other", "Other", "Other changes that don't fit an existing category."},
+	{"docs"},
+	{"code"},
+	{"tests"},
+	{"config"},
+	{"deps"},
+	{"generated"},
+	{"other"},
+}
+
+// label names a kind of file.
+func (k kind) label() string {
+	switch k.key {
+	case "docs":
+		return msg().GroupDocs()
+	case "code":
+		return msg().GroupCode()
+	case "tests":
+		return msg().GroupTests()
+	case "config":
+		return msg().GroupConfig()
+	case "deps":
+		return msg().GroupDeps()
+	case "generated":
+		return msg().GroupGenerated()
+	}
+	return msg().GroupOther()
+}
+
+// summary says what a kind of file is.
+func (k kind) summary() string {
+	switch k.key {
+	case "docs":
+		return msg().GroupDocsSummary()
+	case "code":
+		return msg().GroupCodeSummary()
+	case "tests":
+		return msg().GroupTestsSummary()
+	case "config":
+		return msg().GroupConfigSummary()
+	case "deps":
+		return msg().GroupDepsSummary()
+	case "generated":
+		return msg().GroupGeneratedSummary()
+	}
+	return msg().GroupOtherSummary()
 }
 
 // kindOf returns the index in kinds of a file's kind. The first rule that
@@ -301,7 +340,7 @@ func (w *window) regroup() {
 		for k := range kinds {
 			if slices.Contains(ranks, k) {
 				used[k] = len(w.groups)
-				w.groups = append(w.groups, fileGroup{key: kinds[k].key, label: kinds[k].label, summary: kinds[k].summary})
+				w.groups = append(w.groups, fileGroup{key: kinds[k].key, label: kinds[k].label(), summary: kinds[k].summary()})
 			}
 		}
 		for i, f := range w.files {
@@ -329,7 +368,7 @@ func (w *window) regroup() {
 				// Files new since the review gather at the end.
 				if rest < 0 {
 					rest = len(w.groups)
-					w.groups = append(w.groups, fileGroup{key: "unreviewed", label: "Not in the review", summary: "Files that changed since the agent's review.", ai: true})
+					w.groups = append(w.groups, fileGroup{key: "unreviewed", label: msg().NotInReview(), summary: msg().NotInReviewSummary(), ai: true})
 				}
 				gi = rest
 			}
@@ -786,17 +825,17 @@ func (w *window) noteRow(c *ui.Context, pal *palette, n *aiNote) {
 			Background(accent.Alpha(0.07)).Border(1, border).Children(func() {
 			ui.Icon(c, iconSparkle).FontSize(14).TextColor(accent).Margin(1, 0, 0)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
-				label := "AI note"
+				label := msg().AiNote()
 				switch {
 				case n.file:
-					label = "AI note on this file"
+					label = msg().AiNoteOnFile()
 				case n.side == sideOld:
-					label = "AI note · old line " + itoa(n.line)
+					label = msg().AiNoteOldLine(n.line)
 				default:
-					label = "AI note · line " + itoa(n.line)
+					label = msg().AiNoteLine(n.line)
 				}
 				if n.critical {
-					label += " · needs care"
+					label += msg().NeedsCareSuffix()
 				}
 				ui.Text(c, label).FontSize(11).FontWeight(600).TextColor(accent)
 				ui.Text(c, n.text).FontSize(13).Selectable()

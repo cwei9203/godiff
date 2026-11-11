@@ -37,14 +37,17 @@ func (c *comment) pending() bool { return strings.TrimSpace(c.text) != "" }
 
 // label is "New line 12", "Old lines 3-5".
 func (c *comment) label() string {
-	s := "New"
-	if c.side == sideOld {
-		s = "Old"
-	}
+	old := c.side == sideOld
 	if c.start != 0 && c.start != c.line {
-		return fmt.Sprintf("%s lines %d-%d", s, min(c.start, c.line), max(c.start, c.line))
+		if old {
+			return msg().CommentOldLines(min(c.start, c.line), max(c.start, c.line))
+		}
+		return msg().CommentNewLines(min(c.start, c.line), max(c.start, c.line))
 	}
-	return fmt.Sprintf("%s line %d", s, c.line)
+	if old {
+		return msg().CommentOldLine(c.line)
+	}
+	return msg().CommentNewLine(c.line)
 }
 
 var commentIDs int

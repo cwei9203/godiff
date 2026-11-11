@@ -343,7 +343,7 @@ func (w *window) runAnalysis() {
 			if len(installed) == 0 {
 				w.update(func() {
 					st.running = false
-					st.err = "No coding agent was found. Install Claude Code, Codex, OpenCode or Pi, or name one as aiAgent in the config file."
+					st.err = msg().NoAgentFound()
 					w.rowsDirty = true
 				})
 				return
@@ -389,7 +389,7 @@ func (w *window) runAnalysis() {
 				// The failure as a sentence to act on, with what the agent
 				// said kept under it: one godiff does not know is shown as
 				// it came.
-				st.err, st.errDetail = agent.Explain(err.Error())
+				st.err, st.errDetail = explainFailure(err.Error())
 				st.errOpen = false
 				if st.err == "" {
 					st.err = err.Error()
@@ -456,7 +456,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 				// The one action of a review at work: stop it.
 				b := ui.Button(c, "").Height(26).Children(func() {
 					ui.Icon(c, iconStop).FontSize(12)
-					ui.Text(c, textStop).FontSize(12)
+					ui.Text(c, textStop()).FontSize(12)
 				})
 				if b.Clicked() {
 					w.stopAnalysis()
@@ -472,17 +472,17 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			default:
 				if st.result != nil {
 					// The summary shows whole, or else as its first line alone.
-					svg, tip := iconChevronDown, "Hide the summary"
+					svg, tip := iconChevronDown, msg().HideSummary()
 					if !w.settings.SummaryExpanded {
-						svg, tip = iconChevronRight, "Show the summary"
+						svg, tip = iconChevronRight, msg().ShowSummary()
 					}
 					if iconButton(c, svg, tip).Size(26, 26).Clicked() {
 						cfg.Update(func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded })
 					}
 				}
-				label := textTryAgain
+				label := textTryAgain()
 				if st.result != nil {
-					label = textReviewAgain
+					label = textReviewAgain()
 				}
 				if ui.Button(c, label).Height(26).Clicked() {
 					w.runAnalysis()
@@ -500,9 +500,9 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			if d := st.errDetail; d != st.err {
 				// What the agent said itself, for a report or a bug: it is
 				// no sentence to act on, so it stays folded away.
-				label := "Show what it said"
+				label := msg().ShowWhatItSaid()
 				if st.errOpen {
-					label = "Hide what it said"
+					label = msg().HideWhatItSaid()
 				}
 				if ui.ButtonBase(c).Padding(2, 0).Children(func() {
 					ui.Text(c, label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
@@ -525,8 +525,8 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			} else {
 				// One line of it, which opens the whole.
 				line, _, _ := strings.Cut(summary, "\n")
-				b := ui.ButtonBase(c).Padding(2, 6).Radius(6).Gap(6).Label("Show the summary").
-					Tooltip("Show the whole summary of the review")
+				b := ui.ButtonBase(c).Padding(2, 6).Radius(6).Gap(6).Label(msg().ShowSummary()).
+					Tooltip(msg().ShowWholeSummary())
 				if b.Hovered() {
 					b.Background(pal.hover)
 				}
@@ -544,21 +544,21 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			notes += len(g.FileNotes) + len(g.LineNotes)
 		}
 		ui.Row(c).Gap(10).Children(func() {
-			ui.Textf(c, "%s · %s", plural(len(a.Groups), "group"), plural(notes, "note")).FontSize(12).TextColor(t.TextMuted)
+			ui.Text(c, msg().GroupsNotes(len(a.Groups), notes)).FontSize(12).TextColor(t.TextMuted)
 			if n := a.Critical(); n > 0 {
 				ui.Row(c).Gap(4).Children(func() {
 					ui.Icon(c, iconAlert).FontSize(12).TextColor(careTone(pal))
-					ui.Textf(c, "%d to take care with", n).FontSize(12).FontWeight(600).TextColor(careTone(pal))
+					ui.Text(c, msg().ToTakeCare(n)).FontSize(12).FontWeight(600).TextColor(careTone(pal))
 				})
 			}
 			if n := w.changedSince(st); n > 0 {
-				ui.Textf(c, "%s changed since", plural(n, "file")).FontSize(12).TextColor(pal.ref).
-					Tooltip("Notes on the files changed since do not show. Review again to include them.")
+				ui.Text(c, msg().ChangedSince(n)).FontSize(12).TextColor(pal.ref).
+					Tooltip(msg().ChangedSinceTip())
 			}
 			ui.Spacer(c)
 			if w.grouping() != groupAI {
 				b := ui.ButtonBase(c).Children(func() {
-					ui.Text(c, "Group files by this review").FontSize(12).FontWeight(600).TextColor(t.Accent)
+					ui.Text(c, msg().GroupByThisReview()).FontSize(12).FontWeight(600).TextColor(t.Accent)
 				})
 				if b.Clicked() {
 					w.setGrouping(groupAI)
@@ -584,7 +584,7 @@ func (w *window) reviewMark(st *analysisState) string {
 	case st.running:
 		return st.agent
 	case st.err != "":
-		return textReviewFailed
+		return textReviewFailed()
 	case st.result == nil:
 		return textNotRun()
 	}
@@ -628,9 +628,9 @@ func (w *window) cardRunning(c *ui.Context, pal *palette, st *analysisState) {
 		kind  agent.ProgressKind
 		label string
 	}{
-		{agent.ProgressThinking, textThinking},
-		{agent.ProgressReading, textReading},
-		{agent.ProgressOrganizing, textOrganizing},
+		{agent.ProgressThinking, textThinking()},
+		{agent.ProgressReading, textReading()},
+		{agent.ProgressOrganizing, textOrganizing()},
 	}
 	at := slices.IndexFunc(steps, func(s struct {
 		kind  agent.ProgressKind
@@ -684,16 +684,16 @@ func (w *window) cardRunning(c *ui.Context, pal *palette, st *analysisState) {
 func progressLine(p agent.Progress) string {
 	switch p.Kind {
 	case agent.ProgressThinking:
-		return textThinking
+		return textThinking()
 	case agent.ProgressReading:
 		if n := len(p.Paths); n > 0 {
-			return "Reading " + plural(n, "file")
+			return msg().ReadingFiles(n)
 		}
-		return textReading
+		return textReading()
 	case agent.ProgressOrganizing:
-		return textOrganizing
+		return textOrganizing()
 	}
-	return textStarting
+	return textStarting()
 }
 
 // listedNotes is how many notes the card lists before it is asked for all.
@@ -724,7 +724,7 @@ func (w *window) noteList(c *ui.Context, pal *palette, st *analysisState) {
 			if n.critical {
 				accent, icon = careTone(pal), iconAlert
 			}
-			b := ui.ButtonBase(c).Padding(4, 8).Radius(6).Label("Go to the note on " + where).Tooltip(n.path)
+			b := ui.ButtonBase(c).Padding(4, 8).Radius(6).Label(msg().GoToNote(where)).Tooltip(n.path)
 			if b.Hovered() || n == w.noteSel {
 				b.Background(pal.hover)
 			}
@@ -740,9 +740,9 @@ func (w *window) noteList(c *ui.Context, pal *palette, st *analysisState) {
 			}
 		}
 		if len(notes) > listedNotes {
-			label := fmt.Sprintf("Show %d more", len(notes)-listedNotes)
+			label := msg().ShowMoreNotes(len(notes) - listedNotes)
 			if st.allNotes {
-				label = "Show fewer"
+				label = msg().ShowFewerNotes()
 			}
 			b := ui.ButtonBase(c).Padding(4, 8).Children(func() {
 				ui.Text(c, label).FontSize(12).FontWeight(600).TextColor(t.Accent)
@@ -757,12 +757,12 @@ func (w *window) noteList(c *ui.Context, pal *palette, st *analysisState) {
 // agentMenu chooses the agent that reviews.
 func (w *window) agentMenu(c *ui.Context) {
 	installed, known := installedAgents()
-	label := "Automatic"
+	label := msg().Automatic()
 	if a, ok := agent.ByName(w.settings.AIAgent); ok {
 		label = a.Label
 	}
 	ui.MenuButton(c, label, func(m *ui.Menu) {
-		if m.Item("Automatic").Checked(w.settings.AIAgent == "").Chosen() {
+		if m.Item(msg().Automatic()).Checked(w.settings.AIAgent == "").Chosen() {
 			cfg.Update(func(s *Settings) { s.AIAgent = "" })
 		}
 		m.Separator()
@@ -770,14 +770,14 @@ func (w *window) agentMenu(c *ui.Context) {
 			missing := known && !slices.Contains(installed, a)
 			item := a.Label
 			if missing {
-				item += " (not installed)"
+				item += msg().NotInstalledSuffix()
 			}
 			if m.Item(item).Checked(w.settings.AIAgent == a.Name).Disabled(missing).Chosen() {
 				name := a.Name
 				cfg.Update(func(s *Settings) { s.AIAgent, s.AIModel = name, "" })
 			}
 		}
-	}).Height(26).Tooltip("The agent that reviews")
+	}).Height(26).Tooltip(msg().AgentThatReviews())
 }
 
 // reviewAgent is the agent that reviews: the settings', else the first
@@ -801,13 +801,13 @@ func (w *window) modelMenu(c *ui.Context) {
 	}
 	list := modelsOf(a, w.repo.Root)
 	chosen := w.settings.AIModel
-	label := "Default Model"
+	label := msg().DefaultModel()
 	if chosen != "" {
 		label = modelName(chosen, list.models)
 	}
 	setModel := func(id string) { cfg.Update(func(s *Settings) { s.AIModel = id }) }
 	ui.MenuButton(c, label, func(m *ui.Menu) {
-		def := "Default"
+		def := msg().DefaultModelOption()
 		if list.def != "" {
 			def += " (" + list.def + ")"
 		}
@@ -821,20 +821,21 @@ func (w *window) modelMenu(c *ui.Context) {
 		}
 		switch {
 		case !list.done:
-			m.Item("Loading models…").Disabled(true)
+			m.Item(msg().LoadingModels()).Disabled(true)
 			return
 		case list.err != nil:
 			// The failure in a sentence to act on, the agent's own words
 			// only when godiff knows this one not.
 			raw := strings.TrimSpace(errorText(list.err))
-			msg, _ := agent.Explain(raw)
-			if msg == "" {
-				msg, _, _ = strings.Cut(raw, "\n")
+			reason, _ := agent.Explain(raw)
+			line := textReason(reason)
+			if line == "" {
+				line, _, _ = strings.Cut(raw, "\n")
 			}
-			if len(msg) > 80 {
-				msg = msg[:80] + "…"
+			if len(line) > 80 {
+				line = line[:80] + "…"
 			}
-			m.Item(msg).Disabled(true)
+			m.Item(line).Disabled(true)
 			return
 		}
 		modelItems(m, list.models, func(m *ui.Menu, label, id string) {
@@ -842,7 +843,7 @@ func (w *window) modelMenu(c *ui.Context) {
 				setModel(id)
 			}
 		})
-	}).Height(26).Tooltip("The model that reviews: " + cmp.Or(chosen, cmp.Or(list.def, a.Label+"'s default")))
+	}).Height(26).Tooltip(msg().ModelThatReviews(cmp.Or(chosen, cmp.Or(list.def, msg().AgentDefault(a.Label)))))
 }
 
 // modelName is a model's name on its button: its label, without its

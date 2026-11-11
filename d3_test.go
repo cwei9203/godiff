@@ -297,7 +297,7 @@ func TestPaletteHasTheCommands(t *testing.T) {
 	}
 	// The settings window is not built: its command says so, and runs nothing.
 	cmd, _ := findCommand(w, "Settings")
-	if !cmd.soon || cmd.run != nil || cmd.hint != textSettingsSoon {
+	if !cmd.soon || cmd.run != nil || cmd.hint != textSettingsSoon() {
 		t.Errorf("the settings command is %+v, want one that is to come", cmd)
 	}
 	// The keys are the ones the keys are: n steps the files one at a time.
@@ -352,7 +352,7 @@ func TestAICardThreeStates(t *testing.T) {
 	if !tt.HasText(textReviewWithAI()) {
 		t.Fatalf("the offered card has no button to review: %q", tt.Texts())
 	}
-	if tt.HasText(textStop) || tt.HasText(textReviewAgain) {
+	if tt.HasText(textStop()) || tt.HasText(textReviewAgain()) {
 		t.Error("the offered card carries the actions of another state")
 	}
 
@@ -363,13 +363,13 @@ func TestAICardThreeStates(t *testing.T) {
 	w.rowsDirty = true
 	w.list.ScrollTo(0, ui.Start)
 	tt.Frame()
-	if !tt.HasText(textStop) {
+	if !tt.HasText(textStop()) {
 		t.Fatalf("the card at work cannot be stopped: %q", tt.Texts())
 	}
-	if tt.HasText(textReviewWithAI()) || tt.HasText(textReviewAgain) {
+	if tt.HasText(textReviewWithAI()) || tt.HasText(textReviewAgain()) {
 		t.Error("the card at work carries the actions of another state")
 	}
-	if !tt.HasText(textOrganizing) {
+	if !tt.HasText(textOrganizing()) {
 		t.Errorf("the card at work does not say its step: %q", tt.Texts())
 	}
 
@@ -384,10 +384,10 @@ func TestAICardThreeStates(t *testing.T) {
 	w.regroup()
 	w.list.ScrollTo(0, ui.Start)
 	tt.Frame()
-	if !tt.HasText(textReviewAgain) {
+	if !tt.HasText(textReviewAgain()) {
 		t.Fatalf("the card of a review cannot review again: %q", tt.Texts())
 	}
-	if tt.HasText(textReviewWithAI()) || tt.HasText(textStop) {
+	if tt.HasText(textReviewWithAI()) || tt.HasText(textStop()) {
 		t.Error("the card of a review carries the actions of another state")
 	}
 	// Where the review comes from shows in the card, as its note.
@@ -408,9 +408,9 @@ func TestProgressLineFollowsTheStep(t *testing.T) {
 		progress agent.Progress
 		want     string
 	}{
-		{agent.Progress{Kind: agent.ProgressThinking}, textThinking},
+		{agent.Progress{Kind: agent.ProgressThinking}, textThinking()},
 		{agent.Progress{Kind: agent.ProgressReading, Paths: []string{"app.go", "go.mod"}}, "Reading 2 files"},
-		{agent.Progress{Kind: agent.ProgressOrganizing}, textOrganizing},
+		{agent.Progress{Kind: agent.ProgressOrganizing}, textOrganizing()},
 	}
 	for _, line := range lines {
 		st.progress = line.progress

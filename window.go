@@ -1191,7 +1191,7 @@ func (w *window) openInEditor(path string, line int) {
 	}
 	go func() {
 		if err := openEditor(w.settings.EditorCommand, w.repo.Root, abs, line); err != nil {
-			mygo.Dialog.Error("Could not open the file", err.Error())
+			mygo.Dialog.Error(msg().CouldNotOpenFile(), err.Error())
 		}
 	}()
 }

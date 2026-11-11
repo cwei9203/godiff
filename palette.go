@@ -26,13 +26,13 @@ func (w *window) commands() []command {
 	if w.current >= 0 && w.current < len(w.files) {
 		selected = w.files[w.current].Path
 	}
-	layout := "Switch to unified"
+	layout := msg().SwitchToUnified()
 	if !w.split() {
-		layout = "Switch to split"
+		layout = msg().SwitchToSplit()
 	}
-	wrap := "Turn wrapping on"
+	wrap := msg().TurnWrapOn()
 	if w.settings.WordWrap {
-		wrap = "Turn wrapping off"
+		wrap = msg().TurnWrapOff()
 	}
 	// Going to the notes of the agent's review, when there are.
 	notes := func(dir int) func() {
@@ -41,9 +41,9 @@ func (w *window) commands() []command {
 		}
 		return func() { w.nextNote(dir) }
 	}
-	whitespace := "Show whitespace changes"
+	whitespace := msg().ShowWhitespaceChanges()
 	if w.settings.ShowWhitespace {
-		whitespace = "Hide whitespace changes"
+		whitespace = msg().HideWhitespaceChanges()
 	}
 	// Writing the task file asks for the comments there are: with none, the
 	// command has nothing to do and is left out of the bar.
@@ -69,69 +69,69 @@ func (w *window) commands() []command {
 		stepNext, stepPrev = "]", "["
 	}
 	return []command{
-		{title: "Focus file filter", keys: "⌘P", run: w.focusFilter},
-		{title: "Find in diffs", keys: "⌘F", run: func() { w.finding = true }},
-		{title: "Open commit", hint: "Review a commit", run: func() { w.openDialog(dialogCommit) }},
-		{title: "Open branch", hint: "Compare with a branch", run: func() { w.openDialog(dialogBranch) }},
-		{title: "Open pull request", hint: "Review a pull request on GitHub", run: func() { w.openDialog(dialogPull) }},
-		{title: "Open folder", keys: "⌘O", run: openFolder},
+		{title: msg().FocusFileFilter(), keys: "⌘P", run: w.focusFilter},
+		{title: msg().ToolbarFind(), keys: "⌘F", run: func() { w.finding = true }},
+		{title: msg().OpenCommitCommand(), hint: msg().OpenCommitHint(), run: func() { w.openDialog(dialogCommit) }},
+		{title: msg().OpenBranchCommand(), hint: msg().OpenBranchHint(), run: func() { w.openDialog(dialogBranch) }},
+		{title: msg().OpenPullCommand(), hint: msg().OpenPullHint(), run: func() { w.openDialog(dialogPull) }},
+		{title: msg().OpenFolder(), keys: "⌘O", run: openFolder},
 		{title: msg().SettingsCommand(), keys: "⌘,", run: openSettings},
-		{title: "Show file tree", keys: "⌘1", run: func() { w.tab, w.sidebarShown = 0, true }},
-		{title: "Show history", keys: "⌘2", run: func() { w.tab, w.sidebarShown = 1, true }},
-		{title: "Show pull requests", keys: "⌘3", run: w.showPulls},
-		{title: "Next unviewed file", hint: "The first file not viewed yet, round from this one", keys: unviewedKeys, run: func() { w.stepUnviewed(1) }},
-		{title: "Review with AI", hint: w.agentHint(), keys: "⌘⇧I", run: w.reviewWithAI},
-		{title: "Stop the AI review", run: w.stopAnalysis},
-		{title: "Next AI note", keys: noteKeys, run: notes(1)},
-		{title: "Previous AI note", keys: noteBack, run: notes(-1)},
-		{title: "Group files by kind", run: func() { w.chooseGrouping(groupKind) }},
-		{title: "Group files by AI review", run: func() { w.chooseGrouping(groupAI) }},
-		{title: "Ungroup files", run: func() { w.chooseGrouping(groupNone) }},
-		{title: "Show uncommitted changes", run: func() { w.setSource(w.launchWorkTree()) }},
-		{title: "Commit…", run: func() {
+		{title: msg().ShowFileTree(), keys: "⌘1", run: func() { w.tab, w.sidebarShown = 0, true }},
+		{title: msg().ShowHistoryCommand(), keys: "⌘2", run: func() { w.tab, w.sidebarShown = 1, true }},
+		{title: msg().ShowPullRequestsCommand(), keys: "⌘3", run: w.showPulls},
+		{title: msg().NextUnviewed(), hint: msg().NextUnviewedHint(), keys: unviewedKeys, run: func() { w.stepUnviewed(1) }},
+		{title: textReviewWithAI(), hint: w.agentHint(), keys: "⌘⇧I", run: w.reviewWithAI},
+		{title: msg().StopAiReview(), run: w.stopAnalysis},
+		{title: msg().NextAiNoteCommand(), keys: noteKeys, run: notes(1)},
+		{title: msg().PreviousAiNoteCommand(), keys: noteBack, run: notes(-1)},
+		{title: msg().GroupByKindCommand(), run: func() { w.chooseGrouping(groupKind) }},
+		{title: msg().GroupByAICommand(), run: func() { w.chooseGrouping(groupAI) }},
+		{title: msg().UngroupFiles(), run: func() { w.chooseGrouping(groupNone) }},
+		{title: msg().ShowUncommittedChanges(), run: func() { w.setSource(w.launchWorkTree()) }},
+		{title: msg().CommitCommand(), run: func() {
 			if w.source.kind == sourceWorkingTree && !w.commitOpen {
 				w.toggleCommit()
 			}
 		}},
-		{title: "Copy review comments", run: w.copyComments},
-		{title: "Export review task", hint: ".review/REVIEW.md, for an agent", run: exportTask},
-		{title: "Fix comments with an agent", hint: w.fixHint(), run: fixComments},
-		{title: "Submit review", hint: "Approve, comment or request changes", run: w.openSubmit},
-		{title: "Open pull request on GitHub", run: w.openPullOnGitHub},
-		{title: "Copy review comments and close", run: func() {
+		{title: msg().CopyComments(), run: w.copyComments},
+		{title: msg().ExportReviewTask(), hint: msg().ExportReviewTaskHint(), run: exportTask},
+		{title: msg().FixCommentsCommand(), hint: w.fixHint(), run: fixComments},
+		{title: msg().SubmitReview(), hint: msg().SubmitReviewHint(), run: w.openSubmit},
+		{title: msg().OpenPullOnGitHub(), run: w.openPullOnGitHub},
+		{title: msg().CopyCommentsAndClose(), run: func() {
 			w.copyComments()
 			if w.win != nil {
 				w.win.Close()
 			}
 		}},
-		{title: "Toggle viewed", hint: selected, run: func() {
+		{title: msg().ToggleViewed(), hint: selected, run: func() {
 			if w.current >= 0 && w.current < len(w.files) {
 				f := w.files[w.current]
 				w.setViewed(f, !w.isViewed(f))
 			}
 		}},
-		{title: "Mark all viewed", hint: "Every file of the review, with an undo", run: w.markAllViewed},
-		{title: "Reset review state", hint: "Nothing viewed, everything open", run: w.resetReviewState},
-		{title: "Next file", hint: "One file at a time", keys: stepNext, run: func() { w.stepFile(1) }},
-		{title: "Previous file", hint: "One file at a time", keys: stepPrev, run: func() { w.stepFile(-1) }},
-		{title: "Open file in editor", hint: selected, keys: "⌘⇧O", run: w.openCurrent},
-		{title: "Toggle sidebar", keys: "⌘⇧B", run: w.toggleSidebar},
-		{title: "Fold all", hint: "Every group and every folder", run: func() { w.foldAll(true) }},
-		{title: "Unfold all", hint: "Every group and every folder", run: func() { w.foldAll(false) }},
-		{title: "Show one file at a time", run: func() { w.setFileView(fileViewOne) }},
-		{title: "Show all files", run: func() { w.setFileView(fileViewStack) }},
-		{title: "Toggle diff layout", hint: layout, run: toggleLayout},
-		{title: "Toggle word wrap", hint: wrap, keys: "⌥Z", run: toggleWrap},
-		{title: "Toggle whitespace", hint: whitespace, run: func() {
+		{title: msg().MarkAllViewed(), hint: msg().MarkAllViewedHint(), run: w.markAllViewed},
+		{title: msg().ResetReviewState(), hint: msg().ResetReviewStateHint(), run: w.resetReviewState},
+		{title: msg().NextFileCommand(), hint: msg().OneFileHint(), keys: stepNext, run: func() { w.stepFile(1) }},
+		{title: msg().PreviousFileCommand(), hint: msg().OneFileHint(), keys: stepPrev, run: func() { w.stepFile(-1) }},
+		{title: msg().OpenFileInEditorCommand(), hint: selected, keys: "⌘⇧O", run: w.openCurrent},
+		{title: msg().ToggleSidebarMenu(), keys: "⌘⇧B", run: w.toggleSidebar},
+		{title: msg().FoldAllCommand(), hint: msg().EveryGroupAndFolder(), run: func() { w.foldAll(true) }},
+		{title: msg().UnfoldAllCommand(), hint: msg().EveryGroupAndFolder(), run: func() { w.foldAll(false) }},
+		{title: msg().ShowOneFile(), run: func() { w.setFileView(fileViewOne) }},
+		{title: msg().ShowAllFiles(), run: func() { w.setFileView(fileViewStack) }},
+		{title: msg().ToggleDiffLayout(), hint: layout, run: toggleLayout},
+		{title: msg().ToggleWordWrap(), hint: wrap, keys: "⌥Z", run: toggleWrap},
+		{title: msg().ToggleWhitespace(), hint: whitespace, run: func() {
 			cfg.Update(func(s *Settings) { s.ShowWhitespace = !s.ShowWhitespace })
 		}},
-		{title: "Increase code font size", keys: "⌘+", run: func() { changeFontSize(1) }},
-		{title: "Decrease code font size", keys: "⌘-", run: func() { changeFontSize(-1) }},
-		{title: "Reset code font size", keys: "⌘0", run: func() { changeFontSize(0) }},
-		{title: "Settings", hint: textSettingsSoon, soon: true},
-		{title: "Open config file", run: openConfig},
-		{title: "Refresh changes", keys: "⌘R", run: w.refresh},
-		{title: "Keyboard shortcuts", keys: "⇧?", run: func() { w.help = true }},
+		{title: msg().IncreaseFontSize(), keys: "⌘+", run: func() { changeFontSize(1) }},
+		{title: msg().DecreaseFontSize(), keys: "⌘-", run: func() { changeFontSize(-1) }},
+		{title: msg().ResetFontSize(), keys: "⌘0", run: func() { changeFontSize(0) }},
+		{title: msg().SettingsTitle(), hint: textSettingsSoon(), soon: true},
+		{title: msg().OpenConfigCommand(), run: openConfig},
+		{title: msg().RefreshChanges(), keys: "⌘R", run: w.refresh},
+		{title: msg().KeyboardShortcutsCommand(), keys: "⇧?", run: func() { w.help = true }},
 	}
 }
 
@@ -162,7 +162,7 @@ func openConfig() {
 	path := cfg.ensure()
 	go func() {
 		if err := openEditor(cfg.Get().EditorCommand, "", path, 0); err != nil {
-			mygo.Dialog.Error("Could not open the config file", err.Error())
+			mygo.Dialog.Error(msg().CouldNotOpenConfigFile(), err.Error())
 		}
 	}()
 }
@@ -226,11 +226,11 @@ func (w *window) palette(c *ui.Context) {
 	ui.DialogBase(c, &w.paletteOpen, func(backdrop, panel ui.Element) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.12)).Justify(ui.Start).Padding(120, 0, 0, 0)
 		panel.Width(560).MaxHeight(440).Radius(16).Background(pal.surface).Border(1, pal.border).
-			Shadow(0, 20, 60, 0, ui.RGBA(0, 0, 0, 0.28)).Clip().Label("Command bar")
+			Shadow(0, 20, 60, 0, ui.RGBA(0, 0, 0, 0.28)).Clip().Label(msg().CommandBar())
 		var field ui.Element
 		search := ui.Row(c).Padding(4, 10).Gap(10).Radius(8).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
 			ui.Icon(c, iconCommand).FontSize(16).TextColor(t.TextMuted)
-			input := ui.TextInputBase(c, &w.paletteQuery).Placeholder("Type a command…").Label("Command").FontSize(15).Grow(1).AutoFocus()
+			input := ui.TextInputBase(c, &w.paletteQuery).Placeholder(msg().TypeCommand()).Label(msg().CommandLabel()).FontSize(15).Grow(1).AutoFocus()
 			field = input
 			if input.Changed() {
 				w.paletteRow = 0
@@ -289,7 +289,7 @@ func (w *window) palette(c *ui.Context) {
 			})
 		}).Padding(6).MaxHeight(380).Children(func() {
 			if len(cmds) == 0 {
-				emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconCommand, title: textNoCommands, detail: q})
+				emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconCommand, title: textNoCommands(), detail: q})
 			}
 		})
 	})
@@ -333,17 +333,17 @@ func (w *window) sourceDialog(c *ui.Context) {
 	if w.dialog == dialogNone {
 		return
 	}
-	title, desc, label, placeholder := "Open Commit", "Review a commit by SHA or revision, such as HEAD~1.", "Commit", "HEAD~1 or a commit SHA"
+	title, desc, label, placeholder := msg().OpenCommitTitle(), msg().OpenCommitDesc(), msg().CommitField(), msg().CommitPlaceholder()
 	switch w.dialog {
 	case dialogBranch:
-		title, desc, label, placeholder = "Open Branch", "Compare the current working tree with a branch.", "Branch name", "main"
+		title, desc, label, placeholder = msg().OpenBranchTitle(), msg().OpenBranchDesc(), msg().BranchField(), msg().BranchPlaceholder()
 	case dialogPull:
-		title, desc, label, placeholder = "Open Pull Request", "Review a pull request of this repository on GitHub, open or not.", "Pull request", "123, owner/repo#123 or its URL"
+		title, desc, label, placeholder = msg().OpenPullTitle(), msg().OpenPullDesc(), msg().PullField(), msg().PullPlaceholder()
 	}
 	open := func() {
 		v := strings.TrimSpace(w.dialogValue)
 		if v == "" {
-			w.dialogErr = "Enter a " + strings.ToLower(label) + "."
+			w.dialogErr = msg().EnterField(strings.ToLower(label))
 			return
 		}
 		if w.dialogBusy {
@@ -367,7 +367,7 @@ func (w *window) sourceDialog(c *ui.Context) {
 				}
 				switch {
 				case err != nil && kind == dialogBranch:
-					w.dialogErr = "Branch \"" + v + "\" does not exist in this repository."
+					w.dialogErr = msg().BranchMissing(v)
 				case err != nil:
 					w.dialogErr = err.Error()
 				case kind == dialogPull:
@@ -395,12 +395,12 @@ func (w *window) sourceDialog(c *ui.Context) {
 				}
 			}).Error(w.dialogErr)
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "Cancel").Clicked() {
+				if ui.Button(c, msg().Cancel()).Clicked() {
 					w.dialogOpen = false
 				}
-				label := "Open"
+				label := msg().OpenAction()
 				if w.dialogBusy {
-					label = "Opening…"
+					label = msg().Opening()
 				}
 				if ui.PrimaryButton(c, label).Disabled(w.dialogBusy).Clicked() {
 					open()
@@ -418,30 +418,30 @@ func (w *window) shortcutsHelp(c *ui.Context) {
 	t := c.Theme()
 	// One file at a time, n steps through the files not viewed yet, and the
 	// notes take ⌥n; with every file stacked, n stays the notes'.
-	keys := [][2]string{{"Next unviewed file", "N"}, {"Previous unviewed file", "⇧N"},
-		{"Next AI note", "⌥N"}, {"Previous AI note", "⌥⇧N"}}
+	keys := [][2]string{{msg().NextUnviewed(), "N"}, {msg().PreviousUnviewed(), "⇧N"},
+		{msg().NextAiNoteCommand(), "⌥N"}, {msg().PreviousAiNoteCommand(), "⌥⇧N"}}
 	if !w.oneFile() {
-		keys = [][2]string{{"Next AI note", "N"}, {"Previous AI note", "⇧N"}}
+		keys = [][2]string{{msg().NextAiNoteCommand(), "N"}, {msg().PreviousAiNoteCommand(), "⇧N"}}
 	}
-	navigation := [][2]string{{"Command bar", "⌘K"}, {"Filter files", "⌘P"}, {"Next hunk", "J"}, {"Previous hunk", "K"}}
+	navigation := [][2]string{{msg().CommandBar(), "⌘K"}, {msg().FilterFiles(), "⌘P"}, {msg().NextHunk(), "J"}, {msg().PreviousHunk(), "K"}}
 	navigation = append(navigation, keys...)
-	navigation = append(navigation, [2]string{"Toggle sidebar", "⌘⇧B"}, [2]string{"Toggle word wrap", "⌥Z"},
-		[2]string{"Open file in editor", "⌘⇧O"}, [2]string{"Refresh changes", "⌘R"})
+	navigation = append(navigation, [2]string{msg().ToggleSidebarMenu(), "⌘⇧B"}, [2]string{msg().ToggleWordWrap(), "⌥Z"},
+		[2]string{msg().OpenFileInEditorCommand(), "⌘⇧O"}, [2]string{msg().RefreshChanges(), "⌘R"})
 	groups := []struct {
 		title string
 		keys  [][2]string
 	}{
-		{"Navigation", navigation},
-		{"Search", [][2]string{{"Find in diffs", "⌘F"}, {"Next match", "↩"}, {"Previous match", "⇧↩"}, {"Close search", "Esc"}}},
-		{"Comments", [][2]string{{"Comment on a line", "Click"}, {"Comment on the hunk", "↩"}, {"Add comment", "⌘↩"}, {"Discard comment", "Esc"}}},
-		{"Pull requests", [][2]string{{"Pull requests", "⌘3"}, {"Review with AI", "⌘⇧I"}, {"Add to your review", "⌘↩"}, {"Reply", "⌘↩"}}},
-		{"Code", [][2]string{{"Bigger text", "⌘+"}, {"Smaller text", "⌘-"}, {"Actual size", "⌘0"}}},
+		{msg().ShortcutsNavigation(), navigation},
+		{msg().ShortcutsSearch(), [][2]string{{msg().ToolbarFind(), "⌘F"}, {msg().NextMatch(), "↩"}, {msg().PreviousMatch(), "⇧↩"}, {msg().CloseSearch(), "Esc"}}},
+		{msg().ShortcutsComments(), [][2]string{{msg().CommentOnLine(), msg().ClickAction()}, {msg().CommentOnHunk(), "↩"}, {msg().AddComment(), "⌘↩"}, {msg().DiscardComment(), "Esc"}}},
+		{msg().ShortcutsPullRequests(), [][2]string{{msg().PullRequestsLabel(), "⌘3"}, {textReviewWithAI(), "⌘⇧I"}, {msg().AddToYourReview(), "⌘↩"}, {msg().ReplyAction(), "⌘↩"}}},
+		{msg().ShortcutsCode(), [][2]string{{msg().BiggerText(), "⌘+"}, {msg().SmallerText(), "⌘-"}, {msg().ActualSizeText(), "⌘0"}}},
 	}
 	ui.Modal(c, &w.help, func() {
 		ui.Column(c).Width(620).Gap(16).Children(func() {
 			ui.Row(c).Children(func() {
-				ui.Text(c, "Keyboard Shortcuts").FontSize(15).Bold().Grow(1)
-				if ui.Button(c, "Done").Clicked() {
+				ui.Text(c, msg().KeyboardShortcuts()).FontSize(15).Bold().Grow(1)
+				if ui.Button(c, msg().DoneAction()).Clicked() {
 					w.help = false
 				}
 			})

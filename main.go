@@ -175,10 +175,10 @@ func showWelcome(err error) {
 	v := &welcome{err: err, choice: -1}
 	welcomeWin = mygo.NewWindow(mygo.WindowOptions{
 		Title:         "Godiff",
-		Width:         760,
-		Height:        560,
-		MinWidth:      620,
-		MinHeight:     480,
+		Width:         680,
+		Height:        520,
+		MinWidth:      640,
+		MinHeight:     460,
 		TitleBarStyle: mygo.TitleBarHiddenInset,
 		Content:       ui.View(v.view),
 	})

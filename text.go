@@ -1,6 +1,9 @@
 package main
 
-import "github.com/egoist/godiff/locales"
+import (
+	"github.com/egoist/godiff/internal/diff"
+	"github.com/egoist/godiff/locales"
+)
 
 // msg returns the catalogs' messages in the language the interface shows.
 //
@@ -47,25 +50,43 @@ func textNoMatchDiffs() string { return msg().NoMatchingDiffs() }
 func textAllViewed() string    { return msg().EveryFileViewed() }
 func textResetReview() string  { return msg().ResetReview() }
 
-// The review's words the language pass has not reached yet: English still, and
-// the batch after this one.
-const (
-	textReviewFailed = "Failed"
-	textTryAgain     = "Try Again"
-	textReviewAgain  = "Review Again"
-	textStop         = "Stop"
-	textStarting     = "Starting the agent"
-	textThinking     = "Thinking about the change"
-	textReading      = "Reading the files"
-	textOrganizing   = "Organizing the review"
-	textSettingsSoon = "Not built yet"
+// The agent's review, as its card says each state, and the words of a
+// surface with nothing to show.
+func textReviewFailed() string { return msg().ReviewFailed() }
+func textTryAgain() string     { return msg().TryAgain() }
+func textReviewAgain() string  { return msg().ReviewAgain() }
+func textStop() string         { return msg().Stop() }
+func textStarting() string     { return msg().StartingTheAgent() }
+func textThinking() string     { return msg().ThinkingAboutTheChange() }
+func textReading() string      { return msg().ReadingTheFiles() }
+func textOrganizing() string   { return msg().OrganizingTheReview() }
+func textSettingsSoon() string { return msg().NotBuiltYet() }
+func textNoChanges() string    { return msg().NoLocalChanges() }
+func textNoCommits() string    { return msg().NoChangesInCommit() }
+func textNoBranch() string     { return msg().NoChangesInBranch() }
+func textNoPullFiles() string  { return msg().NoChangesInPull() }
+func textNoChangesDir() string { return msg().NoChangedFiles() }
+func textNoCommitsTab() string { return msg().NoMatchingCommits() }
+func textNoPulls() string      { return msg().NoPullRequests() }
+func textNoCommands() string   { return msg().NoCommands() }
 
-	textNoChanges    = "No local changes"
-	textNoCommits    = "No changes in commit"
-	textNoBranch     = "No changes"
-	textNoPullFiles  = "No changes in pull request"
-	textNoChangesDir = "No changed files"
-	textNoCommitsTab = "No matching commits"
-	textNoPulls      = "No pull requests"
-	textNoCommands   = "No matching commands"
-)
+// textStatus says how a file changed, in the interface's language.
+func textStatus(status diff.Status) string {
+	switch status {
+	case diff.Added:
+		return msg().StatusAdded()
+	case diff.Deleted:
+		return msg().StatusDeleted()
+	case diff.Renamed:
+		return msg().StatusRenamed()
+	case diff.Copied:
+		return msg().StatusCopied()
+	case diff.TypeChg:
+		return msg().StatusTypeChanged()
+	case diff.Untracked:
+		return msg().StatusUntracked()
+	case diff.Conflict:
+		return msg().StatusConflict()
+	}
+	return msg().StatusModified()
+}

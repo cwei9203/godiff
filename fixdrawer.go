@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"context"
-	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -65,12 +64,9 @@ func endFix(res review.FixResult, err error, stopped bool) fixEnd {
 		end.phase = fixFailed
 		// The sentence to act on, when godiff knows the failure; else what
 		// the agent wrote, else the error itself.
-		end.errText = strings.TrimSpace(res.ErrMessage)
+		end.errText = explainText(res.ErrReason, res.ErrDetail)
 		if end.errText == "" {
-			end.errText = strings.TrimSpace(res.ErrDetail)
-		}
-		if end.errText == "" {
-			end.errText = err.Error()
+			end.errText = strings.TrimSpace(err.Error())
 		}
 		end.errText = fixErrTail(end.errText, fixFailedLines)
 	}
@@ -172,21 +168,21 @@ func (st *fixState) elapsed(now time.Time) time.Duration {
 func (st *fixState) headline(now time.Time) string {
 	who := st.agent
 	if who == "" {
-		who = "The agent"
+		who = msg().FixTheAgent()
 	}
 	took := fixDuration(st.elapsed(now))
 	switch st.phase {
 	case fixRunning:
 		if st.stopped {
-			return "Stopping the agent… · " + who
+			return msg().FixHeadlineStopping(who)
 		}
-		return "Agent fixing · " + who + " · " + took
+		return msg().FixHeadlineRunning(who, took)
 	case fixStopped:
-		return "Stopped · " + who + " · " + took
+		return msg().FixHeadlineStopped(who, took)
 	case fixFailed:
-		return fmt.Sprintf("Fix failed · exit code %d · %s", st.exitCode, took)
+		return msg().FixHeadlineFailed(st.exitCode, took)
 	}
-	return fmt.Sprintf("Fixed %s · %s", plural(st.comments, "comment"), fixFiles(st.changed))
+	return msg().FixHeadlineFixed(msg().CommentsCount(st.comments), fixFiles(st.changed))
 }
 
 // fixDuration is a run's time, in the units a person reads: 0s, 2m13s.
@@ -197,9 +193,9 @@ func fixDuration(d time.Duration) string {
 // fixFiles is how many files a run changed, or that it changed none.
 func fixFiles(changed []string) string {
 	if len(changed) == 0 {
-		return "no file changed"
+		return msg().FixNoFileChanged()
 	}
-	return fmt.Sprintf("%d changed", len(changed))
+	return msg().FixFilesChanged(len(changed))
 }
 
 // fixAgent is the agent that repairs: the one the settings keep for repairs,
@@ -235,13 +231,13 @@ func (w *window) fixAtWork() bool {
 func (w *window) fixHint() string {
 	n := w.pendingComments()
 	if n == 0 {
-		return "No unresolved comment"
+		return msg().NoUnresolvedComment()
 	}
 	a, ok := w.fixAgent()
 	if !ok {
-		return "No coding agent is installed"
+		return msg().NoCodingAgent()
 	}
-	return plural(n, "comment") + " · " + a.Label
+	return msg().CommentsCount(n) + " · " + a.Label
 }
 
 // openFixDialog offers the agent, its model and the scope of a repair.
@@ -288,26 +284,25 @@ func (w *window) fixDialog(c *ui.Context) {
 	ui.Modal(c, &pick.open, func() {
 		ui.Column(c).Width(460).Gap(14).Children(func() {
 			ui.Column(c).Gap(4).Children(func() {
-				ui.Text(c, "Fix Review Comments").FontSize(16).Bold()
-				ui.Textf(c, "The agent is handed %s and edits the working tree itself. Godiff runs it, shows what it does, and leaves the git writes to you.",
-					plural(w.pendingComments(), "unresolved comment")).FontSize(13).TextColor(t.TextMuted)
+				ui.Text(c, msg().FixReviewComments()).FontSize(16).Bold()
+				ui.Text(c, msg().FixIntro(msg().UnresolvedCommentsCount(w.pendingComments()))).FontSize(13).TextColor(t.TextMuted)
 			})
-			ui.Field(c, "Agent", func() {
+			ui.Field(c, msg().FixAgentField(), func() {
 				ui.RadioGroup(c, func() {
 					for _, a := range agent.All {
 						missing := known && !slices.Contains(installed, a)
 						label := a.Label
 						if missing {
-							label += " (not installed)"
+							label += msg().NotInstalledSuffix()
 						}
 						ui.Radio(c, &pick.agent, a.Name, label).Disabled(missing)
 					}
 				})
 			})
-			ui.Field(c, "Model", func() {
+			ui.Field(c, msg().FixModelField(), func() {
 				w.fixModelButton(c, pick)
 			})
-			ui.Field(c, "Range", func() {
+			ui.Field(c, msg().FixRangeField(), func() {
 				scope := pick.scope
 				idx := 0
 				for i, s := range fixScopeOrder {
@@ -315,16 +310,16 @@ func (w *window) fixDialog(c *ui.Context) {
 						idx = i
 					}
 				}
-				ui.Segmented(c, &idx, fixScopeLabels...)
+				ui.Segmented(c, &idx, fixScopeLabels()...)
 				pick.scope = fixScopeOrder[min(max(idx, 0), len(fixScopeOrder)-1)]
 			})
-			ui.Text(c, "The agent writes in the working tree: its edits and yours are mixed together until you commit.").
+			ui.Text(c, msg().FixWorkingTreeNote()).
 				FontSize(12).TextColor(t.TextMuted)
 			ui.Row(c).Gap(8).Justify(ui.End).Children(func() {
-				if ui.Button(c, "Cancel").Clicked() {
+				if ui.Button(c, msg().Cancel()).Clicked() {
 					pick.open = false
 				}
-				if ui.PrimaryButton(c, "Start the Agent").Clicked() {
+				if ui.PrimaryButton(c, msg().StartTheAgent()).Clicked() {
 					start()
 				}
 			})
@@ -343,12 +338,12 @@ func (w *window) fixModelButton(c *ui.Context, pick *fixChoice) {
 		return
 	}
 	list := modelsOf(a, w.repo.Root)
-	label := "Default Model"
+	label := msg().DefaultModel()
 	if pick.model != "" {
 		label = modelName(pick.model, list.models)
 	}
 	ui.MenuButton(c, label, func(m *ui.Menu) {
-		def := "Default"
+		def := msg().DefaultModelOption()
 		if list.def != "" {
 			def += " (" + list.def + ")"
 		}
@@ -358,7 +353,7 @@ func (w *window) fixModelButton(c *ui.Context, pick *fixChoice) {
 		m.Separator()
 		switch {
 		case !list.done:
-			m.Item("Loading models…").Disabled(true)
+			m.Item(msg().LoadingModels()).Disabled(true)
 			return
 		case list.err != nil:
 			msg, _, _ := strings.Cut(strings.TrimSpace(errorText(list.err)), "\n")
@@ -373,7 +368,7 @@ func (w *window) fixModelButton(c *ui.Context, pick *fixChoice) {
 				pick.model = id
 			}
 		})
-	}).Height(28).Tooltip("The model that fixes: " + cmp.Or(pick.model, list.def, a.Label+"'s default"))
+	}).Height(28).Tooltip(msg().ModelThatFixes(cmp.Or(pick.model, list.def, msg().AgentDefault(a.Label))))
 }
 
 // startFix hands the review's comments to an agent, in the working tree, and
@@ -385,7 +380,7 @@ func (w *window) startFix(a agent.Agent, model string, scope fixScope) {
 	doc := w.reviewDocumentFor(scope)
 	task := review.Render(doc)
 	if strings.TrimSpace(task) == "" {
-		mygo.Dialog.Error("Nothing to fix", "There is no unresolved comment in this range of the review.")
+		mygo.Dialog.Error(msg().NothingToFix(), msg().NothingToFixDetail())
 		return
 	}
 	st := &fixState{open: true, phase: fixRunning, agent: a.Label, comments: len(doc.Comments), started: time.Now()}
@@ -455,7 +450,7 @@ func openFixLog(path string) {
 		return
 	}
 	if err := mygo.Shell.OpenPath(path); err != nil {
-		mygo.Dialog.Error("Could not open the log file", err.Error())
+		mygo.Dialog.Error(msg().CouldNotOpenLog(), err.Error())
 	}
 }
 
@@ -491,9 +486,9 @@ func (w *window) fixDrawer(c *ui.Context, pal *palette) {
 // while it runs, and the arrow that folds the log away.
 func (w *window) fixHeader(c *ui.Context, st *fixState) {
 	t := c.Theme()
-	svg, tip := iconChevronDown, "Hide the agent's output"
+	svg, tip := iconChevronDown, msg().HideOutput()
 	if !st.open {
-		svg, tip = iconChevronRight, "Show the agent's output"
+		svg, tip = iconChevronRight, msg().ShowOutput()
 	}
 	ui.Row(c).Gap(8).MinHeight(24).Children(func() {
 		if iconButton(c, svg, tip).Size(24, 24).Clicked() {
@@ -515,14 +510,14 @@ func (w *window) fixHeader(c *ui.Context, st *fixState) {
 			b := ui.Button(c, "").Height(24)
 			b.Children(func() {
 				ui.Icon(c, iconStop).FontSize(11)
-				ui.Text(c, "Stop").FontSize(12)
+				ui.Text(c, textStop()).FontSize(12)
 			})
 			if b.Disabled(st.stopped).Clicked() {
 				w.stopFix()
 			}
 			return
 		}
-		if iconButton(c, iconClose, "Close the agent's drawer").Size(24, 24).Clicked() {
+		if iconButton(c, iconClose, msg().CloseDrawer()).Size(24, 24).Clicked() {
 			w.fix = nil
 		}
 	})
@@ -534,11 +529,11 @@ func (w *window) fixResult(c *ui.Context, st *fixState) {
 	t := c.Theme()
 	ui.Row(c).Gap(10).Padding(0, 0, 0, 28).Children(func() {
 		if st.phase != fixStopped {
-			ui.Textf(c, "Exit code %d", st.exitCode).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+			ui.Text(c, msg().ExitCode(st.exitCode)).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 		}
-		ui.Textf(c, "took %s", fixDuration(st.duration)).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+		ui.Text(c, msg().Took(fixDuration(st.duration))).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 		// The files are git's answer, not the agent's own.
-		files := "No files were changed"
+		files := msg().NoFilesChanged()
 		if len(st.changed) > 0 {
 			files = strings.Join(st.changed, ", ")
 		}
@@ -550,11 +545,11 @@ func (w *window) fixResult(c *ui.Context, st *fixState) {
 			Padding(0, 0, 0, 28)
 	}
 	ui.Row(c).Gap(8).Padding(0, 0, 0, 28).Children(func() {
-		log := ui.Button(c, "Open the Log File").Height(24)
+		log := ui.Button(c, msg().OpenLogFile()).Height(24)
 		if log.Disabled(st.logPath == "").Clicked() {
 			openFixLog(st.logPath)
 		}
-		if ui.Button(c, "Refresh Diff").Height(24).Clicked() {
+		if ui.Button(c, msg().RefreshDiff()).Height(24).Clicked() {
 			w.refresh()
 		}
 	})
@@ -568,9 +563,9 @@ func (w *window) fixLog(c *ui.Context, pal *palette, st *fixState) {
 	st.log.FollowEnd = true
 	log := ui.List(c, &st.log, n, func(i int) {
 		ui.Text(c, st.ring.line(i).text).Font(w.codeFont()).FontSize(11).MinHeight(16).SingleLine().Padding(0, 12)
-	}).Height(fixLogHeight).Background(pal.codeBg).Focusable().Label("The agent's output").Children(func() {
+	}).Height(fixLogHeight).Background(pal.codeBg).Focusable().Label(msg().AgentOutput()).Children(func() {
 		if n == 0 {
-			emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconCommand, title: "Waiting for the agent's output…"})
+			emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconCommand, title: msg().WaitingForOutput()})
 		}
 	})
 	// The drawer is a place the keys go, like the review and the tree.
