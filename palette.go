@@ -202,9 +202,9 @@ func (w *window) palette(c *ui.Context) {
 	}
 	ui.DialogBase(c, &w.paletteOpen, func(backdrop, panel ui.Element) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.12)).Justify(ui.Start).Padding(120, 0, 0, 0)
-		panel.Width(560).MaxHeight(440).Radius(16).Background(pal.headerBg).Border(1, pal.cardBorder).
+		panel.Width(560).MaxHeight(440).Radius(16).Background(pal.surface).Border(1, pal.border).
 			Shadow(0, 20, 60, 0, ui.RGBA(0, 0, 0, 0.28)).Clip().Label("Command bar")
-		ui.Row(c).Padding(10, 14).Gap(10).BorderWidth(0, 0, 1, 0).BorderColor(pal.cardBorder).Children(func() {
+		ui.Row(c).Padding(10, 14).Gap(10).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
 			ui.Icon(c, iconCommand).FontSize(16).TextColor(t.TextMuted)
 			input := ui.TextInputBase(c, &w.paletteQuery).Placeholder("Type a command…").Label("Command").FontSize(15).Grow(1).AutoFocus()
 			if input.Changed() {

@@ -551,13 +551,15 @@ func (w *window) groupChips(c *ui.Context, pal *palette) {
 				if g.summary != "" {
 					tip += ": " + g.summary
 				}
-				b := ui.ButtonBase(c.Key(g.key)).Height(26).Padding(0, 10, 0, 8).Gap(6).Radius(13).Label(g.label).Tooltip(tip).
+				b := ui.ButtonBase(c.Key(g.key)).Height(26).Padding(0, 10, 0, 8).Gap(6).Radius(radiusChip).Label(g.label).Tooltip(tip).
 					Border(1, ui.RGBA(127, 127, 127, 0.18)).Shrink(0)
 				switch {
 				case gi == active:
-					b.Background(t.Accent.Alpha(0.14)).Border(1, t.Accent.Alpha(0.45))
+					// The group the file shown belongs to: a low ground, and the
+					// body color kept, as the selected rows of the tree.
+					b.Background(pal.selection)
 				case b.Hovered():
-					b.Background(pal.hover)
+					b.Background(pal.surfaceHover)
 				}
 				if b.Clicked() {
 					w.showGroup(gi)
@@ -567,7 +569,7 @@ func (w *window) groupChips(c *ui.Context, pal *palette) {
 					svg, accent := groupMark(g)
 					icon := ui.Icon(c, svg).FontSize(12).TextColor(categoryColor(accent, t, pal))
 					if g.critical {
-						icon.TextColor(t.Danger)
+						icon.TextColor(careTone(pal))
 					}
 					ui.Text(c, g.label).FontSize(12).FontWeight(600).SingleLine()
 					count := ui.Textf(c, "%d/%d", viewed[gi], total[gi]).Font(w.codeFont()).FontSize(10).FontWeight(600).TextColor(t.TextMuted)
@@ -603,13 +605,13 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 		}
 		w.rowsDirty = true
 	}
-	ui.Column(c).Padding(20, 2, 0).Gap(4).Background(pal.appBg).Children(func() {
+	ui.Column(c).Padding(gapBlock, 2, 0).Gap(4).Background(pal.appBg).Children(func() {
 		// The whole band folds the group, as its files fold away in the tree:
 		// the button at the end says the same, and the chevron only says which
 		// way the fold goes.
-		head := ui.Row(c).Gap(8).Label(g.label).Tooltip("Collapse or expand " + g.label)
+		head := ui.Row(c).Height(lineGroup).Gap(8).Label(g.label).Tooltip("Fold or unfold " + g.label)
 		if head.Hovered() {
-			head.Background(pal.hover.Alpha(0.7))
+			head.Background(pal.surfaceHover.Alpha(0.7))
 		}
 		if head.Clicked() {
 			collapse(!allCollapsed)
@@ -618,7 +620,7 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			svg, accent := groupMark(g)
 			icon := ui.Icon(c, svg).FontSize(15).TextColor(categoryColor(accent, t, pal))
 			if g.critical {
-				icon.TextColor(t.Danger)
+				icon.TextColor(careTone(pal))
 			}
 			name := ui.Row(c).Gap(8).Shrink(1).MinWidth(0)
 			name.Children(func() {
@@ -632,7 +634,7 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			})
 			if g.critical {
 				ui.Text(c, "Needs care").FontSize(11).FontWeight(600).Padding(2, 8).Radius(10).
-					Background(t.Danger.Alpha(0.14)).TextColor(t.Danger).Shrink(0)
+					Background(careTone(pal).Alpha(0.14)).TextColor(careTone(pal)).Shrink(0)
 			}
 			ui.RichText(c,
 				ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
@@ -641,21 +643,21 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			).FontSize(12).FontWeight(600).Shrink(0)
 			// The same bar the sidebar shows this group's progress with, so
 			// that both read alike.
-			ui.Progress(c, ratio(viewed, len(files))).Width(groupProgressWidth).Shrink(0).AlignSelf(ui.Center)
+			progressBar(c, pal, ratio(viewed, len(files))).Width(groupProgressWidth).Shrink(0).AlignSelf(ui.Center)
 			ui.Spacer(c)
 			count := ui.Textf(c, "%d/%d viewed", viewed, len(files)).FontSize(12).TextColor(t.TextMuted).Shrink(0)
 			if viewed == len(files) && viewed > 0 {
 				count.TextColor(pal.viewed)
 			}
-			label := "Collapse"
+			label := "Fold"
 			if allCollapsed {
-				label = "Expand"
+				label = "Unfold"
 			}
 			b := ui.ButtonBase(c).Padding(3, 8).Radius(6).Label(label + " " + g.label).Children(func() {
 				ui.Text(c, label).FontSize(12).FontWeight(600).TextColor(t.TextMuted)
 			})
 			if b.Hovered() {
-				b.Background(pal.hover)
+				b.Background(pal.surfaceHover)
 			}
 			if b.Clicked() {
 				collapse(!allCollapsed)
@@ -664,15 +666,15 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			// group alone, so with one group this would say the same.
 			if len(w.groups) > 1 {
 				everyCollapsed := w.allCollapsed()
-				label := "Collapse all"
+				label := "Fold all"
 				if everyCollapsed {
-					label = "Expand all"
+					label = "Unfold all"
 				}
 				ab := ui.ButtonBase(c).Padding(3, 8).Radius(6).Label(label).Children(func() {
 					ui.Text(c, label).FontSize(12).FontWeight(600).TextColor(t.TextMuted)
 				})
 				if ab.Hovered() {
-					ab.Background(pal.hover)
+					ab.Background(pal.surfaceHover)
 				}
 				if ab.Clicked() {
 					for _, f := range w.files {
@@ -683,9 +685,21 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			}
 		})
 		if g.summary != "" {
-			ui.Text(c, g.summary).FontSize(13).TextColor(t.Text.Alpha(0.8)).Selectable().Padding(0, 0, 0, 23)
+			ui.Text(c, g.summary).FontSize(13).TextColor(t.Text).Selectable().Padding(0, 0, 0, 23)
 		}
 	})
+}
+
+// progressBar shows how much of a group was viewed, in the neutral tones of
+// the review: the accent is kept for what can be pressed, and the item that
+// is current.
+func progressBar(c *ui.Context, pal *palette, share float64) ui.Element {
+	const height = 6
+	bar := ui.Row(c).Height(height).Radius(height / 2).Background(pal.pressed).Clip().Label("Viewed")
+	bar.Children(func() {
+		ui.Box(c).Height(height).Radius(height / 2).Background(pal.progress).WidthPercent(float32(share) * 100)
+	})
+	return bar
 }
 
 // groupProgressWidth is how wide a group's progress shows in a heading of
@@ -764,7 +778,7 @@ func (w *window) noteRow(c *ui.Context, pal *palette, n *aiNote) {
 	t := c.Theme()
 	accent := t.Accent
 	if n.critical {
-		accent = t.Danger
+		accent = careTone(pal)
 	}
 	border := accent.Alpha(0.22)
 	if n == w.noteSel {

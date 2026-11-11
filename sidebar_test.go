@@ -13,9 +13,11 @@ func TestFileTreeSelectsOnPressFromOutsideSidebar(t *testing.T) {
 	w, _ := newTestWindow(t, testRepo(t))
 	w.treeSel = "f:main.go"
 	draft := ""
-	var accent ui.Color
+	var selected ui.Color
 	tt := ui.NewTester(func(c *ui.Context) {
-		accent = c.Theme().Accent
+		// The ground of the row the keys are on: the selection's, which is
+		// lower than the accent, kept for what can be pressed.
+		selected = paletteFor(c.Theme()).selection.Over(c.Theme().Background)
 		ui.Column(c).Fill().Children(func() {
 			ui.Text(c, "Selected "+w.treeSel)
 			w.fileTree(c)
@@ -43,7 +45,7 @@ func TestFileTreeSelectsOnPressFromOutsideSidebar(t *testing.T) {
 	pixel := func(r ui.Rect) color.RGBA {
 		return tt.Image().RGBAAt(int(r.X+r.W-4), int(r.Y+r.H/2))
 	}
-	want := color.RGBA{R: accent.R, G: accent.G, B: accent.B, A: 255}
+	want := color.RGBA{R: selected.R, G: selected.G, B: selected.B, A: 255}
 	if pixel(old) == want || pixel(r) != want {
 		t.Fatalf("old fill %v, new fill %v, want only the new file to have %v", pixel(old), pixel(r), want)
 	}

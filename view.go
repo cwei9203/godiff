@@ -99,7 +99,7 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 		right += bar.Right
 	}
 	ui.Row(c).Height(titleBarHeight).Padding(0, right, 0, left).Gap(8).Shrink(0).DragWindow().
-		BorderWidth(0, 0, 1, 0).BorderColor(pal.cardBorder).Background(pal.headerBg.Alpha(0.6)).Children(func() {
+		BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Background(pal.surface.Alpha(0.6)).Children(func() {
 		if !w.sidebarShown {
 			w.sidebarToggle(c)
 		}
@@ -215,7 +215,7 @@ func (w *window) layoutControl(c *ui.Context, pal *palette) {
 		}{{iconSplit, "Split"}, {iconUnified, "Unified"}} {
 			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
 			if i == choice {
-				s.Background(pal.headerBg).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
+				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
 			}
 			s.OnClick(func() {
 				split := i == 0
@@ -234,7 +234,6 @@ func (w *window) layoutControl(c *ui.Context, pal *palette) {
 // mainArea shows the review, the commit view, or why there is nothing,
 // and reports whether it built the review list in this pass.
 func (w *window) mainArea(c *ui.Context, pal *palette) bool {
-	t := c.Theme()
 	if w.commitOpen && w.source.kind == sourceWorkingTree {
 		w.commitView(c)
 		return false
@@ -247,9 +246,9 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 				if w.source.kind == sourcePull {
 					what = "New commits were pushed,"
 				}
-				ui.Text(c, what).FontSize(13).FontWeight(600).TextColor(pal.viewed.Mix(t.Text, 0.6))
+				ui.Text(c, what).FontSize(13).FontWeight(600).TextColor(pal.viewed)
 				ref := ui.ButtonBase(c).FocusRing(true).Children(func() {
-					ui.Text(c, "refresh to see them.").FontSize(13).FontWeight(600).Underline().TextColor(pal.viewed.Mix(t.Text, 0.6))
+					ui.Text(c, "refresh to see them.").FontSize(13).FontWeight(600).Underline().TextColor(pal.viewed)
 				})
 				if ref.Clicked() {
 					w.refresh()
@@ -295,7 +294,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 	// The commit's message shows at once, from the history, until it
 	// shows atop the changes.
 	if w.source.kind == sourceCommit && w.commit != nil && w.loadErr == nil && len(w.files) == 0 {
-		w.commitMessage(c, pal).Margin(11, 12, 0)
+		w.commitMessage(c, pal).Margin(gapBlock, 12, 0)
 	}
 	switch {
 	case w.loadErr != nil && w.source.kind == sourcePull:
@@ -353,7 +352,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 func (w *window) commitMessage(c *ui.Context, pal *palette) ui.Element {
 	t := c.Theme()
 	cm := w.commit
-	return ui.Column(c).Padding(12, 16).Gap(6).Radius(cardRadius).Background(pal.headerBg).Border(1, pal.cardBorder).Children(func() {
+	return ui.Column(c).Padding(padCard, 16).Gap(6).Radius(radiusCard).Background(pal.surface).Border(1, pal.border).Children(func() {
 		ui.Row(c).Gap(10).Children(func() {
 			ui.Avatar(c, cm.Author, nil).Size(26, 26)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
@@ -364,7 +363,7 @@ func (w *window) commitMessage(c *ui.Context, pal *palette) ui.Element {
 			ui.Text(c, shortHash(cm.Hash)).Font(w.codeFont()).FontSize(12).TextColor(pal.ref).Selectable()
 		})
 		if cm.Body != "" {
-			ui.Text(c, cm.Body).FontSize(13).Selectable().Padding(4, 0, 0, 36).TextColor(t.Text.Alpha(0.85))
+			ui.Text(c, cm.Body).FontSize(13).Selectable().Padding(4, 0, 0, 36).TextColor(t.Text)
 		}
 	})
 }
@@ -373,7 +372,7 @@ func (w *window) commitMessage(c *ui.Context, pal *palette) ui.Element {
 func emptyPanel(c *ui.Context, pal *palette, title, detail string, actions func()) {
 	t := c.Theme()
 	ui.Column(c).Grow(1).Center().Padding(24).Children(func() {
-		ui.Column(c).MaxWidth(520).Padding(28).Gap(10).Radius(16).Background(pal.headerBg).Border(1, pal.cardBorder).AlignItems(ui.Center).Children(func() {
+		ui.Column(c).MaxWidth(520).Padding(28).Gap(10).Radius(16).Background(pal.surface).Border(1, pal.border).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, iconFileDiff).FontSize(28).TextColor(t.TextMuted)
 			ui.Text(c, title).FontSize(15).Bold().TextAlign(ui.Center)
 			if detail != "" {
@@ -546,12 +545,11 @@ func (v *welcome) row(c *ui.Context, pal *palette, i int, root string) {
 	color, muted := t.Text, t.TextMuted
 	switch {
 	case chosen && focused:
-		row.Background(t.Accent)
-		color, muted = t.AccentText, t.AccentText.Alpha(0.8)
+		row.Background(pal.selection)
 	case chosen:
-		row.Background(ui.RGBA(127, 127, 127, 0.14))
+		row.Background(pal.surfaceHover)
 	case row.Hovered():
-		row.Background(ui.RGBA(127, 127, 127, 0.08))
+		row.Background(pal.hover)
 	}
 	if row.Clicked() {
 		v.choice = i
