@@ -89,8 +89,8 @@ func TestFileViewOneLaysOutOneFile(t *testing.T) {
 	w.filter = ""
 }
 
-// TestFileViewStackShowsEveryFile checks the other view: every file of the
-// scope, one under the other, and no navigation bar.
+// TestFileViewStackShowsEveryFile checks the other view: every file, one
+// under the other, and no navigation bar.
 func TestFileViewStackShowsEveryFile(t *testing.T) {
 	w, tt := fileViewWindow(t)
 	keepFileView(t)
@@ -139,11 +139,11 @@ func TestFileViewToolbarSwitches(t *testing.T) {
 	}
 }
 
-// TestFileViewNavNumbers checks where the file shown stands: among every
-// file of the scope, and among the files of the group shown.
+// TestFileViewNavNumbers checks where the file shown stands: it numbers
+// every file of the review, since the file view shows every one of them.
 func TestFileViewNavNumbers(t *testing.T) {
 	w, tt := fileViewWindow(t)
-	// The third file of the eight, every change shown.
+	// The third file of the eight.
 	w.current = 2
 	tt.Frame()
 	if at, total := w.fileNav(); at != 3 || total != 8 {
@@ -152,38 +152,18 @@ func TestFileViewNavNumbers(t *testing.T) {
 	if !tt.HasText("3 / 8") {
 		t.Errorf("no 3 / 8 in %q", tt.Texts())
 	}
-	// A group shown alone numbers its own files, from its own start.
-	gi := groupIndex(t, w, "code")
-	w.showGroup(gi)
+	// A group's way in shows its first file, and numbers that file among
+	// every file.
+	w.showGroup(groupIndex(t, w, "code"))
 	tt.Frame()
-	if at, total := w.fileNav(); at != 1 || total != 3 {
-		t.Errorf("%d / %d, want 1 / 3", at, total)
-	}
-	if !tt.HasText("1 / 3") {
-		t.Errorf("no 1 / 3 in %q", tt.Texts())
-	}
 	if path := w.files[w.current].Path; path != "main.go" {
 		t.Errorf("the group opens on %s, want its first file", path)
 	}
-	// Down the group, and no further: the files of the other groups are not
-	// in the count.
-	w.stepFile(1)
-	w.stepFile(1)
-	tt.Frame()
-	if at, total := w.fileNav(); at != 3 || total != 3 {
-		t.Errorf("%d / %d, want 3 / 3", at, total)
+	if at, total := w.fileNav(); at != 4 || total != 8 {
+		t.Errorf("%d / %d, want 4 / 8", at, total)
 	}
-	if path := w.files[w.current].Path; path != "util.go" {
-		t.Errorf("the third file of the group is %s", path)
-	}
-	// A file shown alone stands 1 of 1.
-	w.showFile(w.current)
-	tt.Frame()
-	if at, total := w.fileNav(); at != 1 || total != 1 {
-		t.Errorf("%d / %d, want 1 / 1", at, total)
-	}
-	if !tt.HasText("1 / 1") {
-		t.Errorf("no 1 / 1 in %q", tt.Texts())
+	if !tt.HasText("4 / 8") {
+		t.Errorf("no 4 / 8 in %q", tt.Texts())
 	}
 }
 
@@ -301,7 +281,7 @@ func TestFileViewSummaryFolds(t *testing.T) {
 }
 
 // TestFileViewSelectsFromTheTree checks a file of the Files section: it
-// shows alone, the navigation bar counting 1 of 1.
+// shows, the navigation bar numbering it among every file.
 func TestFileViewSelectsFromTheTree(t *testing.T) {
 	w, tt := fileViewWindow(t)
 	if err := tt.Click("util.go"); err != nil {
@@ -311,14 +291,19 @@ func TestFileViewSelectsFromTheTree(t *testing.T) {
 	if path := w.files[w.current].Path; path != "util.go" {
 		t.Fatalf("%s shows, want util.go", path)
 	}
-	if w.scope.kind != scopeOneFile {
-		t.Errorf("the click showed %+v, want the file alone", w.scope)
-	}
-	if at, total := w.fileNav(); at != 1 || total != 1 {
-		t.Errorf("%d / %d, want 1 / 1", at, total)
+	if at, total := w.fileNav(); at != 6 || total != 8 {
+		t.Errorf("%d / %d, want 6 / 8", at, total)
 	}
 	if got := countRows(w, rowHeader); got != 1 {
 		t.Errorf("%d file cards, want 1", got)
+	}
+	// A second click shows the same file again: it chooses no more.
+	if err := tt.Click("util.go"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if path := w.files[w.current].Path; path != "util.go" {
+		t.Errorf("the second click showed %s, want util.go", path)
 	}
 }
 

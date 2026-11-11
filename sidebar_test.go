@@ -135,7 +135,9 @@ func TestSidebarGroupsInTheTree(t *testing.T) {
 			t.Errorf("%s shows at %d, depth %d, not under its group", w.files[i].Path, j, rows[j].depth)
 		}
 	}
-	// A group's row shows that part of the review.
+	// A group's row folds its files away, and leaves the surface on the
+	// file it showed: it is a fold, not a place to go.
+	shown := w.current
 	r, ok := tt.Find("Code")
 	if !ok {
 		t.Fatal("the Code group has no row")
@@ -143,14 +145,17 @@ func TestSidebarGroupsInTheTree(t *testing.T) {
 	tt.Press(r.X+r.W/2, r.Y+r.H/2)
 	tt.Release(r.X+r.W/2, r.Y+r.H/2)
 	tt.Frame()
-	if w.current < 0 || w.files[w.current].group != gi {
-		t.Fatalf("the surface stayed on file %d, group %v", w.current, w.files[w.current].group)
+	if !w.closedDirs["g:"+w.groups[gi].key] {
+		t.Fatalf("the press did not fold Code: %v", w.closedDirs)
+	}
+	if w.current != shown {
+		t.Errorf("the fold showed file %d, want %d still", w.current, shown)
 	}
 }
 
-// TestSidebarTreeShowsEveryGroup checks that the navigation keeps every
-// file while the surface shows one part of the review: the scope changes
-// the diffs, not the tree.
+// TestSidebarTreeShowsEveryGroup checks that the tree keeps every file
+// while the surface shows one file alone: going to a file changes the
+// diffs, not the tree.
 func TestSidebarTreeShowsEveryGroup(t *testing.T) {
 	w, tt := groupByKind(t)
 	w.showGroup(groupIndex(t, w, "code"))

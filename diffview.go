@@ -145,8 +145,8 @@ func (w *window) matchRow() bool {
 }
 
 // fileNavRow heads the file shown alone: the way to the file before it and
-// the one after it, where it stands among the files of the scope, its name,
-// and the group it belongs to.
+// the one after it, where it stands among the files, its name, and the
+// group it belongs to.
 func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 	t := c.Theme()
 	f := w.files[idx]
@@ -189,15 +189,8 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 	})
 }
 
-// revealFile scrolls the surface to a file's card. A file outside the
-// scope shown, as a match of the find bar may be, widens the surface to
-// every change first, so that its card is there to scroll to.
+// revealFile scrolls the surface to a file's card.
 func (w *window) revealFile(i int) {
-	if !w.inScope(i) {
-		w.scope = allScope()
-		w.rowsDirty = true
-		w.buildTree()
-	}
 	// The file gone to is the one shown, before the rows are laid out: the
 	// file view lays out that file's rows alone.
 	w.current = i
@@ -268,9 +261,9 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 	}
 }
 
-// summaryLine is the agent's review folded to one line, as a scope
-// narrower than every change shows it: the card tells of every change, not
-// of the part shown. The line opens the card again.
+// summaryLine is the agent's review folded to one line, as the file view
+// shows it: the card tells of every change, not of the file shown. The line
+// opens the card again.
 func (w *window) summaryLine(c *ui.Context, pal *palette) {
 	t := c.Theme()
 	st := w.analyses[w.source]
@@ -365,22 +358,17 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 	})
 	h.Children(func() {
 		if f.group >= 0 && f.group < len(w.groups) {
-			// Where the file belongs, so that a card says it too: the
-			// breadcrumb goes up a step, to the group from the file alone and
-			// to every change from a group.
+			// Where the file belongs, so that a card says it too, and the way
+			// to the group's other files.
 			g := &w.groups[f.group]
 			svg, accent := groupMark(g)
-			tip := "Show the group " + g.label
-			if w.scope.kind == scopeOneGroup {
-				tip = "Show every change (\u2318\u21e7A)"
-			}
 			crumb := ui.ButtonBase(c).Height(22).Padding(0, 7, 0, 6).Gap(5).Radius(6).Shrink(0).
-				Label("Group " + g.label).Tooltip(tip)
+				Label("Group " + g.label).Tooltip("Go to the group " + g.label)
 			if crumb.Hovered() {
 				crumb.Background(pal.hover)
 			}
 			if crumb.Clicked() {
-				w.scopeUp(f.group)
+				w.showGroup(f.group)
 			}
 			crumb.Children(func() {
 				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)

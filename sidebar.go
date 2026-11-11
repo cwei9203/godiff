@@ -456,14 +456,12 @@ func (w *window) visibleTree() []treeRow {
 	return rows
 }
 
-// fileTree shows the sidebar's files tab: every change, the groups of the
-// files, and the files of each under it. The whole is one list, scrolled as
-// a whole: a group folds its files away, which is how much room it takes is
-// decided.
+// fileTree shows the sidebar's files tab: the groups of the files, and the
+// files of each under it. The whole is one list, scrolled as a whole: a
+// group folds its files away, which is how much room it takes is decided.
 func (w *window) fileTree(c *ui.Context) {
 	pal := paletteFor(c.Theme())
 	t := c.Theme()
-	w.allChangesBar(c, pal)
 	if len(w.treeRoots) == 0 {
 		ui.Column(c).Grow(1).Center().Padding(16).Children(func() {
 			msg := "No changed files"
@@ -480,56 +478,6 @@ func (w *window) fileTree(c *ui.Context) {
 	rows := w.visibleTree()
 	w.treeRows = rows
 	w.fileTreeList(c, pal, rows)
-}
-
-// allChangesBar heads the sidebar: every change, with its files' count,
-// their change, and how much of it was viewed. It stays above the tree, in
-// reach however far the files scroll.
-func (w *window) allChangesBar(c *ui.Context, pal *palette) {
-	t := c.Theme()
-	files, viewed, adds, dels := 0, 0, 0, 0
-	for i, f := range w.files {
-		if !w.fileVisible(i) {
-			continue
-		}
-		files++
-		if w.isViewed(f) {
-			viewed++
-		}
-		if countable(f) {
-			adds += f.Additions
-			dels += f.Deletions
-		}
-	}
-	all := w.scope.all()
-	row := ui.Row(c).Height(34).Padding(0, 8, 0, 6).Gap(6).Radius(6).AlignItems(ui.Center).Label("All changes")
-	switch {
-	case all:
-		row.Background(t.Accent.Alpha(0.14).Over(pal.headerBg))
-	case row.Hovered():
-		row.Background(t.Accent.Alpha(0.07).Over(pal.headerBg))
-	}
-	if row.Clicked() {
-		w.showAll()
-	}
-	row.Children(func() {
-		ui.Icon(c, iconFileDiff).FontSize(13).TextColor(t.TextMuted).Shrink(0)
-		name := ui.Text(c, "All changes").FontSize(13).FontWeight(600).SingleLine().Shrink(1).MinWidth(0)
-		if !all {
-			name.TextColor(t.TextMuted)
-		}
-		ui.Spacer(c)
-		ui.RichText(c,
-			ui.Span{Text: "+" + compact(adds), Color: pal.addText},
-			ui.Span{Text: " −" + compact(dels), Color: pal.delText},
-		).Font(w.codeFont()).FontSize(10).FontWeight(600).Shrink(0)
-		count := ui.Textf(c, "%d/%d", viewed, files).Font(w.codeFont()).FontSize(10).FontWeight(600).
-			TextColor(t.TextMuted).Shrink(0).
-			Tooltip(itoa(viewed) + " of " + plural(files, "file") + " viewed")
-		if viewed == files && files > 0 {
-			count.TextColor(pal.viewed)
-		}
-	})
 }
 
 // ratio is a share between 0 and 1, 0 when there is nothing to share.
@@ -570,7 +518,9 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			return
 		}
 		if n.dir && n.group >= 0 && n.group < len(w.groups) {
-			// A group heads its files, which fold away under it.
+			// A group heads its files, which fold away under it. It returns
+			// before the press and the click below, which choose a row: a
+			// group is a switch, and a click on it chooses nothing.
 			w.groupTreeRow(c, pal, n.group, key, focused)
 			return
 		}
@@ -595,10 +545,9 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 				choose(key)
 				return
 			}
-			// A file shows alone, and the file shown again goes back to
-			// every change.
+			// A file shows: one file at a time shows its card, and the
+			// stacked view scrolls to it. A second click shows it again.
 			choose(key)
-			w.showFile(n.file)
 		}
 		muted := t.TextMuted
 		if selected && focused {
@@ -729,39 +678,41 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 const groupRowHeight = 38
 
 // groupTreeRow is a group in the sidebar: the heading of the files under
-// it, with what they change and how much of it was viewed. A click shows
-// that part of the review alone; the chevron folds its files away.
+// it, with what they change and how much of it was viewed. The whole row
+// folds its files away, and the chevron only says which way the fold goes.
+//
+// A group is a switch, not a row a click may choose: a click writes nothing
+// but the fold. It writes no treeSel, so no group takes a selected ground
+// and the file the surface showed stays the chosen one; it keeps the focus
+// where it was, so the keys stay on the diffs; and it leaves w.focusList
+// alone, so it never asks the list for the focus. The keys still say which
+// row they are on, with a ring rather than a ground.
 func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, focused bool) {
 	t := c.Theme()
 	g := &w.groups[gi]
 	files := w.groupFiles(gi)
 	viewed, adds, dels := w.groupStats(gi)
 	open := !w.closedDirs[key]
-	active := w.scope.kind != scopeAll && w.scope.group == gi
 	row := ui.Row(c).MinHeight(groupRowHeight).Padding(2, 8, 2, 4).Gap(6).Radius(6).
-		AlignItems(ui.Center).MinWidth(0).Label(g.label)
+		AlignItems(ui.Center).MinWidth(0).Label(g.label).KeepFocus()
 	switch {
-	case active:
-		row.Background(t.Accent.Alpha(0.14).Over(pal.headerBg))
 	case key == w.treeSel && focused:
-		row.Background(ui.RGBA(127, 127, 127, 0.2))
+		// The keys moved onto the group: a ring says so, where a ground
+		// would read as a choice the user did not make.
+		row.Border(1, ui.RGBA(127, 127, 127, 0.45))
 	case row.Hovered():
 		row.Background(t.Accent.Alpha(0.07).Over(pal.headerBg))
 	}
-	if row.Pressed() {
-		w.treeSel = key
-	}
 	if row.Clicked() {
-		w.treeSel = key
-		w.showGroup(gi)
+		w.closedDirs[key] = open
 	}
 	row.Children(func() {
 		tip := "Hide the files of " + g.label
 		if !open {
 			tip = "Show the files of " + g.label
 		}
-		// The chevron folds the files away, which is how much room the
-		// group takes.
+		// The chevron says which way the fold goes, and takes no click of its
+		// own: a click on it is a click on the row, one fold per click.
 		arrow := ui.Box(c).Size(12, 12).Center().Shrink(0).Label(tip).Tooltip(tip)
 		arrow.Children(func() {
 			ic := ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted)
@@ -771,9 +722,6 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 			}
 			ic.Rotate(ic.Animate("grp"+g.key, target, 150*time.Millisecond))
 		})
-		if arrow.Pressed() {
-			w.closedDirs[key] = open
-		}
 		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(1).Children(func() {
 			ui.Row(c).Gap(5).MinWidth(0).AlignItems(ui.Center).Children(func() {
 				svg, accent := groupMark(g)
@@ -781,11 +729,8 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 				if g.critical {
 					icon.TextColor(t.Danger)
 				}
-				name := ui.Text(c, g.label).FontSize(13).FontWeight(600).SingleLine().Grow(1).Shrink(1).
+				ui.Text(c, g.label).FontSize(13).FontWeight(600).SingleLine().Grow(1).Shrink(1).
 					MinWidth(0).Tooltip(g.summary)
-				if !active {
-					name.TextColor(t.Text)
-				}
 				if g.critical {
 					ui.Icon(c, iconAlert).FontSize(11).TextColor(t.Danger).Shrink(0).Tooltip("Needs care")
 				}
@@ -808,22 +753,14 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 }
 
 // selectTreeFile chooses a file's row in the tree, as the surface
-// scrolls to it.
+// scrolls to it. A group the user folded stays folded: what the surface
+// shows does not open a tree the reader closed.
 func (w *window) selectTreeFile(i int) {
 	key := "f:" + w.files[i].Path
 	if w.treeSel == key {
 		return
 	}
 	w.treeSel = key
-	// The directories holding it open, and its group.
-	for k, n := range w.treeItems {
-		if !n.dir || !w.closedDirs[k] {
-			continue
-		}
-		if (n.group >= 0 && n.group == w.files[i].group) || (n.path != "" && strings.HasPrefix(w.files[i].Path, n.path+"/")) {
-			w.closedDirs[k] = false
-		}
-	}
 	for r, row := range w.visibleTree() {
 		if row.key == key {
 			w.treeList.ScrollIntoView(r)

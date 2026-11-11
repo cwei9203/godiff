@@ -22,44 +22,6 @@ const (
 	groupAI
 )
 
-// scopeKind is what the surface shows: every change, the files of one
-// group, or one file.
-type scopeKind uint8
-
-const (
-	// scopeAll shows the review as a whole.
-	scopeAll scopeKind = iota
-	// scopeOneGroup shows a group's files, under its strip.
-	scopeOneGroup
-	// scopeOneFile shows one file's card, under its group's strip.
-	scopeOneFile
-)
-
-// scope is the part of the review the surface shows, chosen in the sidebar
-// or in the chips. It is not kept, so that a window opens on every change.
-type scope struct {
-	kind  scopeKind
-	group int // the group shown, -1 for none
-	file  int // the file shown, -1 for none
-}
-
-// allScope shows every change.
-func allScope() scope { return scope{kind: scopeAll, group: -1, file: -1} }
-
-// all reports whether the surface shows every change.
-func (s scope) all() bool { return s.kind == scopeAll }
-
-// inScope reports whether the surface shows a file.
-func (w *window) inScope(i int) bool {
-	switch w.scope.kind {
-	case scopeOneGroup:
-		return w.files[i].group == w.scope.group
-	case scopeOneFile:
-		return i == w.scope.file
-	}
-	return true
-}
-
 // the file view of the settings: one file at a time, or every file
 // stacked one under the other.
 const (
@@ -68,15 +30,15 @@ const (
 )
 
 // oneFile reports whether the surface shows one file at a time, rather
-// than every file of the scope one under the other.
+// than every file one under the other.
 func (w *window) oneFile() bool { return w.settings.FileView != fileViewStack }
 
 // viewFiles lists the files the file view may show, in the order they
-// show: those of the scope that pass the filter.
+// show: those that pass the filter.
 func (w *window) viewFiles() []int {
 	var out []int
 	for i := range w.files {
-		if w.fileVisible(i) && w.inScope(i) {
+		if w.fileVisible(i) {
 			out = append(out, i)
 		}
 	}
@@ -84,11 +46,11 @@ func (w *window) viewFiles() []int {
 }
 
 // shownFile is the file the surface shows alone: the one chosen while it
-// is of the scope, else the first of it, -1 for none.
+// passes the filter, else the first that does, -1 for none.
 func (w *window) shownFile() int {
 	first := -1
 	for i := range w.files {
-		if !w.fileVisible(i) || !w.inScope(i) {
+		if !w.fileVisible(i) {
 			continue
 		}
 		if first < 0 {
@@ -119,8 +81,7 @@ func (w *window) canStep(dir int) bool {
 	return at > 0 && at+dir >= 1 && at+dir <= total
 }
 
-// stepFile shows the file before (dir -1) or after (dir 1) the one shown,
-// within the scope.
+// stepFile shows the file before (dir -1) or after (dir 1) the one shown.
 func (w *window) stepFile(dir int) {
 	if !w.canStep(dir) {
 		return
@@ -153,8 +114,8 @@ func (w *window) setFileView(mode string) {
 }
 
 // summaryFolded reports whether the agent's review folds to one line: it
-// summarizes every change, not the part of the review shown.
-func (w *window) summaryFolded() bool { return w.oneFile() || !w.scope.all() }
+// summarizes every change, not the one file shown.
+func (w *window) summaryFolded() bool { return w.oneFile() }
 
 // fileGroup is a group of the files, which show together.
 type fileGroup struct {
@@ -283,14 +244,6 @@ func (w *window) regroup() {
 		return ""
 	}
 	current, selected := path(w.current), path(w.selFile)
-	// The scope follows its file or its group to their new place.
-	scopePath, scopeKey := "", ""
-	if w.scope.kind == scopeOneFile {
-		scopePath = path(w.scope.file)
-	}
-	if w.scope.kind != scopeAll && w.scope.group >= 0 && w.scope.group < len(w.groups) {
-		scopeKey = w.groups[w.scope.group].key
-	}
 	w.groups = nil
 	for _, f := range w.files {
 		f.group = -1
@@ -380,22 +333,6 @@ func (w *window) regroup() {
 	if w.selFile < 0 {
 		w.selHunk = -1
 	}
-	// A scope whose group or file is gone shows every change; a file's
-	// scope falls back to its group.
-	w.scope = allScope()
-	if scopeKey != "" {
-		if gi := slices.IndexFunc(w.groups, func(g fileGroup) bool { return g.key == scopeKey }); gi >= 0 {
-			w.scope = scope{kind: scopeOneGroup, group: gi, file: -1}
-		}
-	}
-	if scopePath != "" {
-		if i := slices.IndexFunc(w.files, func(f *fileState) bool { return f.Path == scopePath }); i >= 0 {
-			w.scope = scope{kind: scopeOneFile, group: w.files[i].group, file: i}
-		}
-	}
-	if w.scope.kind == scopeOneFile {
-		w.current = w.scope.file
-	}
 	w.buildNotes()
 	w.matchesFor = "\x00" // find again
 	w.buildTree()
@@ -413,80 +350,19 @@ func (w *window) groupFiles(gi int) []int {
 	return out
 }
 
-// showAll shows every change again, from its top.
-func (w *window) showAll() { w.setScope(allScope()) }
-
-// showGroup shows the files of a group alone. A second click on the group
-// shown goes back to every change, as a row folds itself shut.
+// showGroup goes to a group: every file stacked scrolls to the first file
+// of the group, and one file at a time shows it. It is a way to a group,
+// not a state of the surface: nothing is selected, and nothing folds.
 func (w *window) showGroup(gi int) {
 	if gi < 0 || gi >= len(w.groups) {
 		return
 	}
-	if w.scope.kind == scopeOneGroup && w.scope.group == gi {
-		w.showAll()
+	files := w.groupFiles(gi)
+	if len(files) == 0 {
 		return
 	}
-	w.setScope(scope{kind: scopeOneGroup, group: gi, file: -1})
-}
-
-// showFile shows one file alone. A second click on the file shown goes back
-// to every change.
-func (w *window) showFile(i int) {
-	if i < 0 || i >= len(w.files) {
-		return
-	}
-	if w.scope.kind == scopeOneFile && w.scope.file == i {
-		w.showAll()
-		return
-	}
-	w.setScope(scope{kind: scopeOneFile, group: w.files[i].group, file: i})
-}
-
-// scopeUp shows the group a file shown alone belongs to, and every change
-// from a group: the steps back the surface's breadcrumb takes.
-func (w *window) scopeUp(gi int) {
-	if w.scope.kind == scopeOneFile && gi >= 0 {
-		w.showGroup(gi)
-		return
-	}
-	w.showAll()
-}
-
-// setScope changes what the surface shows: the rows of the new scope from
-// its top, the file at the top, and the file tree with them.
-func (w *window) setScope(s scope) {
-	w.scope = s
-	// The agent's review summarizes every change, so it folds back to a
-	// line.
-	w.summaryOpen = false
 	w.rowsDirty = true
-	w.buildTree()
-	w.buildRows()
-	w.list.ScrollTo(0, ui.Start)
-	w.revealedAt = w.now
-	switch s.kind {
-	case scopeOneFile:
-		if s.file >= 0 && s.file < len(w.files) {
-			w.current = s.file
-			w.selectTreeFile(s.file)
-		}
-	case scopeOneGroup:
-		if files := w.groupFiles(s.group); len(files) > 0 {
-			w.current = files[0]
-			w.selectTreeFile(files[0])
-		}
-	default:
-		// The group at the top of the surface.
-		for _, r := range w.rows {
-			if !r.banner() {
-				if i := int(r.file); i >= 0 && i < len(w.files) {
-					w.current = i
-					w.selectTreeFile(i)
-				}
-				break
-			}
-		}
-	}
+	w.revealFile(files[0])
 }
 
 // groupIcon draws the mark of a group: a sparkle for the agent's groups.
@@ -601,35 +477,21 @@ func groupMark(g *fileGroup) (*ui.SVG, categoryAccent) {
 	return groupIcon(g), accentMuted
 }
 
-// scopeBar shows every change and the groups as chips, with how many of
-// their files were viewed; a chip shows that part of the review alone, and
-// the one shown again goes back to every change.
-func (w *window) scopeBar(c *ui.Context, pal *palette) {
+// groupChips shows the groups as chips, with how many of their files were
+// viewed; a chip goes to its group. They show where the sidebar's tree does
+// not, and the chip of the file shown says where the surface is.
+func (w *window) groupChips(c *ui.Context, pal *palette) {
 	if len(w.groups) == 0 {
 		return
 	}
 	t := c.Theme()
-	// The chip of the group shown, or of the file shown; every change has
-	// its own.
 	active := -1
-	switch w.scope.kind {
-	case scopeOneGroup, scopeOneFile:
-		active = w.scope.group
-	default:
-		if w.current >= 0 && w.current < len(w.files) {
-			active = w.files[w.current].group
-		}
+	if w.current >= 0 && w.current < len(w.files) {
+		active = w.files[w.current].group
 	}
 	viewed := make([]int, len(w.groups))
 	total := make([]int, len(w.groups))
-	every, everyViewed := 0, 0
 	for _, f := range w.files {
-		if w.hasContent(f) {
-			every++
-			if w.isViewed(f) {
-				everyViewed++
-			}
-		}
 		if f.group < 0 {
 			continue
 		}
@@ -640,26 +502,6 @@ func (w *window) scopeBar(c *ui.Context, pal *palette) {
 	}
 	ui.ScrollHorizontal(c).Shrink(0).Padding(8, 12, 0).Children(func() {
 		ui.Row(c).Gap(6).Children(func() {
-			all := ui.ButtonBase(c.Key("all")).Height(26).Padding(0, 10, 0, 8).Gap(6).Radius(13).
-				Label("All changes").Tooltip("Show every change (\u2318\u21e7A)").
-				Border(1, ui.RGBA(127, 127, 127, 0.18)).Shrink(0)
-			switch {
-			case w.scope.all():
-				all.Background(t.Accent.Alpha(0.14)).Border(1, t.Accent.Alpha(0.45))
-			case all.Hovered():
-				all.Background(pal.hover)
-			}
-			if all.Clicked() {
-				w.showAll()
-			}
-			all.Children(func() {
-				ui.Icon(c, iconFileDiff).FontSize(12).TextColor(t.TextMuted)
-				ui.Text(c, "All").FontSize(12).FontWeight(600).SingleLine()
-				count := ui.Textf(c, "%d/%d", everyViewed, every).Font(w.codeFont()).FontSize(10).FontWeight(600).TextColor(t.TextMuted)
-				if everyViewed == every && every > 0 {
-					count.TextColor(pal.viewed)
-				}
-			})
 			for gi := range w.groups {
 				g := &w.groups[gi]
 				tip := g.label
@@ -719,26 +561,31 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 		w.rowsDirty = true
 	}
 	ui.Column(c).Padding(20, 2, 0).Gap(4).Background(pal.appBg).Children(func() {
-		ui.Row(c).Gap(8).Children(func() {
+		// The whole band folds the group, as its files fold away in the tree:
+		// the button at the end says the same, and the chevron only says which
+		// way the fold goes.
+		head := ui.Row(c).Gap(8).Label(g.label).Tooltip("Collapse or expand " + g.label)
+		if head.Hovered() {
+			head.Background(pal.hover.Alpha(0.7))
+		}
+		if head.Clicked() {
+			collapse(!allCollapsed)
+		}
+		head.Children(func() {
 			svg, accent := groupMark(g)
 			icon := ui.Icon(c, svg).FontSize(15).TextColor(categoryColor(accent, t, pal))
 			if g.critical {
 				icon.TextColor(t.Danger)
 			}
-			// The name of the group goes back to every change, as the name on
-			// the strip of a block does.
-			name := ui.ButtonBase(c).Gap(8).Shrink(1).MinWidth(0).Label("All changes, away from " + g.label).
-				Tooltip("Show every change (⌘⇧A)")
-			if name.Hovered() {
-				name.Background(pal.hover.Alpha(0.7))
-			}
-			if name.Clicked() {
-				w.showAll()
-			}
+			name := ui.Row(c).Gap(8).Shrink(1).MinWidth(0)
 			name.Children(func() {
 				ui.Icon(c, svg).FontSize(15).TextColor(categoryColor(accent, t, pal))
 				ui.Text(c, g.label).FontSize(15).Bold().SingleLine().Shrink(1).MinWidth(0)
-				ui.Icon(c, iconChevronRight).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+				chevron := iconChevronDown
+				if allCollapsed {
+					chevron = iconChevronRight
+				}
+				ui.Icon(c, chevron).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 			})
 			if g.critical {
 				ui.Text(c, "Needs care").FontSize(11).FontWeight(600).Padding(2, 8).Radius(10).

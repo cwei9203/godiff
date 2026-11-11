@@ -256,7 +256,7 @@ func (w *window) buildRows() {
 	}
 	group := -1
 	for fi, f := range w.files {
-		if !w.fileVisible(fi) || !w.inScope(fi) || (shown >= 0 && fi != shown) {
+		if !w.fileVisible(fi) || (shown >= 0 && fi != shown) {
 			continue
 		}
 		idx := int32(fi)
