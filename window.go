@@ -826,7 +826,8 @@ func (w *window) restorePosition() {
 	w.revealFile(i)
 }
 
-// analysesKept is how many reviews a repository keeps, and runsKept how many
+// analysesKept is how many reviews every repository together keeps, in one
+// directory of the app's own, and runsKept how many
 // logs of the repairs are kept in all: the newest, by their time.
 const (
 	analysesKept = 50
