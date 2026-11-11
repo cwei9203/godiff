@@ -108,6 +108,9 @@ type window struct {
 	// columnW is the width of the review beside its sidebar, measured the
 	// frame before: the aside shows on a window wide enough for it.
 	columnW float32
+	// shownFor is the file whose rows the surface laid out last, in the
+	// file view: another one replaces them, from its top.
+	shownFor int
 	// The aside listing the files of the group shown.
 	asideWidth float32
 	asideDrag  float32
@@ -334,6 +337,7 @@ func newWindow(repo *git.Repo, src source) *window {
 		fileMatches:  map[int]bool{},
 		selFile:      -1,
 		selHunk:      -1,
+		shownFor:     -1,
 		asideFor:     -1,
 		asideAt:      -1,
 		asideMore:    map[string]bool{},
@@ -381,8 +385,13 @@ func (w *window) applySettings(s Settings) {
 	if old.ShowWhitespace != s.ShowWhitespace {
 		w.load()
 	}
-	if old.DiffStyle != s.DiffStyle || old.WordWrap != s.WordWrap || old.CodeFontSize != s.CodeFontSize {
+	if old.DiffStyle != s.DiffStyle || old.WordWrap != s.WordWrap || old.CodeFontSize != s.CodeFontSize || old.FileView != s.FileView {
 		w.rowsDirty = true
+	}
+	if old.FileView != s.FileView {
+		// The rows of the other view start from the top of the file shown.
+		w.shownFor = -1
+		w.list.ScrollTo(0, ui.Start)
 	}
 }
 
@@ -499,7 +508,7 @@ func (w *window) switchTo(src source) {
 	w.selFile, w.selHunk = -1, -1
 	w.finding, w.query = false, ""
 	w.hscroll = map[string]float32{}
-	w.current = 0
+	w.current, w.shownFor = 0, -1
 	if w.win != nil {
 		w.win.SetTitle(windowTitle(w.repo.Root, src))
 	}

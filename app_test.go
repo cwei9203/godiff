@@ -22,6 +22,9 @@ func TestMain(m *testing.M) {
 	dir, _ := os.MkdirTemp("", "godiff-config")
 	cfg.path = filepath.Join(dir, "godiff.jsonc")
 	cfg.settings = defaultSettings()
+	// The tests review every file at once unless they say otherwise: the
+	// file view that shows one file at a time has tests of its own.
+	cfg.settings.FileView = fileViewStack
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)
@@ -95,6 +98,9 @@ func newTestWindow(t *testing.T, dir string) (*window, *ui.Tester) {
 	}
 	w := newWindow(repo, source{})
 	w.settings = defaultSettings()
+	// The window tests review every file at once, as the app did before the
+	// file view: those that show one file at a time say so.
+	w.settings.FileView = fileViewStack
 	w.sidebarShown, w.sidebarWidth = true, sidebarDefault
 	// The sections of the sidebar are the store's, which tests change.
 	w.groupsOpen, w.filesOpen = true, true

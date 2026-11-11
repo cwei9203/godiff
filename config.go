@@ -24,6 +24,9 @@ type Settings struct {
 	CopyCommentsOnClose bool   `json:"copyCommentsOnClose"`
 	DiffStyle           string `json:"diffStyle"` // split or unified
 	EditorCommand       string `json:"editorCommand"`
+	// FileView is how many files the surface shows at once: one, or every
+	// file stacked one under the other.
+	FileView string `json:"fileView"` // one or stack
 	// GithubToken reads and reviews pull requests; empty, the token of
 	// the GitHub CLI is used.
 	GithubToken string `json:"githubToken"`
@@ -66,6 +69,7 @@ func defaultSettings() Settings {
 	return Settings{
 		CodeFontSize:         13,
 		DiffStyle:            "split",
+		FileView:             fileViewOne,
 		GroupingEnabled:      true,
 		Notes:                true,
 		OverallSummary:       true,
@@ -86,6 +90,9 @@ func (s *Settings) normalize() {
 	s.CodeFontSize = min(max(s.CodeFontSize, 10), 32)
 	if s.DiffStyle != "split" && s.DiffStyle != "unified" {
 		s.DiffStyle = d.DiffStyle
+	}
+	if s.FileView != fileViewOne && s.FileView != fileViewStack {
+		s.FileView = d.FileView
 	}
 	if s.SidebarPosition != "left" && s.SidebarPosition != "right" {
 		s.SidebarPosition = d.SidebarPosition
