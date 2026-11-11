@@ -172,9 +172,9 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 				w.stepFile(dir)
 			}
 		}
-		step(iconChevronRight, 180, -1, "Previous file (\u005b)")
+		step(iconChevronRight, 180, -1, msg().PreviousFile())
 		ui.Text(c, fmt.Sprintf("%d / %d", at, total)).Font(w.codeFont()).FontSize(12).FontWeight(600).
-			TextColor(t.TextMuted).Shrink(0).Tooltip(fmt.Sprintf("File %d of %d", at, total))
+			TextColor(t.TextMuted).Shrink(0).Tooltip(msg().FilePosition(at, total))
 		ui.Row(c).Gap(5).Grow(1).Shrink(1).MinWidth(0).Children(func() {
 			fileIcon(c, f, 13)
 			ui.RichText(c,
@@ -191,17 +191,17 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 			})
 		}
-		step(iconChevronRight, 0, 1, "Next file (\u005d)")
+		step(iconChevronRight, 0, 1, msg().NextFile())
 		if w.unviewedMiss {
 			// The step found nothing: every file of the review is viewed.
-			emptyState(c, pal, emptyBox{shape: emptyLine, icon: iconEye, title: textAllViewed, detail: "",
+			emptyState(c, pal, emptyBox{shape: emptyLine, icon: iconEye, title: textAllViewed(), detail: "",
 				actions: func() {
-					b := ui.ButtonBase(c).Padding(0, 4).Radius(4).Label(textResetReview)
+					b := ui.ButtonBase(c).Padding(0, 4).Radius(4).Label(textResetReview())
 					if b.Hovered() {
 						b.Background(pal.hover)
 					}
 					b.Children(func() {
-						ui.Text(c, textResetReview).FontSize(11).FontWeight(600).TextColor(t.Accent)
+						ui.Text(c, textResetReview()).FontSize(11).FontWeight(600).TextColor(t.Accent)
 					})
 					if b.Clicked() {
 						w.resetReviewState()
@@ -210,8 +210,8 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 		}
 		// The same step for the reader who reviews by what is left: the first
 		// file not viewed yet, round from this one.
-		unviewed := ui.ButtonBase(c).Size(26, 26).Radius(6).Center().Label("Next unviewed file").
-			Tooltip("Next unviewed file").FocusRing(false)
+		unviewed := ui.ButtonBase(c).Size(26, 26).Radius(6).Center().Label(msg().NextUnviewed()).
+			Tooltip(msg().NextUnviewed()).FocusRing(false)
 		if unviewed.Hovered() {
 			unviewed.Background(pal.surfaceHover)
 		}
@@ -380,20 +380,20 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		h.Border(1, pal.border)
 	}
 	h.ContextMenu(func(m *ui.Menu) {
-		if m.Item("Open in Editor").Disabled(f.Status == diff.Deleted).Chosen() {
+		if m.Item(msg().OpenInEditor()).Disabled(f.Status == diff.Deleted).Chosen() {
 			w.openInEditor(f.Path, firstLine(f))
 		}
-		if m.Item("Copy Path").Chosen() {
+		if m.Item(msg().CopyPath()).Chosen() {
 			c.WriteClipboard(f.Path)
 		}
-		if m.Item("Viewed").Checked(viewed).Chosen() {
+		if m.Item(msg().Viewed()).Checked(viewed).Chosen() {
 			w.setViewed(f, !viewed)
 		}
 		m.Separator()
-		if m.Item("Collapse All").Chosen() {
+		if m.Item(msg().CollapseAll()).Chosen() {
 			w.setAllCollapsed(true)
 		}
-		if m.Item("Expand All").Chosen() {
+		if m.Item(msg().ExpandAll()).Chosen() {
 			w.setAllCollapsed(false)
 		}
 	})
@@ -455,7 +455,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		})
 		// The copy button shows while the pointer is over the header; it
 		// is always built, so that the elements after it keep their state.
-		cp := iconButton(c, iconCopy, "Copy path")
+		cp := iconButton(c, iconCopy, msg().CopyPath())
 		if !h.Hovered() && !cp.FocusVisible() {
 			cp.Opacity(0)
 		}
@@ -463,7 +463,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 			c.WriteClipboard(f.Path)
 			c.Toast("Copied " + f.Name())
 		}
-		open := iconButton(c, iconOpen, "Open file in editor").Disabled(f.Status == diff.Deleted || f.Directory)
+		open := iconButton(c, iconOpen, msg().OpenInEditor()).Disabled(f.Status == diff.Deleted || f.Directory)
 		if f.Status == diff.Deleted {
 			open.Tooltip("Deleted files cannot be opened")
 		}
@@ -472,7 +472,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		}
 		if countable(f) && (f.Additions > 0 || f.Deletions > 0) {
 			ui.Row(c).Gap(8).Padding(4, 9).Radius(radiusChip).Background(pal.pill).Shrink(0).
-				Tooltip(lines(f.Additions, "added") + ", " + lines(f.Deletions, "removed")).Children(func() {
+				Tooltip(msg().ChangedLinesTip(f.Additions, f.Deletions)).Children(func() {
 				ui.Text(c, "+"+thousands(f.Additions)).Font(w.codeFont()).FontSize(12).FontWeight(600).TextColor(pal.addText)
 				ui.Text(c, "-"+thousands(f.Deletions)).Font(w.codeFont()).FontSize(12).FontWeight(600).TextColor(pal.delText)
 			})
@@ -497,7 +497,7 @@ func (w *window) viewedButton(c *ui.Context, pal *palette, f *fileState, viewed 
 	t := c.Theme()
 	on := viewed
 	b := ui.CheckboxBase(c, &on).Gap(7).Height(30).Padding(0, 11).Radius(radiusChip).Shrink(0).
-		Border(1, ui.RGBA(127, 127, 127, 0.22)).Label("Viewed")
+		Border(1, ui.RGBA(127, 127, 127, 0.22)).Label(msg().Viewed())
 	b.OnClick(func() { w.setViewed(f, on) })
 	if b.Hovered() {
 		b.Background(pal.surfaceHover)
@@ -514,7 +514,7 @@ func (w *window) viewedButton(c *ui.Context, pal *palette, f *fileState, viewed 
 		} else {
 			box.Border(1.5, ui.RGBA(127, 127, 127, 0.45))
 		}
-		ui.Text(c, "Viewed").FontSize(12).FontWeight(600).TextColor(map[bool]ui.Color{true: pal.viewed, false: t.Text}[viewed])
+		ui.Text(c, msg().Viewed()).FontSize(12).FontWeight(600).TextColor(map[bool]ui.Color{true: pal.viewed, false: t.Text}[viewed])
 	})
 }
 
@@ -620,7 +620,7 @@ func (w *window) gapRow(c *ui.Context, pal *palette, f *fileState, r *row) {
 		}
 		if n > expandStep {
 			b := ui.ButtonBase(c).Padding(3, 8).Radius(6).Disabled(!can).Children(func() {
-				ui.Text(c, "Expand all").FontSize(12).FontWeight(600).TextColor(pal.gapText)
+				ui.Text(c, msg().ExpandLines()).FontSize(12).FontWeight(600).TextColor(pal.gapText)
 			})
 			if b.Hovered() {
 				b.Background(pal.hover)
@@ -823,7 +823,7 @@ func (w *window) lineCell(c *ui.Context, pal *palette, f *fileState, r *row, s l
 			numbers = 2*gutter - 4
 		}
 		plus := ui.ButtonBase(c).Absolute().Top((lh-18)/2).Left(numbers-9).Size(18, 18).Radius(5).Center().
-			Background(c.Theme().Accent).TextColor(c.Theme().AccentText).Label("Comment").Tooltip("Comment on this line").FocusRing(false)
+			Background(c.Theme().Accent).TextColor(c.Theme().AccentText).Label(msg().Comment()).Tooltip(msg().CommentTip()).FocusRing(false)
 		if !hovered {
 			plus.Opacity(0)
 		}

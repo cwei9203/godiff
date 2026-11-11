@@ -27,6 +27,9 @@ func TestMain(m *testing.M) {
 	cfg.settings.FileView = fileViewStack
 	// The file shown is saved at once: no test waits a second for it.
 	positionDebounce = 0
+	// The interface's language is English, as MyGo would work it out alone:
+	// with no main loop, a test answers for the reader's languages.
+	followedLanguage = testFollowedLanguage
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)

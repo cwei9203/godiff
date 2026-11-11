@@ -107,7 +107,7 @@ func TestFileViewStackShowsEveryFile(t *testing.T) {
 	if got := countRows(w, rowFileNav); got != 0 {
 		t.Errorf("%d navigation bars, want none", got)
 	}
-	if !tt.HasText(textView) {
+	if !tt.HasText(textView()) {
 		t.Errorf("the toolbar has no View menu: %q", tt.Texts())
 	}
 }
@@ -119,23 +119,23 @@ func TestFileViewMenuSwitches(t *testing.T) {
 	w, tt := fileViewWindow(t)
 	keepFileView(t)
 	tt.Frame()
-	if err := tt.Click(textView); err != nil {
+	if err := tt.Click(textView()); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(tt.Menu(), textStack) {
+	if !slices.Contains(tt.Menu(), textStack()) {
 		t.Fatalf("the View menu has no file view: %q", tt.Menu())
 	}
-	if err := tt.ChooseMenuItem(textStack); err != nil {
+	if err := tt.ChooseMenuItem(textStack()); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	if w.oneFile() || cfg.Get().FileView != fileViewStack {
 		t.Errorf("one file %v, the settings say %q", w.oneFile(), cfg.Get().FileView)
 	}
-	if err := tt.Click(textView); err != nil {
+	if err := tt.Click(textView()); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem(textOneFile); err != nil {
+	if err := tt.ChooseMenuItem(textOneFile()); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

@@ -605,7 +605,7 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 		// The whole band folds the group, as its files fold away in the tree:
 		// the button at the end says the same, and the chevron only says which
 		// way the fold goes.
-		head := ui.Row(c).Height(lineGroup).Gap(8).Label(g.label).Tooltip("Fold or unfold " + g.label)
+		head := ui.Row(c).Height(lineGroup).Gap(8).Label(g.label).Tooltip(msg().FoldGroupTip(g.label))
 		if head.Hovered() {
 			head.Background(pal.surfaceHover.Alpha(0.7))
 		}
@@ -629,11 +629,11 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 				ui.Icon(c, chevron).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 			})
 			if g.critical {
-				ui.Text(c, "Needs care").FontSize(11).FontWeight(600).Padding(2, 8).Radius(10).
+				ui.Text(c, msg().NeedsCare()).FontSize(11).FontWeight(600).Padding(2, 8).Radius(10).
 					Background(careTone(pal).Alpha(0.14)).TextColor(careTone(pal)).Shrink(0)
 			}
 			ui.RichText(c,
-				ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
+				ui.Span{Text: msg().FilesCount(len(files)) + " · ", Color: t.TextMuted},
 				ui.Span{Text: "+" + thousands(adds), Color: pal.addText},
 				ui.Span{Text: " −" + thousands(dels), Color: pal.delText},
 			).FontSize(12).FontWeight(600).Shrink(0)
@@ -641,13 +641,13 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			// that both read alike.
 			progressBar(c, pal, ratio(viewed, len(files))).Width(groupProgressWidth).Shrink(0).AlignSelf(ui.Center)
 			ui.Spacer(c)
-			count := ui.Textf(c, "%d/%d viewed", viewed, len(files)).FontSize(12).TextColor(t.TextMuted).Shrink(0)
+			count := ui.Text(c, msg().GroupViewed(viewed, len(files))).FontSize(12).TextColor(t.TextMuted).Shrink(0)
 			if viewed == len(files) && viewed > 0 {
 				count.TextColor(pal.viewed)
 			}
-			label := "Fold"
+			label := msg().FoldGroup()
 			if allCollapsed {
-				label = "Unfold"
+				label = msg().UnfoldGroup()
 			}
 			b := ui.ButtonBase(c).Padding(3, 8).Radius(6).Label(label + " " + g.label).Children(func() {
 				ui.Text(c, label).FontSize(12).FontWeight(600).TextColor(t.TextMuted)
@@ -662,9 +662,9 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 			// group alone, so with one group this would say the same.
 			if len(w.groups) > 1 {
 				everyCollapsed := w.allCollapsed()
-				label := "Fold all"
+				label := msg().FoldAll()
 				if everyCollapsed {
-					label = "Unfold all"
+					label = msg().UnfoldAll()
 				}
 				ab := ui.ButtonBase(c).Padding(3, 8).Radius(6).Label(label).Children(func() {
 					ui.Text(c, label).FontSize(12).FontWeight(600).TextColor(t.TextMuted)
@@ -691,7 +691,7 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 // is current.
 func progressBar(c *ui.Context, pal *palette, share float64) ui.Element {
 	const height = 6
-	bar := ui.Row(c).Height(height).Radius(height / 2).Background(pal.pressed).Clip().Label("Viewed")
+	bar := ui.Row(c).Height(height).Radius(height / 2).Background(pal.pressed).Clip().Label(msg().ViewedFilesTip())
 	bar.Children(func() {
 		ui.Box(c).Height(height).Radius(height / 2).Background(pal.progress).WidthPercent(float32(share) * 100)
 	})

@@ -46,12 +46,12 @@ func (w *window) undoBar(c *ui.Context, pal *palette) {
 			Border(1, pal.border).Shadow(0, 10, 28, 0, ui.RGBA(0, 0, 0, 0.22)).Children(func() {
 			ui.Icon(c, iconCheckCircle).FontSize(13).TextColor(pal.viewed).Shrink(0)
 			ui.Text(c, u.label).FontSize(12).FontWeight(600).Shrink(1).MinWidth(0)
-			b := ui.ButtonBase(c).Height(22).Padding(0, 8).Radius(6).Label(textUndo).Tooltip(textUndo + " (Esc to dismiss)")
+			b := ui.ButtonBase(c).Height(22).Padding(0, 8).Radius(6).Label(textUndo()).Tooltip(msg().UndoDismiss())
 			if b.Hovered() {
 				b.Background(pal.hover)
 			}
 			b.Children(func() {
-				ui.Text(c, textUndo).FontSize(12).FontWeight(600).TextColor(t.Accent)
+				ui.Text(c, textUndo()).FontSize(12).FontWeight(600).TextColor(t.Accent)
 			})
 			focusRing(b, pal, 6)
 			if b.Clicked() {
@@ -119,7 +119,7 @@ func (w *window) markAllViewed() {
 	w.unviewedMiss = false
 	w.rowsDirty = true
 	w.writeViewed()
-	w.offerUndo("Marked all "+plural(len(w.files), "file")+" viewed", func() {
+	w.offerUndo(msg().MarkedAllViewed(len(w.files)), func() {
 		w.restoreViewed(viewed, before)
 	})
 }
@@ -145,7 +145,7 @@ func (w *window) resetReviewState() {
 	w.unviewedMiss = false
 	w.rowsDirty = true
 	w.writeViewed()
-	w.offerUndo(textResetReview, func() { w.restoreViewed(viewed, before) })
+	w.offerUndo(textResetReview(), func() { w.restoreViewed(viewed, before) })
 }
 
 // restoreViewed puts the viewed marks and the folds of the tree back, and

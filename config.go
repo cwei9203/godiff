@@ -60,6 +60,11 @@ type Settings struct {
 	// SummaryLocale is the language the review is written in, as a BCP 47
 	// tag; empty follows the language of the interface.
 	SummaryLocale string `json:"summaryLocale"`
+	// UILocale is the language the interface says its own words in, as a
+	// BCP 47 tag of the languages it is written in; empty follows the
+	// reader's languages, as the system lists them. It is the surface's
+	// language, and the one the review is written in is another.
+	UILocale string `json:"uiLocale"`
 	// MaxFiles is the most files an agent is asked to group: beyond it the
 	// rules group them, as the list of files would run away.
 	MaxFiles int `json:"maxFiles"`
@@ -118,6 +123,10 @@ func (s *Settings) normalize() {
 	s.SummaryLocale = strings.TrimSpace(s.SummaryLocale)
 	if !validLocale(s.SummaryLocale) {
 		s.SummaryLocale = d.SummaryLocale
+	}
+	s.UILocale = strings.TrimSpace(s.UILocale)
+	if s.UILocale != "" && !slices.Contains(uiLanguages, s.UILocale) {
+		s.UILocale = d.UILocale
 	}
 	if s.MaxFiles <= 0 {
 		s.MaxFiles = d.MaxFiles

@@ -267,13 +267,26 @@ func main() {
 		go open(request{dir: path}, nil, true)
 	})
 	state.open() // before the menu, which lists the recent repositories
-	applyTheme(cfg.Get())
+	s := cfg.Get()
+	applyTheme(s)
+	if s.UILocale != "" {
+		// The menu is built in a language before MyGo has worked out the
+		// reader's: the settings' choice, or the app's own until then.
+		interfaceLanguage = s.UILocale
+	}
 	mygo.App.SetMenu(buildMenu())
 	cfg.OnChange(func(s Settings) {
 		mygo.RunOnMain(func() {
 			syncMenu(s)
 			applyTheme(s)
 		})
+	})
+	// The language MyGo shows can change under the app: the user's languages
+	// in the system's settings, or a language chosen for one run. The
+	// interface's own words follow it, as its windows draw again.
+	mygo.App.OnLocaleChanged(func(tag string) {
+		interfaceLanguage = tag
+		languageChanged()
 	})
 	mygo.App.OnWindowAllClosed(func() {
 		if runtime.GOOS != "darwin" {
@@ -310,6 +323,9 @@ func main() {
 	}
 	fetchAvatars, detectAgents = true, true
 	mygo.App.WhenReady(func() {
+		// The interface's language, before the first window is drawn: the
+		// settings', or the reader's, which MyGo works out now that it runs.
+		applyUiLocale(cfg.Get())
 		if langs := mygo.App.PreferredLanguages(); len(langs) > 0 {
 			readerLocale = langs[0]
 		}

@@ -379,6 +379,12 @@ func (w *window) applySettings(s Settings) {
 	if old.DiffStyle != s.DiffStyle || old.WordWrap != s.WordWrap || old.CodeFontSize != s.CodeFontSize || old.FileView != s.FileView {
 		w.rowsDirty = true
 	}
+	if old.UILocale != s.UILocale {
+		// The interface says another language: the menu takes its items'
+		// labels again, and every window, this one too, draws again.
+		applyUiLocale(s)
+		w.rowsDirty = true
+	}
 	if old.FileView != s.FileView {
 		// The rows of the other view start from the top of the file shown.
 		w.shownFor = -1

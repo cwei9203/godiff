@@ -81,8 +81,8 @@ func TestNextUnviewedWithEveryFileViewed(t *testing.T) {
 	// The bar above the file says why nothing moved.
 	w.stepUnviewed(1)
 	tt.Frame()
-	if !tt.HasText(textAllViewed) {
-		t.Errorf("%q is not in the bar: %q", textAllViewed, tt.Texts())
+	if !tt.HasText(textAllViewed()) {
+		t.Errorf("%q is not in the bar: %q", textAllViewed(), tt.Texts())
 	}
 	if got := at(w); got != "main.go" {
 		t.Errorf("the button moved the surface to %q", got)
@@ -90,7 +90,7 @@ func TestNextUnviewedWithEveryFileViewed(t *testing.T) {
 	// A file viewed again is one to step to, and the bar stops saying so.
 	w.setViewed(w.files[0], false)
 	tt.Frame()
-	if tt.HasText(textAllViewed) {
+	if tt.HasText(textAllViewed()) {
 		t.Errorf("the bar still says every file is viewed: %q", tt.Texts())
 	}
 }

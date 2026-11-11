@@ -446,7 +446,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 		Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Children(func() {
 		ui.Row(c).Height(lineCardHead).Gap(8).Children(func() {
 			ui.Icon(c, iconSparkle).FontSize(15).TextColor(t.Accent)
-			ui.Text(c, textAIReview).FontSize(14).Bold().Shrink(0)
+			ui.Text(c, textAIReview()).FontSize(14).Bold().Shrink(0)
 			if mark := w.reviewMark(st); mark != "" {
 				ui.Text(c, mark).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 			}
@@ -462,7 +462,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 					w.stopAnalysis()
 				}
 			case offered:
-				if iconButton(c, iconClose, "Dismiss").Size(26, 26).Clicked() {
+				if iconButton(c, iconClose, msg().Dismiss()).Size(26, 26).Clicked() {
 					st.offered = false
 					if w.groupPref == groupAI {
 						w.groupPref = groupAuto
@@ -586,7 +586,7 @@ func (w *window) reviewMark(st *analysisState) string {
 	case st.err != "":
 		return textReviewFailed
 	case st.result == nil:
-		return textNotRun
+		return textNotRun()
 	}
 	a := st.result
 	by := a.Agent
@@ -608,12 +608,12 @@ func (w *window) reviewMark(st *analysisState) string {
 func (w *window) cardOffered(c *ui.Context, pal *palette) {
 	t := c.Theme()
 	ui.Column(c).Gap(gapCard).MinHeight(cardBodyMin).Children(func() {
-		ui.Text(c, textOffered).FontSize(13).TextColor(t.TextMuted)
+		ui.Text(c, textOffered()).FontSize(13).TextColor(t.TextMuted)
 		ui.Row(c).Gap(6).Children(func() {
 			w.agentMenu(c)
 			w.modelMenu(c)
 			ui.Spacer(c)
-			if ui.PrimaryButton(c, textReviewWithAI).Height(26).Clicked() {
+			if ui.PrimaryButton(c, textReviewWithAI()).Height(26).Clicked() {
 				w.runAnalysis()
 			}
 		})

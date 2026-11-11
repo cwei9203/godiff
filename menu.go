@@ -135,30 +135,30 @@ func buildMenu() *mygo.Menu {
 			{Label: "Pull Requests", Accelerator: "CmdOrCtrl+3", Click: inWindow(func(w *window) { w.showPulls() })},
 			mygo.Separator(),
 			{Label: "Review with AI", Accelerator: "CmdOrCtrl+Shift+I", Click: inWindow(func(w *window) { w.reviewWithAI() })},
-			{Label: "Group Files", Submenu: []*mygo.MenuItem{
-				{Label: "Not at All", Click: inWindow(func(w *window) { w.chooseGrouping(groupNone) })},
-				{Label: "By Kind", Click: inWindow(func(w *window) { w.chooseGrouping(groupKind) })},
-				{Label: "By AI Review", Click: inWindow(func(w *window) { w.chooseGrouping(groupAI) })},
+			{Label: textGroup(), Submenu: []*mygo.MenuItem{
+				{Label: textNoGroup(), Click: inWindow(func(w *window) { w.chooseGrouping(groupNone) })},
+				{Label: textByKind(), Click: inWindow(func(w *window) { w.chooseGrouping(groupKind) })},
+				{Label: textByAI(), Click: inWindow(func(w *window) { w.chooseGrouping(groupAI) })},
 			}},
-			{Label: "Show One File at a Time", Submenu: []*mygo.MenuItem{
-				{ID: "fileview-one", Label: "One File", Type: mygo.MenuItemRadio, Checked: s.FileView != fileViewStack,
+			{Label: msg().ViewOneFile(), Submenu: []*mygo.MenuItem{
+				{ID: "fileview-one", Label: textOneFile(), Type: mygo.MenuItemRadio, Checked: s.FileView != fileViewStack,
 					Click: setting(func(s *Settings) { s.FileView = fileViewOne })},
-				{ID: "fileview-stack", Label: "All Files", Type: mygo.MenuItemRadio, Checked: s.FileView == fileViewStack,
+				{ID: "fileview-stack", Label: textStack(), Type: mygo.MenuItemRadio, Checked: s.FileView == fileViewStack,
 					Click: setting(func(s *Settings) { s.FileView = fileViewStack })},
 			}},
 			{Label: "AI Agent", Submenu: agentMenuItems(s)},
 			{Label: "AI Review", Submenu: reviewMenuItems(s)},
 			mygo.Separator(),
-			{Label: "Diff", Submenu: []*mygo.MenuItem{
-				{ID: "split", Label: "Split", Type: mygo.MenuItemRadio, Checked: s.DiffStyle == "split", Click: func(*mygo.MenuItem, *mygo.Window) {
+			{Label: msg().DiffMenu(), Submenu: []*mygo.MenuItem{
+				{ID: "split", Label: textSplit(), Type: mygo.MenuItemRadio, Checked: s.DiffStyle == "split", Click: func(*mygo.MenuItem, *mygo.Window) {
 					cfg.Update(func(s *Settings) { s.DiffStyle = "split" })
 				}},
-				{ID: "unified", Label: "Unified", Type: mygo.MenuItemRadio, Checked: s.DiffStyle == "unified", Click: func(*mygo.MenuItem, *mygo.Window) {
+				{ID: "unified", Label: textUnified(), Type: mygo.MenuItemRadio, Checked: s.DiffStyle == "unified", Click: func(*mygo.MenuItem, *mygo.Window) {
 					cfg.Update(func(s *Settings) { s.DiffStyle = "unified" })
 				}},
 				mygo.Separator(),
-				{ID: "wrap", Label: "Word Wrap", Type: mygo.MenuItemCheckbox, Checked: s.WordWrap, Click: func(*mygo.MenuItem, *mygo.Window) { toggleWrap() }},
-				{ID: "whitespace", Label: "Show Whitespace", Type: mygo.MenuItemCheckbox, Checked: s.ShowWhitespace, Click: func(*mygo.MenuItem, *mygo.Window) {
+				{ID: "wrap", Label: textWrap(), Type: mygo.MenuItemCheckbox, Checked: s.WordWrap, Click: func(*mygo.MenuItem, *mygo.Window) { toggleWrap() }},
+				{ID: "whitespace", Label: textSpace(), Type: mygo.MenuItemCheckbox, Checked: s.ShowWhitespace, Click: func(*mygo.MenuItem, *mygo.Window) {
 					cfg.Update(func(s *Settings) { s.ShowWhitespace = !s.ShowWhitespace })
 				}},
 				mygo.Separator(),
@@ -175,11 +175,12 @@ func buildMenu() *mygo.Menu {
 					cfg.Update(func(s *Settings) { s.CopyCommentsOnClose = !s.CopyCommentsOnClose })
 				}},
 			}},
-			{Label: "Theme", Submenu: []*mygo.MenuItem{
-				{ID: "theme-system", Label: "Match System", Type: mygo.MenuItemRadio, Checked: s.Theme == "system", Click: setTheme("system")},
-				{ID: "theme-light", Label: "Light", Type: mygo.MenuItemRadio, Checked: s.Theme == "light", Click: setTheme("light")},
-				{ID: "theme-dark", Label: "Dark", Type: mygo.MenuItemRadio, Checked: s.Theme == "dark", Click: setTheme("dark")},
+			{Label: msg().ThemeMenu(), Submenu: []*mygo.MenuItem{
+				{ID: "theme-system", Label: textSystem(), Type: mygo.MenuItemRadio, Checked: s.Theme == "system", Click: setTheme("system")},
+				{ID: "theme-light", Label: textLight(), Type: mygo.MenuItemRadio, Checked: s.Theme == "light", Click: setTheme("light")},
+				{ID: "theme-dark", Label: textDark(), Type: mygo.MenuItemRadio, Checked: s.Theme == "dark", Click: setTheme("dark")},
 			}},
+			{Label: msg().LanguageMenu(), Submenu: languageMenuItems(s)},
 			mygo.Separator(),
 			{Label: "Refresh Changes", Accelerator: "CmdOrCtrl+R", Click: inWindow(func(w *window) { w.refresh() })},
 			mygo.Separator(),
@@ -216,6 +217,10 @@ func syncMenu(s Settings) {
 	set("notes", s.Notes)
 	for _, tag := range summaryLocales {
 		set("locale-"+tag, s.SummaryLocale == tag)
+	}
+	set("uilocale-", s.UILocale == "")
+	for _, tag := range uiLanguages {
+		set("uilocale-"+tag, s.UILocale == tag)
 	}
 	set("theme-system", s.Theme == "system")
 	set("theme-light", s.Theme == "light")

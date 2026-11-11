@@ -152,7 +152,7 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 		ui.Spacer(c)
 		if !w.commitOpen {
 			if width >= toolbarSearch {
-				if iconButton(c, iconSearch, textFind+" (⌘F)").Clicked() {
+				if iconButton(c, iconSearch, textFind()+" (⌘F)").Clicked() {
 					w.finding = !w.finding
 				}
 			}
@@ -175,7 +175,7 @@ func (w *window) commentsButton(c *ui.Context, pal *palette) {
 	n := w.pendingComments()
 	copied := time.Since(w.copiedAt) < 2*time.Second
 	cb := ui.ButtonBase(c).Height(28).Padding(0, 8).Gap(5).Radius(7).TextColor(t.TextMuted).
-		Label("Copy review comments").Tooltip("Copy review comments as Markdown").Disabled(n == 0)
+		Label(msg().CopyComments()).Tooltip(msg().CopyCommentsTip()).Disabled(n == 0)
 	if n == 0 {
 		cb.Opacity(0.5)
 	}
@@ -205,46 +205,46 @@ func (w *window) viewMenu(c *ui.Context, pal *palette) {
 	s := w.settings
 	set := w.applySetting
 	b := ui.MenuButton(c, "", func(m *ui.Menu) {
-		if m.Item(textLayoutSplit).Checked(s.DiffStyle == "split").Chosen() {
+		if m.Item(textSplit()).Checked(s.DiffStyle == "split").Chosen() {
 			set(func(s *Settings) { s.DiffStyle = "split" })
 		}
-		if m.Item(textLayoutUnified).Checked(s.DiffStyle == "unified").Chosen() {
+		if m.Item(textUnified()).Checked(s.DiffStyle == "unified").Chosen() {
 			set(func(s *Settings) { s.DiffStyle = "unified" })
 		}
 		m.Separator()
-		if m.Item(textOneFile).Checked(s.FileView != fileViewStack).Chosen() {
+		if m.Item(textOneFile()).Checked(s.FileView != fileViewStack).Chosen() {
 			set(func(s *Settings) { s.FileView = fileViewOne })
 		}
-		if m.Item(textStack).Checked(s.FileView == fileViewStack).Chosen() {
+		if m.Item(textStack()).Checked(s.FileView == fileViewStack).Chosen() {
 			set(func(s *Settings) { s.FileView = fileViewStack })
 		}
 		m.Separator()
-		m.Submenu(textTheme, func(m *ui.Menu) {
-			if m.Item(textThemes).Checked(s.Theme == "system").Chosen() {
+		m.Submenu(textTheme(), func(m *ui.Menu) {
+			if m.Item(textSystem()).Checked(s.Theme == "system").Chosen() {
 				set(func(s *Settings) { s.Theme = "system" })
 			}
-			if m.Item(textLight).Checked(s.Theme == "light").Chosen() {
+			if m.Item(textLight()).Checked(s.Theme == "light").Chosen() {
 				set(func(s *Settings) { s.Theme = "light" })
 			}
-			if m.Item(textDark).Checked(s.Theme == "dark").Chosen() {
+			if m.Item(textDark()).Checked(s.Theme == "dark").Chosen() {
 				set(func(s *Settings) { s.Theme = "dark" })
 			}
 		})
-		if m.Item(textWrap).Checked(s.WordWrap).Chosen() {
+		if m.Item(textWrap()).Checked(s.WordWrap).Chosen() {
 			set(func(s *Settings) { s.WordWrap = !s.WordWrap })
 		}
-		if m.Item(textSpace).Checked(s.ShowWhitespace).Chosen() {
+		if m.Item(textSpace()).Checked(s.ShowWhitespace).Chosen() {
 			set(func(s *Settings) { s.ShowWhitespace = !s.ShowWhitespace })
 		}
 		m.Separator()
-		m.Submenu(textGroup, func(m *ui.Menu) {
+		m.Submenu(textGroup(), func(m *ui.Menu) {
 			modes := []struct {
 				label string
 				mode  groupMode
 			}{
-				{textNoGroup, groupNone},
-				{textByKind, groupKind},
-				{textByAI, groupAI},
+				{textNoGroup(), groupNone},
+				{textByKind(), groupKind},
+				{textByAI(), groupAI},
 			}
 			for _, it := range modes {
 				if m.Item(it.label).Checked(w.grouping() == it.mode).Chosen() {
@@ -252,13 +252,13 @@ func (w *window) viewMenu(c *ui.Context, pal *palette) {
 				}
 			}
 		})
-	}).Height(28).Padding(0, 8).Gap(5).Radius(7).Label(textView).Tooltip("What the review shows: the diff's layout, the file view, the theme, the wrapping, the whitespace, the groups")
+	}).Height(28).Padding(0, 8).Gap(5).Radius(7).Label(textView()).Tooltip(msg().ViewMenuTip())
 	if b.Hovered() {
 		b.Background(pal.surfaceHover)
 	}
 	b.Children(func() {
 		ui.Icon(c, iconEye).FontSize(15).TextColor(t.TextMuted)
-		ui.Text(c, textView).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
+		ui.Text(c, textView()).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
 		ui.Icon(c, iconChevronDown).FontSize(10).TextColor(t.TextMuted).Shrink(0)
 	})
 }
@@ -294,7 +294,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 				if ref.Clicked() {
 					w.refresh()
 				}
-				if iconButton(c, iconClose, "Dismiss").Size(22, 22).Clicked() {
+				if iconButton(c, iconClose, msg().Dismiss()).Size(22, 22).Clicked() {
 					w.changed = false
 				}
 			})
@@ -374,9 +374,9 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 			w.buildRows()
 		}
 		if len(w.rows) == 0 {
-			title, detail := textNoMatchFiles, strings.TrimSpace(w.filter)
+			title, detail := textNoMatchFiles(), strings.TrimSpace(w.filter)
 			if w.searching() {
-				title, detail = textNoMatchDiffs, strings.TrimSpace(w.query)
+				title, detail = textNoMatchDiffs(), strings.TrimSpace(w.query)
 			}
 			if detail == "" {
 				detail = "Whitespace-only changes hidden"
@@ -521,8 +521,7 @@ func (v *welcome) view(c *ui.Context) {
 	if v.err != nil && !errors.Is(v.err, git.ErrNotRepository) {
 		title, detail, mono = "Unable to read repository", errorText(v.err), true
 	} else if v.err != nil {
-		title = "No Git repository found"
-		detail = "Godiff was opened outside a Git repository. Run godiff from inside one, or open a folder below."
+		title, detail = textNoRepo(), textNoRepoDetail()
 	}
 	recent := state.recent()
 	ui.Column(c).Grow(1).Center().Padding(24).Children(func() {
@@ -632,7 +631,7 @@ func (w *window) repoSwitcher(c *ui.Context, pal *palette) {
 		if m.Item("Close Repository").Chosen() {
 			closeRepository(w)
 		}
-	}).Height(38).Label(textRepo)
+	}).Height(38).Label(textRepo())
 	b.Children(func() {
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Column(c).Gap(1).Shrink(1).MinWidth(0).Children(func() {
