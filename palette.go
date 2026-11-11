@@ -63,8 +63,10 @@ func (w *window) commands() []command {
 	// with the file view: one file at a time, n steps the files and the
 	// notes take ⌥n; every file stacked and n stays the notes'.
 	unviewedKeys, noteKeys, noteBack := "", "N", "⇧N"
+	stepNext, stepPrev := "", ""
 	if w.oneFile() {
 		unviewedKeys, noteKeys, noteBack = "N", "⌥N", "⌥⇧N"
+		stepNext, stepPrev = "]", "["
 	}
 	return []command{
 		{title: "Focus file filter", keys: "⌘P", run: w.focusFilter},
@@ -109,8 +111,8 @@ func (w *window) commands() []command {
 		}},
 		{title: "Mark all viewed", hint: "Every file of the review, with an undo", run: w.markAllViewed},
 		{title: "Reset review state", hint: "Nothing viewed, everything open", run: w.resetReviewState},
-		{title: "Next file", hint: "One file at a time", keys: "]", run: func() { w.stepFile(1) }},
-		{title: "Previous file", hint: "One file at a time", keys: "[", run: func() { w.stepFile(-1) }},
+		{title: "Next file", hint: "One file at a time", keys: stepNext, run: func() { w.stepFile(1) }},
+		{title: "Previous file", hint: "One file at a time", keys: stepPrev, run: func() { w.stepFile(-1) }},
 		{title: "Open file in editor", hint: selected, keys: "⌘⇧O", run: w.openCurrent},
 		{title: "Toggle sidebar", keys: "⌘⇧B", run: w.toggleSidebar},
 		{title: "Fold all", hint: "Every group and every folder", run: func() { w.foldAll(true) }},
