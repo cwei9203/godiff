@@ -578,7 +578,10 @@ func (v *welcome) view(c *ui.Context) {
 						list := ui.List(c, &v.list, len(recent), func(i int) {
 							v.row(c, pal, i, recent[i], i == len(recent)-1)
 						}).Focusable().Label(msg().Recent())
-						focusRingWhen(list, v.list.FocusWithin(c), pal, radiusCard)
+						// The list takes the focus as the page opens, so the
+						// ring waits for a key: a page is not a control until
+						// the keys reach it.
+						focusRingWhen(list, list.FocusVisible(), pal, radiusCard)
 						if !v.focused && v.list.Focus(c) {
 							v.focused = true
 						}
