@@ -8,13 +8,16 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/egoist/godiff/internal/agent"
 	"github.com/egoist/godiff/internal/diff"
+	"github.com/egoist/godiff/internal/gc"
 	"github.com/egoist/godiff/internal/git"
 	"github.com/egoist/godiff/internal/github"
 	"github.com/egoist/godiff/internal/highlight"
@@ -109,6 +112,15 @@ type window struct {
 	now        time.Time
 	charW      float32
 	charKey    string
+	// unviewedMiss is set when the reader asked for a file not viewed yet
+	// and every file was: the bar above the file says so.
+	unviewedMiss bool
+	// The file shown last, which a window opened again comes back to. The
+	// position waits positionDebounce before it is saved, so that a walk
+	// through the files saves the last one alone.
+	restoredPosition bool
+	posSeq           atomic.Int64
+	posKey, posPath  string
 	// The hunk chosen with j and k.
 	selFile, selHunk int
 	focusList        bool
@@ -266,6 +278,8 @@ func openWindow(dir string, src source) error {
 		if w.settings.CopyCommentsOnClose && len(w.comments) > 0 {
 			mygo.Clipboard.WriteText(w.commentsMarkdown())
 		}
+		// The file shown is where the next window opens.
+		w.flushPosition()
 	})
 	offSettings := cfg.OnChange(func(s Settings) { w.win.Update(func() { w.applySettings(s) }) })
 	w.win.OnClosed(func() {
@@ -288,6 +302,7 @@ func openWindow(dir string, src source) error {
 	w.win.OnFocus(func() { go w.checkChanges() })
 	go noteRecent(repo.Root)
 	w.load()
+	w.sweepCache()
 	w.loadHistory()
 	w.loadUser()
 	go w.watch(stop)
@@ -483,6 +498,7 @@ func (w *window) switchTo(src source) {
 	w.finding, w.query = false, ""
 	w.hscroll = map[string]float32{}
 	w.current, w.shownFor = 0, -1
+	w.unviewedMiss = false
 	if w.win != nil {
 		w.win.SetTitle(windowTitle(w.repo.Root, src))
 	}
@@ -738,7 +754,112 @@ func (w *window) setViewed(f *fileState, viewed bool) {
 		go state.setViewed(key, f.Path, fp)
 	}
 	f.collapsed = viewed
+	// What was not viewed is not what the reader asked for anymore.
+	w.unviewedMiss = false
 	w.rowsDirty = true
+}
+
+// positionDebounce is how long the file shown stays before it is saved: it
+// is a var, so that tests need not wait.
+var positionDebounce = time.Second
+
+// rememberPosition saves the file shown in this source once it has stayed
+// there for a while, so that the next window opens where this one stopped.
+func (w *window) rememberPosition() {
+	key, path := positionKey(w.repo.Root, w.source), w.shownPath()
+	if key == "" || path == "" || (key == w.posKey && path == w.posPath) {
+		return
+	}
+	w.posKey, w.posPath = key, path
+	seq := w.posSeq.Add(1)
+	w.background(func() {
+		time.Sleep(positionDebounce)
+		if w.posSeq.Load() != seq {
+			return // another file came, and is the one shown now
+		}
+		state.setPosition(key, path)
+	})
+}
+
+// flushPosition saves the file shown at once, as the window closes.
+func (w *window) flushPosition() {
+	// What waits for its second is what this writes.
+	w.posSeq.Add(1)
+	key, path := positionKey(w.repo.Root, w.source), w.shownPath()
+	if key == "" || path == "" {
+		return
+	}
+	w.posKey, w.posPath = key, path
+	state.setPosition(key, path)
+}
+
+// shownPath is the path of the file the surface shows: the one alone, or
+// the one at the top of the stack, "" for none.
+func (w *window) shownPath() string {
+	if i := w.shownFile(); i >= 0 && i < len(w.files) {
+		return w.files[i].Path
+	}
+	return ""
+}
+
+// restorePosition shows the file shown last in this source, once: one at a
+// time, that file, and in the stack, the surface at its head. A file gone
+// since — deleted or renamed — leaves the surface at the first, silently.
+func (w *window) restorePosition() {
+	if w.restoredPosition || len(w.files) == 0 {
+		return
+	}
+	w.restoredPosition = true
+	path := state.position(positionKey(w.repo.Root, w.source))
+	i := slices.IndexFunc(w.files, func(f *fileState) bool { return f.Path == path })
+	if i < 0 {
+		return
+	}
+	if w.oneFile() {
+		// The file laid out is the one shown, before the rows are built, so
+		// that they are built of it alone.
+		w.current, w.shownFor = i, -1
+		w.selFile, w.selHunk = -1, -1
+		w.rowsDirty = true
+		return
+	}
+	w.revealFile(i)
+}
+
+// analysesKept is how many reviews a repository keeps, and runsKept how many
+// logs of the repairs are kept in all: the newest, by their time.
+const (
+	analysesKept = 50
+	runsKept     = 20
+)
+
+// sweepCache deletes the reviews and the run logs godiff keeps past what it
+// needs, off the main thread and once per directory for the process: it is
+// neither the first frame's work nor the user's.
+func (w *window) sweepCache() {
+	dir := analysesDir()
+	if dir == "" {
+		return
+	}
+	opts := gc.Options{
+		Analyses:      dir,
+		Runs:          runsDir(),
+		Slots:         analysesKept,
+		Logs:          runsKept,
+		SchemaVersion: agent.SchemaVersion,
+	}
+	w.background(func() { gc.SweepOnce(opts) })
+}
+
+// runsDir is where the logs of the repairs are, as internal/review writes
+// them: one per run, in the user's home, so that a log outlives the window
+// and any repository.
+func runsDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".godiff", "runs")
 }
 
 // maxContent is the size of the files whose contents are loaded.

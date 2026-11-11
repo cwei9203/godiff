@@ -103,7 +103,7 @@ func TestSavedAnalysisKeyed(t *testing.T) {
 		}
 		fingerprints := map[string]string{"main.go": "fingerprint"}
 		a.Normalize()
-		saveAnalysis(analysisPath(repo.Root, src), w.analysisKeyOf(src, a, fingerprints), a, fingerprints)
+		saveAnalysis(analysisPath(repo.Root, src), repo.Root, w.analysisKeyOf(src, a, fingerprints), a, fingerprints)
 	}
 	// loaded is the review a window reads of the source, as the settings
 	// stand now.

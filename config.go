@@ -359,9 +359,12 @@ type store struct {
 type storeData struct {
 	// Viewed maps repository roots to the fingerprints of the files
 	// viewed, by path.
-	Viewed       map[string]map[string]string `json:"viewed"`
-	SidebarWidth float32                      `json:"sidebarWidth"`
-	SidebarShown *bool                        `json:"sidebarShown"`
+	Viewed map[string]map[string]string `json:"viewed"`
+	// Positions maps a repository and a source, as positionKey writes
+	// them, to the path of the file shown last there.
+	Positions    map[string]string `json:"positions,omitempty"`
+	SidebarWidth float32           `json:"sidebarWidth"`
+	SidebarShown *bool             `json:"sidebarShown"`
 	// Recent are the repositories opened, the last first: File → Open
 	// Recent lists them, and the app opens the first when started without
 	// one, from the Dock.
@@ -423,6 +426,42 @@ func (s *store) setViewed(root, path, fingerprint string) {
 	} else {
 		m[path] = fingerprint
 	}
+	s.mu.Unlock()
+	s.save()
+}
+
+// positionKey is what the file shown last of a source is remembered by: the
+// repository and the source, as the files viewed are. A commit's review does
+// not change, but the place in it is still worth coming back to, so a commit
+// has a key of its own where viewedKey gives none.
+func positionKey(root string, src source) string {
+	if key := viewedKey(root, src); key != "" {
+		return key
+	}
+	return root + "@" + src.ref
+}
+
+// position is the path of the file shown last in a source, "" for none.
+func (s *store) position(key string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.data.Positions[key]
+}
+
+// setPosition remembers the file shown last in a source.
+func (s *store) setPosition(key, path string) {
+	if key == "" || path == "" {
+		return
+	}
+	s.mu.Lock()
+	if s.data.Positions[key] == path {
+		s.mu.Unlock()
+		return
+	}
+	if s.data.Positions == nil {
+		s.data.Positions = map[string]string{}
+	}
+	s.data.Positions[key] = path
 	s.mu.Unlock()
 	s.save()
 }
