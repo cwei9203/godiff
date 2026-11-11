@@ -34,10 +34,11 @@ type FixResult struct {
 	Duration time.Duration
 	Changed  []string // paths as git status reports them, repo-relative
 	LogPath  string   // where the whole output was written
-	// ErrMessage is the failure as a sentence a person can act on, "" for a
-	// run that failed in no way godiff knows.
-	ErrMessage string
-	ErrDetail  string // the tail of stderr as the agent wrote it, for the log and the detail
+	// ErrReason is why the run failed, when godiff knows the failure.
+	// The interface says it in the reader's language; this package names no
+	// words of its own.
+	ErrReason agent.Reason
+	ErrDetail string // the tail of stderr as the agent wrote it, for the log and the detail
 }
 
 // stopGrace is how long a run may take to end once it is stopped, or its
@@ -155,19 +156,14 @@ func fix(ctx context.Context, req FixRequest, started time.Time, onLine func(str
 	}
 	if waitErr != nil {
 		res.ErrDetail = strings.TrimSpace(res.ErrDetail)
-		// The failure as a sentence to act on, when it is one godiff knows;
+		// The failure as a reason the interface can say in its language;
 		// what the agent said stays in ErrDetail, and in the log.
-		detail := lastLine(res.ErrDetail)
-		message, _ := agent.Explain(res.ErrDetail)
-		switch {
-		case message != "":
-		case detail != "":
-			message = detail
-		default:
-			message = waitErr.Error()
+		res.ErrReason, _ = agent.Explain(res.ErrDetail)
+		said := lastLine(res.ErrDetail)
+		if said == "" {
+			said = waitErr.Error()
 		}
-		res.ErrMessage = message
-		return res, fmt.Errorf("%s failed with exit code %d: %s", label, res.ExitCode, message)
+		return res, fmt.Errorf("%s failed with exit code %d: %s", label, res.ExitCode, said)
 	}
 	// A run that worked has no error to explain: what it wrote to stderr is
 	// progress, and the log holds it.

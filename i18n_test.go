@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/egoist/godiff/internal/agent"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -158,5 +159,107 @@ func TestCatalogsAgree(t *testing.T) {
 				t.Errorf("%s: %q is not in the source catalog", name, key)
 			}
 		}
+	}
+}
+
+// TestAICardSpeaksChinese checks the agent's card in its three states, in the
+// interface's language: offered, at work, and the review it gave.
+func TestAICardSpeaksChinese(t *testing.T) {
+	useEnglish(t)
+	w, tt := designWindow(t)
+	w.applySetting(func(s *Settings) { s.UILocale = "zh-Hans" })
+	tt.Frame()
+	tt.Frame()
+
+	st := w.analysisFor(w.source)
+	result := st.result
+	for _, want := range []string{"AI 审查", "再次审查", "需要留意", "按本次审查给文件分组", "个分组", "条注释"} {
+		if !tt.HasText(want) {
+			t.Errorf("%q is not in the result card: %q", want, tt.Texts())
+		}
+	}
+
+	// At work: the steps, the stop, and what it reads now.
+	st.result = nil
+	st.running = true
+	st.agent = "Claude Code"
+	st.started = w.now
+	st.progress = agent.Progress{Kind: agent.ProgressReading, Paths: []string{"app.go", "app_test.go"}}
+	tt.Frame()
+	for _, want := range []string{"AI 审查", "停止", "正在思考改动", "正在阅读 2 个文件"} {
+		if !tt.HasText(want) {
+			t.Errorf("%q is not in the running card: %q", want, tt.Texts())
+		}
+	}
+	if tt.HasText("Review Again") || tt.HasText("Review with AI") {
+		t.Errorf("the English words stayed in the running card: %q", tt.Texts())
+	}
+
+	// Offered, and not started.
+	st.running, st.result, st.offered = false, nil, true
+	tt.Frame()
+	for _, want := range []string{"AI 审查", "用 AI 审查", "自动"} {
+		if !tt.HasText(want) {
+			t.Errorf("%q is not in the offered card: %q", want, tt.Texts())
+		}
+	}
+
+	st.result = result
+}
+
+// TestCommandBarSpeaksChinese checks the command bar's titles and hints in the
+// interface's language.
+func TestCommandBarSpeaksChinese(t *testing.T) {
+	useEnglish(t)
+	w, tt := designWindow(t)
+	w.applySetting(func(s *Settings) { s.UILocale = "zh-Hans" })
+	w.paletteOpen = true
+	tt.Frame()
+	tt.Frame()
+	for _, want := range []string{"打开设置", "下一个未看的文件", "收起全部", "在差异中搜索"} {
+		if !tt.HasText(want) {
+			t.Errorf("%q is not in the command bar: %q", want, tt.Texts())
+		}
+	}
+	if tt.HasText("Open settings") || tt.HasText("Fold all") {
+		t.Errorf("the English words stayed in the command bar: %q", tt.Texts())
+	}
+}
+
+// TestI18nSnapshotsWelcomeAndCard saves the two surfaces this batch reworked:
+// the welcome page with recent repositories and without, and the agent's card
+// in its three states, in each language.
+func TestI18nSnapshotsWelcomeAndCard(t *testing.T) {
+	if os.Getenv("GODIFF_SNAPSHOTS") == "" {
+		t.Skip("no GODIFF_SNAPSHOTS")
+	}
+	for _, c := range []struct{ tag, prefix string }{{"en", "en"}, {"zh-Hans", "zh"}} {
+		speak(t, c.tag)
+		_, tt := welcomeWith(t, nil, "/src/godiff", "/src/mygo", "/src/fate")
+		snapshot(t, tt, "welcome-"+c.prefix)
+		_, empty := welcomeWith(t, nil)
+		snapshot(t, empty, "welcome-empty-"+c.prefix)
+	}
+
+	useEnglish(t)
+	w, tt := designWindow(t)
+	st := w.analysisFor(w.source)
+	result := st.result
+	for _, c := range []struct{ tag, prefix string }{{"en", "en"}, {"zh-Hans", "zh"}} {
+		w.applySetting(func(s *Settings) { s.UILocale = c.tag })
+		st.running, st.result, st.offered = false, result, false
+		tt.Frame()
+		snapshot(t, tt, "ai-result-"+c.prefix)
+
+		st.result, st.offered, st.running = nil, true, false
+		tt.Frame()
+		snapshot(t, tt, "ai-offer-"+c.prefix)
+
+		st.offered, st.running = false, true
+		st.agent = "Claude Code"
+		st.started = w.now
+		st.progress = agent.Progress{Kind: agent.ProgressReading, Paths: []string{"app.go", "app_test.go", "go.mod"}}
+		tt.Frame()
+		snapshot(t, tt, "ai-running-"+c.prefix)
 	}
 }

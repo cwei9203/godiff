@@ -21,7 +21,9 @@ const (
 )
 
 // fixScopeLabels names the scopes, in the order they show.
-var fixScopeLabels = []string{"All Comments", "This Group", "This File"}
+func fixScopeLabels() []string {
+	return []string{msg().FixScopeAll(), msg().FixScopeGroup(), msg().FixScopeFile()}
+}
 
 // fixScopeOrder is the scopes as fixScopeLabels names them.
 var fixScopeOrder = []fixScope{fixScopeAll, fixScopeGroup, fixScopeFile}
@@ -146,7 +148,7 @@ func (w *window) exportReviewTask() {
 	}
 	path := review.Path(w.repo.Root)
 	if err := review.Write(path, w.reviewDocument()); err != nil {
-		mygo.Dialog.Error("Could not write the review task file", err.Error())
+		mygo.Dialog.Error(msg().CouldNotWriteReviewTask(), err.Error())
 		return
 	}
 	w.copiedAt = w.now

@@ -77,7 +77,7 @@ func (w *window) commitView(c *ui.Context) {
 	}
 	ui.Column(c).Grow(1).MinHeight(0).Background(pal.appBg).Children(func() {
 		ui.Row(c).Padding(12, 20).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
-			ui.Text(c, "Commit").FontSize(22).Bold()
+			ui.Text(c, msg().CommitTitle()).FontSize(22).Bold()
 			if w.branch != "" {
 				ui.Row(c).Gap(5).Padding(3, 8).Radius(12).Background(pal.ref.Alpha(0.13)).TextColor(pal.ref).Children(func() {
 					ui.Icon(c, iconBranch).FontSize(12)
@@ -85,7 +85,7 @@ func (w *window) commitView(c *ui.Context) {
 				})
 			}
 			ui.RichText(c,
-				ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
+				ui.Span{Text: msg().FilesCount(len(files)) + " · ", Color: t.TextMuted},
 				ui.Span{Text: "+" + thousands(adds), Color: pal.addText, Weight: 700},
 				ui.Span{Text: " −" + thousands(dels), Color: pal.delText, Weight: 700},
 			).FontSize(12).FontWeight(600)
@@ -96,12 +96,12 @@ func (w *window) commitView(c *ui.Context) {
 					ui.Row(c).Gap(10).Padding(12, 14).Radius(12).Background(pal.viewed.Alpha(0.1)).Border(1, pal.viewed.Alpha(0.25)).Children(func() {
 						ui.Icon(c, iconCheckCircle).FontSize(20).TextColor(pal.viewed)
 						ui.Column(c).Gap(2).Children(func() {
-							ui.Text(c, "Committed "+plural(w.committedFiles, "file")).Bold()
+							ui.Text(c, msg().CommittedFiles(w.committedFiles)).Bold()
 							ui.Textf(c, "%s · onto %s", w.commitDone, w.branch).Font(w.codeFont()).FontSize(12).TextColor(t.TextMuted)
 						})
 					})
 				}
-				subj := ui.TextInputBase(c, &w.subject).Placeholder("Summarize the change in one line…").Label("Subject").
+				subj := ui.TextInputBase(c, &w.subject).Placeholder(msg().CommitSubjectPlaceholder()).Label(msg().CommitSubjectLabel()).
 					Font(w.codeFont()).FontSize(17).FontWeight(600).Padding(14, 16).Radius(14).Background(pal.codeBg).Border(1, pal.border)
 				if w.commitFocus {
 					subj.Focus()
@@ -118,20 +118,20 @@ func (w *window) commitView(c *ui.Context) {
 				if n > 50 {
 					counter.TextColor(pal.ref)
 				}
-				ui.Text(c, "Summary").FontSize(13).Bold().Margin(6, 0, 0)
-				body := ui.TextAreaBase(c, &w.body).Placeholder("Describe the change in a paragraph or two…").Label("Summary").
+				ui.Text(c, msg().CommitSummary()).FontSize(13).Bold().Margin(6, 0, 0)
+				body := ui.TextAreaBase(c, &w.body).Placeholder(msg().CommitSummaryPlaceholder()).Label(msg().CommitSummary()).
 					FontSize(13).MinHeight(120).Padding(12, 14).Radius(14).Background(pal.codeBg).Border(1, pal.border)
 				if body.Focused() {
 					body.Border(1, t.Accent.Alpha(0.6)).Shadow(0, 0, 0, 3, t.Accent.Alpha(0.2))
 				}
 				ui.Row(c).Margin(14, 0, 0).Children(func() {
-					ui.Text(c, "Files in this commit").FontSize(13).Bold()
+					ui.Text(c, msg().FilesInCommit()).FontSize(13).Bold()
 					ui.Spacer(c)
-					ui.Textf(c, "%d of %d selected", chosen, len(files)).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted)
+					ui.Text(c, msg().FilesSelected(chosen, len(files))).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted)
 				})
 				ui.Column(c).Radius(14).Background(pal.codeBg).Border(1, pal.border).Padding(6).Gap(2).Children(func() {
 					all := chosen == len(files) && len(files) > 0
-					group := ui.ButtonBase(c).Gap(10).Padding(6, 8).Radius(8).Label("Changed files")
+					group := ui.ButtonBase(c).Gap(10).Padding(6, 8).Radius(8).Label(msg().ChangedFiles())
 					if group.Hovered() {
 						group.Background(pal.hover)
 					}
@@ -142,7 +142,7 @@ func (w *window) commitView(c *ui.Context) {
 					}
 					group.Children(func() {
 						checkMark(c, pal, all, chosen > 0 && !all)
-						ui.Text(c, "Changed files").FontSize(13).FontWeight(600).Grow(1)
+						ui.Text(c, msg().ChangedFiles()).FontSize(13).FontWeight(600).Grow(1)
 						ui.Textf(c, "%d/%d", chosen, len(files)).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted)
 					})
 					for _, f := range files {
@@ -177,8 +177,8 @@ func (w *window) commitView(c *ui.Context) {
 				if w.commitOutput != "" {
 					ui.Column(c).Margin(10, 0, 0).Radius(12).Border(1, pal.border).Background(pal.codeBg).Clip().Children(func() {
 						ui.Row(c).Padding(6, 6, 6, 12).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
-							ui.Text(c, "Commit output").FontSize(12).Bold().Grow(1)
-							if iconButton(c, iconClose, "Dismiss").Size(24, 24).Clicked() {
+							ui.Text(c, msg().CommitOutput()).FontSize(12).Bold().Grow(1)
+							if iconButton(c, iconClose, msg().Dismiss()).Size(24, 24).Clicked() {
 								w.commitOutput = ""
 							}
 						})
@@ -191,20 +191,20 @@ func (w *window) commitView(c *ui.Context) {
 			if w.commitErr != "" {
 				ui.Text(c, w.commitErr).FontSize(12).TextColor(t.Danger).Grow(1).Shrink(1).MaxLines(2)
 			} else {
-				ui.Text(c, "⌘↩ commits").FontSize(12).TextColor(t.TextMuted).Grow(1)
+				ui.Text(c, msg().CommitHint()).FontSize(12).TextColor(t.TextMuted).Grow(1)
 			}
-			label := "Commit"
+			label := msg().CommitAction()
 			switch {
 			case w.commitBusy:
-				label = "Committing…"
+				label = msg().Committing()
 			case w.commitDone != "":
-				label = "Committed"
+				label = msg().Committed()
 			}
 			b := ui.PrimaryButton(c, "").Disabled(!can).Children(func() {
 				ui.Icon(c, iconCommit).FontSize(15)
 				ui.Text(c, label).SingleLine()
 				if chosen < len(files) && chosen > 0 {
-					ui.Text(c, plural(chosen, "file")).FontSize(11).Padding(1, 6).Radius(8).Background(ui.RGBA(255, 255, 255, 0.22))
+					ui.Text(c, msg().FilesCount(chosen)).FontSize(11).Padding(1, 6).Radius(8).Background(ui.RGBA(255, 255, 255, 0.22))
 				}
 			})
 			if b.Clicked() {
@@ -252,19 +252,19 @@ func (w *window) makeCommit() {
 			paths = append(paths, f.OldPath)
 		}
 	}
-	msg := strings.TrimSpace(w.subject) + "\n"
+	message := strings.TrimSpace(w.subject) + "\n"
 	if body := strings.TrimSpace(w.body); body != "" {
-		msg = strings.TrimSpace(w.subject) + "\n\n" + body + "\n"
+		message = strings.TrimSpace(w.subject) + "\n\n" + body + "\n"
 	}
 	w.commitBusy = true
 	w.commitErr = ""
 	w.commitOutput = ""
 	w.background(func() {
-		hash, err := w.repo.CommitChanges(msg, paths)
+		hash, err := w.repo.CommitChanges(message, paths)
 		w.update(func() {
 			w.commitBusy = false
 			if err != nil {
-				w.commitErr = "The commit failed — see the output above."
+				w.commitErr = msg().CommitFailed()
 				w.commitOutput = errorText(err)
 				return
 			}

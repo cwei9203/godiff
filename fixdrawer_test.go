@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egoist/godiff/internal/agent"
 	"github.com/egoist/godiff/internal/review"
 )
 
@@ -99,11 +100,11 @@ func TestEndFix(t *testing.T) {
 	// A failure godiff knows shows the sentence to act on, not its raw words.
 	explained := res
 	explained.ExitCode = 1
-	explained.ErrMessage = "The agent is not signed in. Sign in with its own CLI in a terminal, then try again."
+	explained.ErrReason = agent.ReasonNotSignedIn
 	explained.ErrDetail = "Error: not logged in\nSee /opt/agent/docs/login.md"
 	end = endFix(explained, errAgent, false)
-	if end.errText != explained.ErrMessage {
-		t.Errorf("the error shown is %q, want %q", end.errText, explained.ErrMessage)
+	if want := msg().ExplainNotSignedIn(); end.errText != want {
+		t.Errorf("the error shown is %q, want %q", end.errText, want)
 	}
 
 	// A failure that wrote nothing to stderr shows the error itself, and the

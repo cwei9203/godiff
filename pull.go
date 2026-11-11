@@ -192,7 +192,7 @@ func (w *window) fetchPull(gen int, src source, remote string, opts git.Options)
 		})
 	}
 	ctx := context.Background()
-	status(fmt.Sprintf("Reading #%d from GitHub…", n))
+	status(msg().ReadingPull(n))
 	meta, err := ghClient().Pull(ctx, repo, n)
 	if err != nil {
 		return p, err
@@ -207,7 +207,7 @@ func (w *window) fetchPull(gen int, src source, remote string, opts git.Options)
 		refspecs = append(refspecs, "refs/heads/"+meta.Base.Ref)
 	}
 	if len(refspecs) > 0 && !w.stale(gen) {
-		status(fmt.Sprintf("Fetching #%d from %s…", n, remote))
+		status(msg().FetchingPull(n, remote))
 		ferr := w.repo.Fetch(ctx, remote, refspecs...)
 		if ferr != nil && remote != repo.URL()+".git" {
 			// SSH may want a passphrase: GitHub serves public
@@ -230,7 +230,7 @@ func (w *window) fetchPull(gen int, src source, remote string, opts git.Options)
 			}
 		}
 	}
-	status(fmt.Sprintf("Reading the changes of #%d…", n))
+	status(msg().ReadingPullChanges(n))
 	p.files, p.mergeBase, err = w.repo.Range(base, p.head, opts)
 	if err != nil {
 		return p, err
@@ -262,7 +262,7 @@ func (w *window) loadReviews() {
 		viewer, readOnly := "", ""
 		if needViewer {
 			if client.Token == "" {
-				readOnly = "Sign in with the GitHub CLI (gh auth login), or set githubToken in the config file, to comment and review."
+				readOnly = msg().PullSignIn()
 			} else if u, err := client.Viewer(ctx); err == nil {
 				viewer = u.Login
 			}
@@ -307,7 +307,7 @@ func (w *window) write(p *pullState, fn func(ctx context.Context, c *github.Clie
 			if err != nil {
 				p.writeErr = errorText(err)
 				if github.Forbidden(err) {
-					p.readOnly = "GitHub refused to let this token write to " + p.repo.String() + "."
+					p.readOnly = msg().PullWriteRefused(p.repo.String())
 				}
 			}
 			if done != nil {

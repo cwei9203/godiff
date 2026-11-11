@@ -2,14 +2,51 @@ package agent
 
 import "strings"
 
-// explain is a failure an agent's command line gives, as a person reads it:
-// the fragments of the raw text that tell it apart from the others, and what
-// to say about it.
+// Reason is why an agent's command failed, as godiff can tell it apart from
+// the other failures. It is a code rather than a sentence: the interface says
+// it in the reader's language, and the agent package names no words of its own.
+type Reason uint8
+
+const (
+	// ReasonUnknown is a failure godiff does not know; the raw text is all
+	// there is to show.
+	ReasonUnknown Reason = iota
+	// ReasonNoModels is Pi naming no model at all, signed in to nothing.
+	ReasonNoModels
+	// ReasonNotSignedIn is an agent whose provider refuses it as unknown.
+	ReasonNotSignedIn
+	// ReasonNotInstalled is a command that is not there, or not on PATH.
+	ReasonNotInstalled
+	// ReasonNetwork is an agent that could not reach its service.
+	ReasonNetwork
+	// ReasonTimeout is an agent that did not answer in time.
+	ReasonTimeout
+)
+
+// String names a reason, for a log or a test.
+func (r Reason) String() string {
+	switch r {
+	case ReasonNoModels:
+		return "no models"
+	case ReasonNotSignedIn:
+		return "not signed in"
+	case ReasonNotInstalled:
+		return "not installed"
+	case ReasonNetwork:
+		return "network"
+	case ReasonTimeout:
+		return "timeout"
+	}
+	return "unknown"
+}
+
+// explain is a failure an agent's command line gives, as the fragments of the
+// raw text that tell it apart from the others, and the reason it is.
 type explain struct {
 	// clues are fragments of the failure, in lower case, any one of which
 	// tells it: agents word the same failure their own way.
-	clues   []string
-	message string
+	clues  []string
+	reason Reason
 }
 
 // explains are the failures godiff knows, in the order they are looked for:
@@ -17,47 +54,41 @@ type explain struct {
 // others', and the most general last.
 var explains = []explain{
 	{
-		clues: []string{"no models available", "log into a provider"},
 		// Pi names no models either when no provider is signed in or when
 		// its agent directory holds none, as a PI_CODING_AGENT_DIR of
-		// another home does; the sentence names both.
-		message: "Pi names no models. Sign in to a provider in a terminal, " +
-			"and check PI_CODING_AGENT_DIR points at your Pi agent directory, then try again.",
+		// another home does.
+		clues:  []string{"no models available", "log into a provider"},
+		reason: ReasonNoModels,
 	},
 	{
-		clues: []string{"not logged in", "unauthorized", "401", "authentication"},
-		message: "The agent is not signed in. " +
-			"Sign in with its own CLI in a terminal, then try again.",
+		clues:  []string{"not logged in", "unauthorized", "401", "authentication"},
+		reason: ReasonNotSignedIn,
 	},
 	{
-		clues: []string{"executable file not found", "command not found"},
-		message: "The agent is not installed, or not on PATH. " +
-			"Install it, or choose another agent in Settings.",
+		clues:  []string{"executable file not found", "command not found"},
+		reason: ReasonNotInstalled,
 	},
 	{
-		clues: []string{"no such host", "connection refused", "network is unreachable"},
-		message: "The agent could not reach its service. " +
-			"Check the network, then try again.",
+		clues:  []string{"no such host", "connection refused", "network is unreachable"},
+		reason: ReasonNetwork,
 	},
 	{
-		clues: []string{"context deadline exceeded", "timed out"},
-		message: "The agent did not answer in time. " +
-			"Try again, or choose a faster model.",
+		clues:  []string{"context deadline exceeded", "timed out"},
+		reason: ReasonTimeout,
 	},
 }
 
-// Explain turns a CLI's raw failure into what a person can act on: what went
-// wrong, and what to do about it. The detail is always the raw text, for a
-// caller that sets it aside; the message is "" when the failure is none it
-// knows, and then the raw text is all there is to show.
-func Explain(raw string) (message, detail string) {
+// Explain tells why a CLI's failure happened, and keeps the raw text: the
+// reason is ReasonUnknown when the failure is none it knows, and then the raw
+// text is all there is to show.
+func Explain(raw string) (Reason, string) {
 	text := strings.ToLower(raw)
 	for _, e := range explains {
 		for _, clue := range e.clues {
 			if strings.Contains(text, clue) {
-				return e.message, raw
+				return e.reason, raw
 			}
 		}
 	}
-	return "", raw
+	return ReasonUnknown, raw
 }

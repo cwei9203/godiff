@@ -1,6 +1,5 @@
 {
   "@@locale": "en",
-
   "toolbarFind": "Find in diffs",
   "@toolbarFind": {
     "description": "The toolbar's search button, and the placeholder of the bar it opens: the search over the diffs."
@@ -93,7 +92,6 @@
   "@switchRepo": {
     "description": "The toolbar's repository switcher, and the accessible name of its menu."
   },
-
   "filterFiles": "Filter files",
   "@filterFiles": {
     "description": "The sidebar's search field, over the paths of the files reviewed."
@@ -118,15 +116,24 @@
   "@filesCount": {
     "description": "How many files the sidebar lists, above the tree.",
     "placeholders": {
-      "count": { "type": "int", "example": "3" }
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
     }
   },
   "groupsFiles": "{groups, plural, one {# group} other {# groups}} · {files, plural, =0 {No files} one {# file} other {# files}}",
   "@groupsFiles": {
     "description": "How many groups, and how many files, the sidebar lists above the tree.",
     "placeholders": {
-      "groups": { "type": "int", "example": "4" },
-      "files": { "type": "int", "example": "9" }
+      "groups": {
+        "type": "int",
+        "example": "4"
+      },
+      "files": {
+        "type": "int",
+        "example": "9"
+      }
     }
   },
   "notInDiff": "Not in this diff",
@@ -145,13 +152,18 @@
   "@noMatchingDiffs": {
     "description": "The review, while the search over the lines matches nothing."
   },
-
   "groupViewed": "{viewed}/{total} viewed",
   "@groupViewed": {
     "description": "A group's heading: how many of its files were marked viewed.",
     "placeholders": {
-      "viewed": { "type": "int", "example": "2" },
-      "total": { "type": "int", "example": "5" }
+      "viewed": {
+        "type": "int",
+        "example": "2"
+      },
+      "total": {
+        "type": "int",
+        "example": "5"
+      }
     }
   },
   "viewedFilesTip": "Viewed files",
@@ -170,28 +182,36 @@
   "@foldGroupTip": {
     "description": "The tooltip of a group's band, which folds the group.",
     "placeholders": {
-      "group": { "type": "String", "example": "Docs" }
+      "group": {
+        "type": "String",
+        "example": "Docs"
+      }
     }
   },
   "hideGroupFiles": "Hide the files of {group}",
   "@hideGroupFiles": {
     "description": "The tooltip of a group's chevron in the tree, which folds its files away.",
     "placeholders": {
-      "group": { "type": "String", "example": "Docs" }
+      "group": {
+        "type": "String",
+        "example": "Docs"
+      }
     }
   },
   "showGroupFiles": "Show the files of {group}",
   "@showGroupFiles": {
     "description": "The tooltip of a group's chevron in the tree, which opens its files again.",
     "placeholders": {
-      "group": { "type": "String", "example": "Docs" }
+      "group": {
+        "type": "String",
+        "example": "Docs"
+      }
     }
   },
   "needsCare": "Needs care",
   "@needsCare": {
     "description": "The badge of a group, or of a file, the agent's review asks to look at."
   },
-
   "viewed": "Viewed",
   "@viewed": {
     "description": "The file card's checkbox marking the file read, which folds it."
@@ -228,19 +248,30 @@
   "@changedLinesTip": {
     "description": "The tooltip of a file's counts of added and removed lines.",
     "placeholders": {
-      "added": { "type": "int", "example": "12" },
-      "removed": { "type": "int", "example": "3" }
+      "added": {
+        "type": "int",
+        "example": "12"
+      },
+      "removed": {
+        "type": "int",
+        "example": "3"
+      }
     }
   },
   "totalChangeTip": "Total change: {added, plural, one {# added line} other {# added lines}}, {removed, plural, one {# removed line} other {# removed lines}}",
   "@totalChangeTip": {
     "description": "The tooltip of the sidebar's footer, which counts the lines of every file shown.",
     "placeholders": {
-      "added": { "type": "int", "example": "120" },
-      "removed": { "type": "int", "example": "34" }
+      "added": {
+        "type": "int",
+        "example": "120"
+      },
+      "removed": {
+        "type": "int",
+        "example": "34"
+      }
     }
   },
-
   "previousFile": "Previous file ([)",
   "@previousFile": {
     "description": "The button stepping to the file before the one shown alone, with the key that does."
@@ -253,8 +284,14 @@
   "@filePosition": {
     "description": "The tooltip of the place of the file shown among the files reviewed.",
     "placeholders": {
-      "at": { "type": "int", "example": "3" },
-      "total": { "type": "int", "example": "7" }
+      "at": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "7"
+      }
     }
   },
   "nextUnviewed": "Next unviewed file",
@@ -269,7 +306,6 @@
   "@resetReview": {
     "description": "The button putting the review back where it began: nothing viewed, every group open."
   },
-
   "undo": "Undo",
   "@undo": {
     "description": "The bar of an undo: the button putting back what the last one-tap action changed."
@@ -282,38 +318,52 @@
   "@foldedAllGroups": {
     "description": "The bar of an undo, after the whole tree folded: how many groups it folded.",
     "placeholders": {
-      "count": { "type": "int", "example": "4" }
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
     }
   },
   "foldedAllFiles": "{count, plural, one {Folded all # file} other {Folded all # files}}",
   "@foldedAllFiles": {
     "description": "The bar of an undo, after the whole tree folded: how many files it folded, where the rules group none.",
     "placeholders": {
-      "count": { "type": "int", "example": "9" }
+      "count": {
+        "type": "int",
+        "example": "9"
+      }
     }
   },
   "unfoldedAllGroups": "{count, plural, one {Unfolded all # group} other {Unfolded all # groups}}",
   "@unfoldedAllGroups": {
     "description": "The bar of an undo, after the whole tree opened: how many groups it opened.",
     "placeholders": {
-      "count": { "type": "int", "example": "4" }
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
     }
   },
   "unfoldedAllFiles": "{count, plural, one {Unfolded all # file} other {Unfolded all # files}}",
   "@unfoldedAllFiles": {
     "description": "The bar of an undo, after the whole tree opened: how many files it opened, where the rules group none.",
     "placeholders": {
-      "count": { "type": "int", "example": "9" }
+      "count": {
+        "type": "int",
+        "example": "9"
+      }
     }
   },
   "markedAllViewed": "{count, plural, one {Marked all # file viewed} other {Marked all # files viewed}}",
   "@markedAllViewed": {
     "description": "The bar of an undo, after every file was marked viewed.",
     "placeholders": {
-      "count": { "type": "int", "example": "9" }
+      "count": {
+        "type": "int",
+        "example": "9"
+      }
     }
   },
-
   "noRepository": "No Git repository found",
   "@noRepository": {
     "description": "The window shown when nothing is reviewed: no Git repository was found."
@@ -342,7 +392,6 @@
   "@dismiss": {
     "description": "The button closing a card or a notice that the app shows unasked, as the offered review."
   },
-
   "languageMenu": "Language",
   "@languageMenu": {
     "description": "The View menu's submenu of the language the interface shows."
@@ -351,7 +400,6 @@
   "@followSystem": {
     "description": "The Language submenu: the interface takes the language of the system's languages."
   },
-
   "settingsMenuItem": "Settings…",
   "@settingsMenuItem": {
     "description": "The app menu's item that opens the window of the settings, with the keys that do, and the title of that window."
@@ -364,7 +412,6 @@
   "@configFile": {
     "description": "The app menu's item opening the settings file itself, in the editor the settings name."
   },
-
   "settingsAppearance": "Appearance",
   "@settingsAppearance": {
     "description": "The settings window: the page of the colors, the language, the code's font and the layouts."
@@ -389,7 +436,6 @@
   "@settingsAdvanced": {
     "description": "The settings window: the page of the cache, of the logs, and of the command line tool."
   },
-
   "settingsLanguage": "Interface language",
   "@settingsLanguage": {
     "description": "The Appearance page: the language the app says its own words in."
@@ -418,7 +464,6 @@
   "@settingsFileView": {
     "description": "The Appearance page: one file at a time, or every file stacked."
   },
-
   "settingsReviewDetail": "What the agent is asked for, and what the review shows of it.",
   "@settingsReviewDetail": {
     "description": "The Review page: what the settings under it decide."
@@ -455,7 +500,6 @@
   "@settingsAutoAnalyze": {
     "description": "The Review page: the agent is asked for its review as a repository opens, rather than when the card is asked."
   },
-
   "settingsAIDetail": "The agent that reads the changes, and the one that repairs the comments.",
   "@settingsAIDetail": {
     "description": "The AI page: what the settings under it decide."
@@ -476,7 +520,10 @@
   "@settingsLookedForAgents": {
     "description": "The AI page: how many coding agents were found on this machine.",
     "placeholders": {
-      "count": { "type": "int", "example": "2" }
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
     }
   },
   "settingsModel": "Model",
@@ -507,7 +554,10 @@
   "@settingsNotInstalled": {
     "description": "The AI page: an agent the settings name, that this machine does not have.",
     "placeholders": {
-      "agent": { "type": "String", "example": "Codex" }
+      "agent": {
+        "type": "String",
+        "example": "Codex"
+      }
     }
   },
   "settingsNoModel": "No agent to take a model from: choose one above.",
@@ -534,10 +584,12 @@
   "@settingsModelsFailed": {
     "description": "The AI page: the agent failed to list its models, and why.",
     "placeholders": {
-      "reason": { "type": "String", "example": "codex is not logged in" }
+      "reason": {
+        "type": "String",
+        "example": "codex is not logged in"
+      }
     }
   },
-
   "settingsGitHubDetail": "The token that reads and reviews pull requests.",
   "@settingsGitHubDetail": {
     "description": "The GitHub page: what the settings under it decide."
@@ -566,21 +618,26 @@
   "@settingsGitHubSignedIn": {
     "description": "The GitHub page: the account the token is.",
     "placeholders": {
-      "login": { "type": "String", "example": "egoist" }
+      "login": {
+        "type": "String",
+        "example": "egoist"
+      }
     }
   },
   "settingsGitHubBad": "GitHub refused the token: {reason}",
   "@settingsGitHubBad": {
     "description": "The GitHub page: the token GitHub would not take, and why.",
     "placeholders": {
-      "reason": { "type": "String", "example": "Bad credentials" }
+      "reason": {
+        "type": "String",
+        "example": "Bad credentials"
+      }
     }
   },
   "settingsGitHubNoToken": "No token: pull requests are read from what the repository's remote serves.",
   "@settingsGitHubNoToken": {
     "description": "The GitHub page: there is no token, and what the app does without one."
   },
-
   "settingsWorkspaceDetail": "The sidebar, how a review opens, and what is remembered of it.",
   "@settingsWorkspaceDetail": {
     "description": "The Workspace page: what the settings under it decide."
@@ -621,7 +678,6 @@
   "@settingsMaxRecentDetail": {
     "description": "The Workspace page: what the count of recent repositories says under it."
   },
-
   "settingsAdvancedDetail": "The cache, the logs, and the command line tool.",
   "@settingsAdvancedDetail": {
     "description": "The Advanced page: what the settings under it decide."
@@ -634,14 +690,20 @@
   "@settingsCacheUsage": {
     "description": "The Advanced page: how much room the reviews and the logs take.",
     "placeholders": {
-      "size": { "type": "String", "example": "4.1 MB" }
+      "size": {
+        "type": "String",
+        "example": "4.1 MB"
+      }
     }
   },
   "settingsCacheCleared": "Cache cleared: {size} freed.",
   "@settingsCacheCleared": {
     "description": "The Advanced page: what clearing the cache freed.",
     "placeholders": {
-      "size": { "type": "String", "example": "4.1 MB" }
+      "size": {
+        "type": "String",
+        "example": "4.1 MB"
+      }
     }
   },
   "settingsClearCache": "Clear cache",
@@ -703,5 +765,921 @@
   "settingsGitHubUnchecked": "Press Enter to have GitHub check the token.",
   "@settingsGitHubUnchecked": {
     "description": "The GitHub page: a token is typed, and GitHub was not asked whose it is yet."
+  },
+  "welcomeSubtitle": "Review the changes of a repository, a commit, a branch, or a pull request.",
+  "openFolder": "Open Folder…",
+  "recent": "Recent",
+  "welcomeEmpty": "No repositories opened yet — open a folder, or run godiff inside one.",
+  "welcomeRunBefore": "Or run",
+  "welcomeRunAfter": "inside a repository to open it too.",
+  "fileMenu": "File",
+  "editMenu": "Edit",
+  "openRecentMenu": "Open Recent",
+  "switchRepository": "Switch Repository…",
+  "openCommitMenu": "Open Commit…",
+  "openBranchMenu": "Open Branch…",
+  "openPullMenu": "Open Pull Request…",
+  "commitMenu": "Commit…",
+  "openFileInEditor": "Open File in Editor",
+  "closeRepository": "Close Repository",
+  "findInDiffsMenu": "Find in Diffs",
+  "filterFilesMenu": "Filter Files",
+  "copyReviewCommentsMenu": "Copy Review Comments",
+  "commandBarMenu": "Command Bar…",
+  "toggleSidebarMenu": "Toggle Sidebar",
+  "filesTabMenu": "Files",
+  "historyTabMenu": "History",
+  "pullRequestsTabMenu": "Pull Requests",
+  "aiAgentMenu": "AI Agent",
+  "aiReviewMenu": "AI Review",
+  "collapseAllFilesMenu": "Collapse All Files",
+  "expandAllFilesMenu": "Expand All Files",
+  "fontSizeMenu": "Font Size",
+  "biggerText": "Bigger",
+  "smallerText": "Smaller",
+  "actualSizeText": "Actual Size",
+  "commentsMenu": "Comments",
+  "copyCommentsOnClose": "Copy Comments on Close",
+  "refreshChangesMenu": "Refresh Changes",
+  "keyboardShortcuts": "Keyboard Shortcuts",
+  "openRepoTitle": "Open a Git Repository",
+  "couldNotOpenFolder": "Could not open the folder",
+  "couldNotOpen": "Could not open {path}",
+  "clearRecentMenu": "Clear Menu",
+  "smartGrouping": "Smart Grouping",
+  "overallSummaryMenu": "Overall Summary",
+  "expandSummaryMenu": "Expand the Summary",
+  "notesOnFilesMenu": "Notes on Files and Lines",
+  "summaryLanguageMenu": "Summary Language",
+  "readerLanguage": "The Reader's Language",
+  "noOtherFolder": "No other folder opened yet",
+  "revealInFinder": "Reveal in Finder",
+  "couldNotOpenFile": "Could not open the file",
+  "couldNotOpenConfigFile": "Could not open the config file",
+  "couldNotWriteReviewTask": "Could not write the review task file",
+  "cancel": "Cancel",
+  "doneAction": "Done",
+  "saveAction": "Save",
+  "openAction": "Open",
+  "opening": "Opening…",
+  "tryAgain": "Try Again",
+  "showHistory": "Show History",
+  "notInstalledSuffix": " (not installed)",
+  "automatic": "Automatic",
+  "defaultModel": "Default Model",
+  "defaultModelOption": "Default",
+  "loadingModels": "Loading models…",
+  "agentDefault": "{agent}'s default",
+  "commentsCount": "{count, plural, one {# comment} other {# comments}}",
+  "unresolvedCommentsCount": "{count, plural, one {# unresolved comment} other {# unresolved comments}}",
+  "pendingCommentsCount": "{count, plural, one {# pending comment} other {# pending comments}}",
+  "groupsCount": "{count, plural, one {# group} other {# groups}}",
+  "notesCount": "{count, plural, one {# note} other {# notes}}",
+  "aiNotesCount": "{count, plural, one {# AI note} other {# AI notes}}",
+  "filesSelected": "{chosen} of {total} selected",
+  "focusFileFilter": "Focus file filter",
+  "openCommitCommand": "Open commit",
+  "openCommitHint": "Review a commit",
+  "openBranchCommand": "Open branch",
+  "openBranchHint": "Compare with a branch",
+  "openPullCommand": "Open pull request",
+  "openPullHint": "Review a pull request on GitHub",
+  "showFileTree": "Show file tree",
+  "showHistoryCommand": "Show history",
+  "showPullRequestsCommand": "Show pull requests",
+  "nextUnviewedHint": "The first file not viewed yet, round from this one",
+  "stopAiReview": "Stop the AI review",
+  "nextAiNoteCommand": "Next AI note",
+  "previousAiNoteCommand": "Previous AI note",
+  "groupByKindCommand": "Group files by kind",
+  "groupByAICommand": "Group files by AI review",
+  "ungroupFiles": "Ungroup files",
+  "showUncommittedChanges": "Show uncommitted changes",
+  "commitCommand": "Commit…",
+  "exportReviewTask": "Export review task",
+  "exportReviewTaskHint": ".review/REVIEW.md, for an agent",
+  "fixCommentsCommand": "Fix comments with an agent",
+  "submitReview": "Submit review",
+  "submitReviewHint": "Approve, comment or request changes",
+  "openPullOnGitHub": "Open pull request on GitHub",
+  "copyCommentsAndClose": "Copy review comments and close",
+  "toggleViewed": "Toggle viewed",
+  "markAllViewed": "Mark all viewed",
+  "markAllViewedHint": "Every file of the review, with an undo",
+  "resetReviewState": "Reset review state",
+  "resetReviewStateHint": "Nothing viewed, everything open",
+  "nextFileCommand": "Next file",
+  "previousFileCommand": "Previous file",
+  "oneFileHint": "One file at a time",
+  "openFileInEditorCommand": "Open file in editor",
+  "foldAllCommand": "Fold all",
+  "unfoldAllCommand": "Unfold all",
+  "everyGroupAndFolder": "Every group and every folder",
+  "showOneFile": "Show one file at a time",
+  "showAllFiles": "Show all files",
+  "toggleDiffLayout": "Toggle diff layout",
+  "switchToUnified": "Switch to unified",
+  "switchToSplit": "Switch to split",
+  "toggleWordWrap": "Toggle word wrap",
+  "turnWrapOn": "Turn wrapping on",
+  "turnWrapOff": "Turn wrapping off",
+  "toggleWhitespace": "Toggle whitespace",
+  "showWhitespaceChanges": "Show whitespace changes",
+  "hideWhitespaceChanges": "Hide whitespace changes",
+  "increaseFontSize": "Increase code font size",
+  "decreaseFontSize": "Decrease code font size",
+  "resetFontSize": "Reset code font size",
+  "openConfigCommand": "Open config file",
+  "refreshChanges": "Refresh changes",
+  "keyboardShortcutsCommand": "Keyboard shortcuts",
+  "typeCommand": "Type a command…",
+  "commandBar": "Command bar",
+  "commandLabel": "Command",
+  "noCommands": "No matching commands",
+  "shortcutsNavigation": "Navigation",
+  "shortcutsSearch": "Search",
+  "shortcutsComments": "Comments",
+  "shortcutsPullRequests": "Pull requests",
+  "shortcutsCode": "Code",
+  "nextMatch": "Next match",
+  "previousMatch": "Previous match",
+  "closeSearch": "Close search",
+  "commentOnLine": "Comment on a line",
+  "commentOnHunk": "Comment on the hunk",
+  "addComment": "Add comment",
+  "discardComment": "Discard comment",
+  "addToYourReview": "Add to your review",
+  "replyAction": "Reply",
+  "openCommitTitle": "Open Commit",
+  "openCommitDesc": "Review a commit by SHA or revision, such as HEAD~1.",
+  "commitField": "Commit",
+  "commitPlaceholder": "HEAD~1 or a commit SHA",
+  "openBranchTitle": "Open Branch",
+  "openBranchDesc": "Compare the current working tree with a branch.",
+  "branchField": "Branch name",
+  "branchPlaceholder": "main",
+  "openPullTitle": "Open Pull Request",
+  "openPullDesc": "Review a pull request of this repository on GitHub, open or not.",
+  "pullField": "Pull request",
+  "pullPlaceholder": "123, owner/repo#123 or its URL",
+  "enterField": "Enter a {field}.",
+  "branchMissing": "Branch \"{branch}\" does not exist in this repository.",
+  "commitTitle": "Commit",
+  "filesInCommit": "Files in this commit",
+  "changedFiles": "Changed files",
+  "committedFiles": "{count, plural, one {Committed # file} other {Committed # files}}",
+  "commitSubjectPlaceholder": "Summarize the change in one line…",
+  "commitSubjectLabel": "Subject",
+  "commitSummary": "Summary",
+  "commitSummaryPlaceholder": "Describe the change in a paragraph or two…",
+  "commitOutput": "Commit output",
+  "commitAction": "Commit",
+  "committing": "Committing…",
+  "committed": "Committed",
+  "commitHint": "⌘↩ commits",
+  "commitFailed": "The commit failed — see the output above.",
+  "totalLabel": "Total:",
+  "reviewAction": "Review",
+  "filterHistory": "Filter history",
+  "filterPullRequests": "Filter pull requests",
+  "tabFiles": "Files (⌘1)",
+  "tabHistory": "History (⌘2)",
+  "tabPullRequests": "Pull Requests (⌘3)",
+  "sidebarLabel": "Sidebar",
+  "clearLabel": "Clear",
+  "loading": "Loading…",
+  "changedFilesLabel": "Changed files",
+  "uncommittedChanges": "Uncommitted changes",
+  "historyLabel": "History",
+  "fileBinary": "Binary file changed.",
+  "fileTooLarge": "File is too large, so Godiff skipped rendering it.",
+  "fileRenamed": "File renamed without changes.",
+  "fileModeChanged": "File mode changed: {mode}.",
+  "fileEmptyAdded": "Empty file added.",
+  "fileEmptyDeleted": "Empty file deleted.",
+  "fileNoChanges": "No changes to show.",
+  "justNow": "just now",
+  "minutesAgo": "{count}m ago",
+  "hoursAgo": "{count}h ago",
+  "daysAgo": "{count}d ago",
+  "monthsAgo": "{count}mo ago",
+  "yearsAgo": "{count}y ago",
+  "statusAdded": "Added",
+  "statusDeleted": "Deleted",
+  "statusRenamed": "Renamed",
+  "statusCopied": "Copied",
+  "statusTypeChanged": "Type changed",
+  "statusUntracked": "Untracked",
+  "statusConflict": "Conflict",
+  "statusModified": "Modified",
+  "reviewAgain": "Review Again",
+  "reviewFailed": "Failed",
+  "toTakeCare": "{count} to take care with",
+  "groupsNotes": "{groups, plural, one {# group} other {# groups}} · {notes, plural, one {# note} other {# notes}}",
+  "changedSince": "{files, plural, one {# file changed since} other {# files changed since}}",
+  "changedSinceTip": "Notes on the files changed since do not show. Review again to include them.",
+  "groupByThisReview": "Group files by this review",
+  "showSummary": "Show the summary",
+  "hideSummary": "Hide the summary",
+  "showWholeSummary": "Show the whole summary of the review",
+  "showWhatItSaid": "Show what it said",
+  "hideWhatItSaid": "Hide what it said",
+  "showMoreNotes": "Show {count} more",
+  "showFewerNotes": "Show fewer",
+  "goToNote": "Go to the note on {where}",
+  "agentThatReviews": "The agent that reviews",
+  "modelThatReviews": "The model that reviews: {model}",
+  "readingFiles": "{count, plural, one {Reading # file} other {Reading # files}}",
+  "noAgentFound": "No coding agent was found. Install Claude Code, Codex, OpenCode or Pi, or name one as aiAgent in the config file.",
+  "notBuiltYet": "Not built yet",
+  "aiNoteOnFile": "AI note on this file",
+  "aiNoteLine": "AI note · line {line}",
+  "aiNoteOldLine": "AI note · old line {line}",
+  "needsCareSuffix": " · needs care",
+  "groupDocs": "Docs",
+  "groupDocsSummary": "Documentation updates.",
+  "groupCode": "Code",
+  "groupCodeSummary": "Source changes.",
+  "groupTests": "Tests",
+  "groupTestsSummary": "Test coverage for the change.",
+  "groupConfig": "Config",
+  "groupConfigSummary": "Configuration changes.",
+  "groupDeps": "Dependencies",
+  "groupDepsSummary": "Dependency version changes.",
+  "groupGenerated": "Generated",
+  "groupGeneratedSummary": "Generated or build output changes.",
+  "groupOther": "Other",
+  "groupOtherSummary": "Other changes that don't fit an existing category.",
+  "notInReview": "Not in the review",
+  "notInReviewSummary": "Files that changed since the agent's review.",
+  "fixReviewComments": "Fix Review Comments",
+  "fixIntro": "The agent is handed {comments} and edits the working tree itself. Godiff runs it, shows what it does, and leaves the git writes to you.",
+  "fixAgentField": "Agent",
+  "fixModelField": "Model",
+  "fixRangeField": "Range",
+  "fixScopeAll": "All Comments",
+  "fixScopeGroup": "This Group",
+  "fixScopeFile": "This File",
+  "fixWorkingTreeNote": "The agent writes in the working tree: its edits and yours are mixed together until you commit.",
+  "startTheAgent": "Start the Agent",
+  "noUnresolvedComment": "No unresolved comment",
+  "noCodingAgent": "No coding agent is installed",
+  "fixHeadlineRunning": "Agent fixing · {agent} · {took}",
+  "fixHeadlineStopping": "Stopping the agent… · {agent}",
+  "fixHeadlineStopped": "Stopped · {agent} · {took}",
+  "fixHeadlineFailed": "Fix failed · exit code {code} · {took}",
+  "fixHeadlineFixed": "Fixed {comments} · {files}",
+  "fixNoFileChanged": "no file changed",
+  "fixFilesChanged": "{count} changed",
+  "fixTheAgent": "The agent",
+  "modelThatFixes": "The model that fixes: {model}",
+  "nothingToFix": "Nothing to fix",
+  "nothingToFixDetail": "There is no unresolved comment in this range of the review.",
+  "explainNoModels": "Pi names no models. Sign in to a provider in a terminal, and check PI_CODING_AGENT_DIR points at your Pi agent directory, then try again.",
+  "explainNotSignedIn": "The agent is not signed in. Sign in with its own CLI in a terminal, then try again.",
+  "explainNotInstalled": "The agent is not installed, or not on PATH. Install it, or choose another agent in Settings.",
+  "explainNetwork": "The agent could not reach its service. Check the network, then try again.",
+  "explainTimeout": "The agent did not answer in time. Try again, or choose a faster model.",
+  "finishYourReview": "Finish Your Review",
+  "reviewSummaryPlaceholder": "Leave a comment",
+  "reviewSummaryLabel": "Review summary",
+  "pullNumberTitle": "#{number} {title}",
+  "pullReviewPendingWith": "{comments} goes with it. {title}",
+  "submitGeneral": "Comment",
+  "submitGeneralDetail": "Submit general feedback without explicit approval.",
+  "submitApprove": "Approve",
+  "submitApproveDetail": "Submit feedback and approve merging these changes.",
+  "submitRequestChanges": "Request changes",
+  "submitRequestChangesDetail": "Submit feedback that must be addressed before merging.",
+  "ownPullTip": "Authors cannot approve their own pull requests, or request changes of them",
+  "discardPendingReview": "Discard Pending Review",
+  "submitReviewAction": "Submit Review",
+  "submitting": "Submitting…",
+  "submitReviewEmpty": "Write a summary, or add comments to the review.",
+  "localChangesDetected": "Local changes detected,",
+  "newCommitsPushed": "New commits were pushed,",
+  "refreshToSeeThem": "refresh to see them.",
+  "whitespaceHidden": "Whitespace-only changes hidden",
+  "unableToReadRepo": "Unable to read repository",
+  "unableToOpenPull": "Unable to open the pull request",
+  "thinking": "Thinking…",
+  "discardCommentTitle": "Discard this review comment?",
+  "discardCommentDetail": "Its text will be lost.",
+  "discardAction": "Discard",
+  "branchChip": "Branch {branch}",
+  "localBranch": "Local + branch vs {branch}",
+  "openFailed": "Could not open the folder",
+  "welcomeTitle": "Godiff",
+  "@toTakeCare": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "@monthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "@yearsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "@showMoreNotes": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "@fixFilesChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "@filesSelected": {
+    "placeholders": {
+      "chosen": {
+        "type": "int",
+        "example": "3"
+      },
+      "total": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "@fixHeadlineFailed": {
+    "placeholders": {
+      "code": {
+        "type": "int",
+        "example": "1"
+      },
+      "took": {
+        "type": "String",
+        "example": "2m13s"
+      }
+    }
+  },
+  "@fixHeadlineStopped": {
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      },
+      "took": {
+        "type": "String",
+        "example": "2m13s"
+      }
+    }
+  },
+  "@fixHeadlineRunning": {
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      },
+      "took": {
+        "type": "String",
+        "example": "2m13s"
+      }
+    }
+  },
+  "@fixHeadlineStopping": {
+    "placeholders": {
+      "agent": {
+        "type": "String",
+        "example": "Claude Code"
+      }
+    }
+  },
+  "@fixHeadlineFixed": {
+    "placeholders": {
+      "comments": {
+        "type": "String",
+        "example": "3 comments"
+      },
+      "files": {
+        "type": "String",
+        "example": "2 changed"
+      }
+    }
+  },
+  "@pullReviewPendingWith": {
+    "placeholders": {
+      "comments": {
+        "type": "String",
+        "example": "2 pending comments"
+      },
+      "title": {
+        "type": "String",
+        "example": "#12 Fix"
+      }
+    }
+  },
+  "@fileModeChanged": {
+    "placeholders": {
+      "mode": {
+        "type": "String",
+        "example": "100644 → 100755"
+      }
+    }
+  },
+  "@branchMissing": {
+    "placeholders": {
+      "branch": {
+        "type": "String",
+        "example": "main"
+      }
+    }
+  },
+  "@enterField": {
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "example": "commit"
+      }
+    }
+  },
+  "@couldNotOpen": {
+    "placeholders": {
+      "path": {
+        "type": "String",
+        "example": "/src/godiff"
+      }
+    }
+  },
+  "@fixIntro": {
+    "placeholders": {
+      "comments": {
+        "type": "String",
+        "example": "3 unresolved comments"
+      }
+    }
+  },
+  "stop": "Stop",
+  "startingTheAgent": "Starting the agent",
+  "thinkingAboutTheChange": "Thinking about the change",
+  "readingTheFiles": "Reading the files",
+  "organizingTheReview": "Organizing the review",
+  "noLocalChanges": "No local changes",
+  "noChangesInCommit": "No changes in commit",
+  "noChangesInBranch": "No changes",
+  "noChangesInPull": "No changes in pull request",
+  "noChangedFiles": "No changed files",
+  "noMatchingCommits": "No matching commits",
+  "noPullRequests": "No pull requests",
+  "aiNote": "AI note",
+  "previousUnviewed": "Previous unviewed file",
+  "nextHunk": "Next hunk",
+  "previousHunk": "Previous hunk",
+  "clickAction": "Click",
+  "pullRequestsLabel": "Pull requests",
+  "couldNotOpenLog": "Could not open the log file",
+  "hideOutput": "Hide the agent's output",
+  "showOutput": "Show the agent's output",
+  "closeDrawer": "Close the agent's drawer",
+  "exitCode": "Exit code {code}",
+  "noFilesChanged": "No files were changed",
+  "openLogFile": "Open the Log File",
+  "refreshDiff": "Refresh Diff",
+  "agentOutput": "The agent's output",
+  "waitingForOutput": "Waiting for the agent's output…",
+  "@exitCode": {
+    "placeholders": {
+      "code": {
+        "type": "int",
+        "example": "1"
+      }
+    }
+  },
+  "committedBy": "{author} committed {when}",
+  "@committedBy": {
+    "placeholders": {
+      "author": {
+        "type": "String",
+        "example": "Ada"
+      },
+      "when": {
+        "type": "String",
+        "example": "5m ago"
+      }
+    }
+  },
+  "pullOpenOn": "Open on {repo}",
+  "pullOpenCount": "{count} open on {repo}",
+  "refreshPullRequests": "Refresh pull requests",
+  "noOpenPulls": "No open pull requests",
+  "unableListPulls": "Unable to list the pull requests",
+  "loadingPulls": "Loading pull requests…",
+  "approvedTip": "Approved",
+  "changesRequestedTip": "Changes requested",
+  "checksTip": "Checks: {checks}",
+  "pullOpenedAt": "Opened {when}",
+  "copyLink": "Copy link",
+  "copiedLink": "Copied the link of #{number}",
+  "openOnGitHub": "Open on GitHub",
+  "showMore": "Show more",
+  "showLess": "Show less",
+  "couldNotReadReviews": "Could not read the review comments: {reason}",
+  "pullWantsToMerge": " wants to merge {commits} into ",
+  "pullMergedWants": " merged {commits} into ",
+  "pullFrom": " from ",
+  "pullThreadsUnresolved": "{threads} · {count} unresolved",
+  "pullDraft": "Draft",
+  "pullMerged": "Merged",
+  "pullClosed": "Closed",
+  "pullCommented": "commented",
+  "pullApproved": "approved",
+  "pullRequestedChanges": "requested changes",
+  "pullDismissed": "was dismissed",
+  "pendingBadge": "Pending",
+  "resolvedBadge": "Resolved",
+  "outdatedBadge": "Outdated",
+  "showAction": "Show",
+  "hideAction": "Hide",
+  "resolveAction": "Resolve",
+  "unresolveAction": "Unresolve",
+  "editComment": "Edit comment",
+  "deleteComment": "Delete comment",
+  "replyPlaceholder": "Reply…",
+  "replyToThread": "Reply to the thread",
+  "replyHint": "⌘↩ replies",
+  "keptHere": "Kept here: copy it with the others as Markdown.",
+  "addSingleComment": "Add Single Comment",
+  "startReview": "Start a Review",
+  "addReviewComment": "Add Review Comment",
+  "posting": "Posting…",
+  "reviewLabel": "Review",
+  "submitYourReview": "Submit your review",
+  "lineLabel": "Line",
+  "oldLineLabel": "Old line",
+  "threadLineRange": "{prefix}s {start}-{end}",
+  "@pullOpenOn": {
+    "placeholders": {
+      "repo": {
+        "type": "String",
+        "example": "owner/repo"
+      }
+    }
+  },
+  "@pullOpenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      },
+      "repo": {
+        "type": "String",
+        "example": "owner/repo"
+      }
+    }
+  },
+  "@checksTip": {
+    "placeholders": {
+      "checks": {
+        "type": "String",
+        "example": "success"
+      }
+    }
+  },
+  "@pullOpenedAt": {
+    "placeholders": {
+      "when": {
+        "type": "String",
+        "example": "2d ago"
+      }
+    }
+  },
+  "@copiedLink": {
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@couldNotReadReviews": {
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Bad credentials"
+      }
+    }
+  },
+  "@pullWantsToMerge": {
+    "placeholders": {
+      "commits": {
+        "type": "String",
+        "example": "3 commits"
+      }
+    }
+  },
+  "@pullMergedWants": {
+    "placeholders": {
+      "commits": {
+        "type": "String",
+        "example": "3 commits"
+      }
+    }
+  },
+  "@pullThreadsUnresolved": {
+    "placeholders": {
+      "threads": {
+        "type": "String",
+        "example": "4 threads"
+      },
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "@threadLineRange": {
+    "placeholders": {
+      "prefix": {
+        "type": "String",
+        "example": "Line"
+      },
+      "start": {
+        "type": "int",
+        "example": "3"
+      },
+      "end": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "commitsCount": "{count, plural, one {# commit} other {# commits}}",
+  "threadsCount": "{count, plural, one {# thread} other {# threads}}",
+  "pullOpen": "Open",
+  "readingPull": "Reading #{number} from GitHub…",
+  "fetchingPull": "Fetching #{number} from {remote}…",
+  "readingPullChanges": "Reading the changes of #{number}…",
+  "pullSignIn": "Sign in with the GitHub CLI (gh auth login), or set githubToken in the config file, to comment and review.",
+  "pullWriteRefused": "GitHub refused to let this token write to {repo}.",
+  "cliInstalled": "The godiff command is installed",
+  "cliInstalledDetail": "It is at {path}. Run godiff in a Git repository to review its changes, or godiff <commit> and godiff <branch>.",
+  "couldNotInstallCLI": "Could not install the godiff command",
+  "@readingPull": {
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@fetchingPull": {
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      },
+      "remote": {
+        "type": "String",
+        "example": "origin"
+      }
+    }
+  },
+  "@readingPullChanges": {
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@pullWriteRefused": {
+    "placeholders": {
+      "repo": {
+        "type": "String",
+        "example": "owner/repo"
+      }
+    }
+  },
+  "@cliInstalledDetail": {
+    "placeholders": {
+      "path": {
+        "type": "String",
+        "example": "/usr/local/bin/godiff"
+      }
+    }
+  },
+  "@aiNoteLine": {
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@aiNoteOldLine": {
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@pullNumberTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "12"
+      },
+      "title": {
+        "type": "String",
+        "example": "Fix the parser"
+      }
+    }
+  },
+  "changesLabel": "Changes",
+  "inGroup": "In group {group}",
+  "groupTip": "Group {group}",
+  "goToGroup": "Go to the group {group}",
+  "reviewEveryChange": "Show the review of every change",
+  "notRun": " · not run",
+  "reviewing": " · reviewing",
+  "reviewFailedSuffix": " · review failed",
+  "copiedFile": "Copied {name}",
+  "deletedCannotOpen": "Deleted files cannot be opened",
+  "generatedBadge": "Generated",
+  "unresolvedThreads": "{count, plural, one {# unresolved thread} other {# unresolved threads}}",
+  "showLinesAbove": "Show the lines above",
+  "showLinesBelow": "Show the lines below",
+  "showLines": "Show the lines",
+  "showMoreLines": "Show {count} more lines",
+  "unmodifiedLines": "{count} unmodified lines",
+  "commentOnLineNumber": "Comment on Line {line}",
+  "copyLine": "Copy Line",
+  "writeReviewComment": "Write a review comment…",
+  "reviewCommentLabel": "Review comment",
+  "gitUser": "Git user",
+  "oldImage": "Old",
+  "newImage": "New",
+  "noImage": "No {side} image",
+  "@inGroup": {
+    "placeholders": {
+      "group": {
+        "type": "String",
+        "example": "Docs"
+      }
+    }
+  },
+  "@groupTip": {
+    "placeholders": {
+      "group": {
+        "type": "String",
+        "example": "Docs"
+      }
+    }
+  },
+  "@goToGroup": {
+    "placeholders": {
+      "group": {
+        "type": "String",
+        "example": "Docs"
+      }
+    }
+  },
+  "@copiedFile": {
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "main.go"
+      }
+    }
+  },
+  "@showMoreLines": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "20"
+      }
+    }
+  },
+  "@unmodifiedLines": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@commentOnLineNumber": {
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@noImage": {
+    "placeholders": {
+      "side": {
+        "type": "String",
+        "example": "old"
+      }
+    }
+  },
+  "commentNewLine": "New line {line}",
+  "commentOldLine": "Old line {line}",
+  "commentNewLines": "New lines {start}-{end}",
+  "commentOldLines": "Old lines {start}-{end}",
+  "@commentNewLine": {
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@commentOldLine": {
+    "placeholders": {
+      "line": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "@commentNewLines": {
+    "placeholders": {
+      "start": {
+        "type": "int",
+        "example": "3"
+      },
+      "end": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "@commentOldLines": {
+    "placeholders": {
+      "start": {
+        "type": "int",
+        "example": "3"
+      },
+      "end": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "renamedFrom": "from {path}",
+  "took": "took {duration}",
+  "@renamedFrom": {
+    "placeholders": {
+      "path": {
+        "type": "String",
+        "example": "main.go"
+      }
+    }
+  },
+  "@took": {
+    "placeholders": {
+      "duration": {
+        "type": "String",
+        "example": "2m13s"
+      }
+    }
   }
 }

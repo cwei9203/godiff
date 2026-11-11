@@ -73,11 +73,11 @@ func installCLI() {
 			os.Chmod(path, 0o755)
 			mygo.Dialog.Message(mygo.MessageOptions{
 				Type:    mygo.MessageInfo,
-				Message: "The godiff command is installed",
-				Detail:  "It is at " + path + ". Run godiff in a Git repository to review its changes, or godiff <commit> and godiff <branch>.",
+				Message: msg().CliInstalled(),
+				Detail:  msg().CliInstalledDetail(path),
 			})
 			return
 		}
-		mygo.Dialog.Error("Could not install the godiff command", strings.Join(errs, "\n"))
+		mygo.Dialog.Error(msg().CouldNotInstallCLI(), strings.Join(errs, "\n"))
 	}()
 }

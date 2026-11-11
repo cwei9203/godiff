@@ -81,19 +81,19 @@ func (w *window) fileNote(f *fileState) string {
 	case f.Note != "":
 		return f.Note
 	case f.Binary:
-		return "Binary file changed."
+		return msg().FileBinary()
 	case f.TooLarge:
-		return "File is too large, so Godiff skipped rendering it."
+		return msg().FileTooLarge()
 	case len(f.Hunks) == 0 && f.OldPath != f.Path:
-		return "File renamed without changes."
+		return msg().FileRenamed()
 	case len(f.Hunks) == 0 && f.ModeChange != "":
-		return "File mode changed: " + f.ModeChange + "."
+		return msg().FileModeChanged(f.ModeChange)
 	case len(f.Hunks) == 0 && f.Status == diff.Added, len(f.Hunks) == 0 && f.Status == diff.Untracked:
-		return "Empty file added."
+		return msg().FileEmptyAdded()
 	case len(f.Hunks) == 0 && f.Status == diff.Deleted:
-		return "Empty file deleted."
+		return msg().FileEmptyDeleted()
 	case len(f.Hunks) == 0:
-		return "No changes to show."
+		return msg().FileNoChanges()
 	}
 	return ""
 }
@@ -301,9 +301,9 @@ func (w *window) sidebar(c *ui.Context) {
 					w.rowsDirty = true
 				}
 			case 1:
-				searchInput(c, &w.historyFilter, "Filter history", &w.filterFocus, &w.typing)
+				searchInput(c, &w.historyFilter, msg().FilterHistory(), &w.filterFocus, &w.typing)
 			default:
-				searchInput(c, &w.pullsFilter, "Filter pull requests", &w.filterFocus, &w.typing)
+				searchInput(c, &w.pullsFilter, msg().FilterPullRequests(), &w.filterFocus, &w.typing)
 			}
 		})
 		if w.tab == 0 {
@@ -343,12 +343,12 @@ func (w *window) tabControl(c *ui.Context) bool {
 		icon *ui.SVG
 		name string
 	}
-	items := []item{{iconTree, "Files (⌘1)"}, {iconHistory, "History (⌘2)"}}
+	items := []item{{iconTree, msg().TabFiles()}, {iconHistory, msg().TabHistory()}}
 	if w.gh.ok() {
-		items = append(items, item{iconPull, "Pull Requests (⌘3)"})
+		items = append(items, item{iconPull, msg().TabPullRequests()})
 	}
 	seg := ui.SegmentedBase(c, &w.tab, len(items))
-	seg.Track.Padding(2).Gap(2).Radius(8).Background(ui.RGBA(127, 127, 127, 0.12)).Label("Sidebar").Children(func() {
+	seg.Track.Padding(2).Gap(2).Radius(8).Background(ui.RGBA(127, 127, 127, 0.12)).Label(msg().SidebarLabel()).Children(func() {
 		for i, it := range items {
 			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
 			if i == w.tab {
@@ -401,7 +401,7 @@ func searchInput(c *ui.Context, query *string, placeholder string, focus *bool, 
 			*typing = true
 		}
 		if *query != "" {
-			clear := ui.ButtonBase(c).Size(16, 16).Radius(8).Center().Background(t.TextMuted.Alpha(0.45)).Label("Clear").FocusRing(false)
+			clear := ui.ButtonBase(c).Size(16, 16).Radius(8).Center().Background(t.TextMuted.Alpha(0.45)).Label(msg().ClearLabel()).FocusRing(false)
 			clear.Children(func() { ui.Icon(c, iconClose).FontSize(10).TextColor(t.Background) })
 			if clear.Clicked() || in.Shortcut(0, ui.KeyEscape) {
 				*query = ""
@@ -454,10 +454,10 @@ func (w *window) visibleTree() []treeRow {
 func (w *window) fileTree(c *ui.Context) {
 	pal := paletteFor(c.Theme())
 	if len(w.treeRoots) == 0 {
-		box := emptyBox{shape: emptySmall, icon: iconTree, title: textNoChangesDir}
+		box := emptyBox{shape: emptySmall, icon: iconTree, title: textNoChangesDir()}
 		switch {
 		case w.loading && len(w.files) == 0:
-			box.title, box.detail = "Loading…", abbreviateHome(w.repo.Root)
+			box.title, box.detail = msg().Loading(), abbreviateHome(w.repo.Root)
 		case strings.TrimSpace(w.filter) != "":
 			box.title, box.detail = textNoMatchFiles(), strings.TrimSpace(w.filter)
 		}
@@ -576,7 +576,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 				if slices.ContainsFunc(notes, func(n *aiNote) bool { return n.critical }) {
 					color = careTone(pal)
 				}
-				ui.Icon(c, iconSparkle).FontSize(11).TextColor(color).Shrink(0).Tooltip(plural(len(notes), "AI note"))
+				ui.Icon(c, iconSparkle).FontSize(11).TextColor(color).Shrink(0).Tooltip(msg().AiNotesCount(len(notes)))
 			}
 			if countable(f) && (f.Additions > 0 || f.Deletions > 0) {
 				ui.Textf(c, "+%s -%s", compact(f.Additions), compact(f.Deletions)).
@@ -591,9 +591,9 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 				letter = pal.ref
 			}
 			ui.Text(c, statusLetter(f)).Font(w.codeFont()).FontSize(11).FontWeight(700).TextColor(letter).
-				Width(12).TextAlign(ui.Center).Shrink(0).Tooltip(f.Status.Label())
+				Width(12).TextAlign(ui.Center).Shrink(0).Tooltip(textStatus(f.Status))
 		})
-	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label("Changed files")
+	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label(msg().ChangedFilesLabel())
 	focusRing(tree, pal, 6)
 
 	// The keys move the choice, open and close directories.
@@ -800,7 +800,7 @@ func (w *window) historyView(c *ui.Context) {
 	}
 	w.historyList.Label = func(i int) string {
 		if entries[i].local {
-			return "Uncommitted changes"
+			return msg().UncommittedChanges()
 		}
 		return entries[i].commit.Subject
 	}
@@ -810,7 +810,7 @@ func (w *window) historyView(c *ui.Context) {
 		e := entries[i]
 		row := ui.Row(c).Gap(8).Padding(5, 8).Radius(6).AlignItems(ui.Start).Role(ui.RoleButton)
 		if e.local {
-			row.Label("Uncommitted changes")
+			row.Label(msg().UncommittedChanges())
 		} else {
 			row.Label(e.commit.Subject)
 		}
@@ -832,7 +832,7 @@ func (w *window) historyView(c *ui.Context) {
 		row.Children(func() {
 			if e.local {
 				ui.Text(c, "local").Font(w.codeFont()).FontSize(12).TextColor(ref).Width(56).Shrink(0)
-				ui.Text(c, "Uncommitted changes").FontSize(12).SingleLine().Grow(1)
+				ui.Text(c, msg().UncommittedChanges()).FontSize(12).SingleLine().Grow(1)
 				return
 			}
 			cm := e.commit
@@ -851,14 +851,14 @@ func (w *window) historyView(c *ui.Context) {
 				})
 			})
 		})
-	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label("History")
+	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label(msg().HistoryLabel())
 	focusRing(history, pal, 6)
 	if w.focusHistory && w.historyList.Focus(c) {
 		w.focusHistory = false
 	}
 	history.Children(func() {
 		if len(entries) == 0 {
-			emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconHistory, title: textNoCommitsTab, detail: q})
+			emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconHistory, title: textNoCommitsTab(), detail: q})
 		}
 	})
 	if w.historyList.Shortcut(c, 0, ui.KeyDown) {
@@ -901,17 +901,17 @@ func relativeTime(now, t time.Time) string {
 	d := now.Sub(t)
 	switch {
 	case d < time.Minute:
-		return "just now"
+		return msg().JustNow()
 	case d < time.Hour:
-		return fmt.Sprintf("%dm ago", int(d/time.Minute))
+		return msg().MinutesAgo(int(d / time.Minute))
 	case d < 24*time.Hour:
-		return fmt.Sprintf("%dh ago", int(d/time.Hour))
+		return msg().HoursAgo(int(d / time.Hour))
 	case d < 30*24*time.Hour:
-		return fmt.Sprintf("%dd ago", int(d/(24*time.Hour)))
+		return msg().DaysAgo(int(d / (24 * time.Hour)))
 	case d < 365*24*time.Hour:
-		return fmt.Sprintf("%dmo ago", int(d/(30*24*time.Hour)))
+		return msg().MonthsAgo(int(d / (30 * 24 * time.Hour)))
 	}
-	return fmt.Sprintf("%dy ago", int(d/(365*24*time.Hour)))
+	return msg().YearsAgo(int(d / (365 * 24 * time.Hour)))
 }
 
 // sidebarFooter shows the total of the changes, and the Commit button.
@@ -932,16 +932,16 @@ func (w *window) sidebarFooter(c *ui.Context, pal *palette) {
 	ui.Row(c).MinHeight(40).Padding(6, 10).Gap(8).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 		if counted && w.tab == 0 {
 			ui.Row(c).Gap(6).Tooltip(msg().TotalChangeTip(adds, dels)).Children(func() {
-				ui.Text(c, "Total:").FontSize(11).FontWeight(600).TextColor(t.TextMuted)
+				ui.Text(c, msg().TotalLabel()).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
 				ui.Text(c, "+"+thousands(adds)).Font(w.codeFont()).FontSize(11).FontWeight(600).TextColor(pal.addText)
 				ui.Text(c, "-"+thousands(dels)).Font(w.codeFont()).FontSize(11).FontWeight(600).TextColor(pal.delText)
 			})
 		}
 		ui.Spacer(c)
 		if canCommit {
-			label := "Commit"
+			label := msg().CommitAction()
 			if w.commitOpen {
-				label = "Review"
+				label = msg().ReviewAction()
 			}
 			b := ui.Button(c, "").Children(func() {
 				ui.Icon(c, iconCommit).FontSize(14)

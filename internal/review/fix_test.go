@@ -440,15 +440,10 @@ func TestFixExplainsAFailure(t *testing.T) {
 	if err == nil {
 		t.Fatal("a run that exits 1 reported no error")
 	}
-	// The failure says what to do, with no path into an install in it.
-	if !strings.Contains(res.ErrMessage, "Pi names no models") {
-		t.Errorf("message: %q", res.ErrMessage)
-	}
-	if strings.Contains(res.ErrMessage, "node_modules") {
-		t.Errorf("the message carries a path of the install: %q", res.ErrMessage)
-	}
-	if !strings.Contains(err.Error(), "Pi names no models") {
-		t.Errorf("error: %v", err)
+	// The failure is a reason the interface says in its own language: this
+	// package keeps the agent's words, and no sentence of its own.
+	if res.ErrReason != agent.ReasonNoModels {
+		t.Errorf("reason: %v, want ReasonNoModels", res.ErrReason)
 	}
 	// What the agent said is kept, and the log holds all of it.
 	if !strings.Contains(res.ErrDetail, "No models available") {
