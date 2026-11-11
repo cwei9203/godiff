@@ -435,7 +435,7 @@ func (w *window) changedSince(st *analysisState) int {
 func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 	t := c.Theme()
 	st := w.analyses[w.source]
-	return ui.Column(c).Padding(12, 16).Gap(8).Radius(cardRadius).Background(pal.headerBg).Border(1, t.Accent.Alpha(0.3)).Children(func() {
+	return ui.Column(c).Padding(padCard, 16).Gap(8).Radius(radiusCard).Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Children(func() {
 		ui.Row(c).Gap(8).Children(func() {
 			ui.Icon(c, iconSparkle).FontSize(15).TextColor(t.Accent)
 			ui.Text(c, "AI Review").FontSize(14).Bold().Shrink(0)
@@ -552,7 +552,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 					cfg.Update(func(s *Settings) { s.SummaryExpanded = true })
 				}
 				b.Children(func() {
-					ui.Text(c, line).FontSize(13).TextColor(t.Text.Alpha(0.8)).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+					ui.Text(c, line).FontSize(13).TextColor(t.Text).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 					ui.Icon(c, iconChevronRight).FontSize(12).TextColor(t.TextMuted).Shrink(0)
 				})
 			}
@@ -565,8 +565,8 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			ui.Textf(c, "%s · %s", plural(len(a.Groups), "group"), plural(notes, "note")).FontSize(12).TextColor(t.TextMuted)
 			if n := a.Critical(); n > 0 {
 				ui.Row(c).Gap(4).Children(func() {
-					ui.Icon(c, iconAlert).FontSize(12).TextColor(t.Danger)
-					ui.Textf(c, "%d to take care with", n).FontSize(12).FontWeight(600).TextColor(t.Danger)
+					ui.Icon(c, iconAlert).FontSize(12).TextColor(careTone(pal))
+					ui.Textf(c, "%d to take care with", n).FontSize(12).FontWeight(600).TextColor(careTone(pal))
 				})
 			}
 			if n := w.changedSince(st); n > 0 {
@@ -613,7 +613,7 @@ func (w *window) noteList(c *ui.Context, pal *palette, st *analysisState) {
 			}
 			accent, icon := t.Accent, iconSparkle
 			if n.critical {
-				accent, icon = t.Danger, iconAlert
+				accent, icon = careTone(pal), iconAlert
 			}
 			b := ui.ButtonBase(c).Padding(4, 8).Radius(6).Label("Go to the note on " + where).Tooltip(n.path)
 			if b.Hovered() || n == w.noteSel {
@@ -904,7 +904,7 @@ func (w *window) groupControl(c *ui.Context, pal *palette) {
 		}{{iconList, "No groups"}, {iconLayers, "Group by kind"}, {iconSparkle, "Group by an AI review"}} {
 			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
 			if i == current {
-				s.Background(pal.headerBg).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
+				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
 			}
 			s.OnClick(func() { w.chooseGrouping(modes[i]) })
 			s.Children(func() {

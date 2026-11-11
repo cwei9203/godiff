@@ -12,9 +12,6 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// cardRadius rounds the corners of the files' cards.
-const cardRadius = 10
-
 // codeFont is the family of the code.
 func (w *window) codeFont() string {
 	if w.settings.CodeFontFamily != "" {
@@ -157,15 +154,15 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 	t := c.Theme()
 	f := w.files[idx]
 	at, total := w.fileNav()
-	ui.Row(c).Height(34).Padding(0, 6).Gap(8).Margin(12, 0, 0).Radius(cardRadius).
-		Border(1, pal.cardBorder).Background(pal.headerBg).Children(func() {
+	ui.Row(c).Height(lineGroup).Padding(0, 6).Gap(8).Margin(gapBlock, 0, 0).Radius(radiusCard).
+		Border(1, pal.border).Background(pal.surface).Children(func() {
 		step := func(svg *ui.SVG, turn, dir int, tip string) {
 			b := ui.ButtonBase(c).Size(26, 26).Radius(6).Center().Label(tip).Tooltip(tip).FocusRing(false).
 				Disabled(!w.canStep(dir))
 			if !w.canStep(dir) {
 				b.Opacity(0.4)
 			} else if b.Hovered() {
-				b.Background(pal.hover)
+				b.Background(pal.surfaceHover)
 			}
 			b.Children(func() { ui.Icon(c, svg).FontSize(15).TextColor(t.TextMuted).Rotate(float32(turn)) })
 			if b.Clicked() {
@@ -185,7 +182,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 		if f.group >= 0 && f.group < len(w.groups) {
 			g := &w.groups[f.group]
 			svg, accent := groupMark(g)
-			ui.Row(c).Gap(5).Padding(3, 8).Radius(11).Background(pal.pill).Shrink(1).MinWidth(0).
+			ui.Row(c).Gap(5).Padding(3, 8).Radius(radiusChip).Background(pal.pill).Shrink(1).MinWidth(0).
 				Label("In group " + g.label).Tooltip("Group " + g.label).Children(func() {
 				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)
 				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
@@ -201,7 +198,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 		unviewed := ui.ButtonBase(c).Size(26, 26).Radius(6).Center().Label("Next unviewed file").
 			Tooltip("Next unviewed file").FocusRing(false)
 		if unviewed.Hovered() {
-			unviewed.Background(pal.hover)
+			unviewed.Background(pal.surfaceHover)
 		}
 		unviewed.Children(func() { ui.Icon(c, iconEye).FontSize(15).TextColor(t.TextMuted) })
 		if unviewed.Clicked() {
@@ -231,10 +228,10 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 	r := &w.rows[i]
 	switch r.kind {
 	case rowCommit:
-		w.commitMessage(c, pal).Margin(12, 0, 0)
+		w.commitMessage(c, pal).Margin(gapBlock, 0, 0)
 		return
 	case rowPull:
-		w.pullHeader(c, pal).Margin(12, 0, 0)
+		w.pullHeader(c, pal).Margin(gapBlock, 0, 0)
 		return
 	case rowSummary:
 		if w.summaryFolded() && !w.summaryOpen {
@@ -243,7 +240,7 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 			w.summaryLine(c, pal)
 			return
 		}
-		w.summaryCard(c, pal).Margin(12, 0, 0)
+		w.summaryCard(c, pal).Margin(gapBlock, 0, 0)
 		return
 	case rowGroup:
 		w.groupRow(c, pal, int(r.gap))
@@ -277,8 +274,7 @@ func (w *window) diffRow(c *ui.Context, pal *palette, i int, focused bool) {
 			ui.Box(c).Height(0)
 			return
 		}
-		ui.Box(c).Height(4).Background(pal.codeBg).
-			BorderWidth(0, 1, 1, 1).BorderColor(pal.cardBorder).Radius(0, 0, cardRadius, cardRadius)
+		ui.Box(c).Height(4).Background(pal.codeBg).Radius(0, 0, radiusCard, radiusCard)
 	}
 }
 
@@ -311,11 +307,11 @@ func (w *window) summaryLine(c *ui.Context, pal *palette) {
 	default:
 		what = " · not run"
 	}
-	b := ui.ButtonBase(c).Height(34).Padding(0, 12, 0, 10).Gap(8).Margin(12, 0, 0).Radius(cardRadius).
-		Background(pal.headerBg).Border(1, t.Accent.Alpha(0.3)).Label("AI Review" + what).
+	b := ui.ButtonBase(c).Height(lineGroup).Padding(0, 12, 0, 10).Gap(8).Margin(gapBlock, 0, 0).Radius(radiusCard).
+		Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Label("AI Review" + what).
 		Tooltip("Show the review of every change")
 	if b.Hovered() {
-		b.Background(pal.hover.Over(pal.headerBg))
+		b.Background(pal.surfaceHover)
 	}
 	if b.Clicked() {
 		w.summaryOpen = true
@@ -329,9 +325,12 @@ func (w *window) summaryLine(c *ui.Context, pal *palette) {
 	})
 }
 
-// card is a row inside a file's card, between its sides.
+// card is a row inside a file's card. The card holds no outline of its own:
+// its ground, on the canvas, sets it apart, and the header of the file draws
+// the one line it takes when the pointer is over it, or when it is the file
+// shown.
 func (w *window) card(c *ui.Context, pal *palette) ui.Element {
-	return ui.Row(c).Background(pal.codeBg).BorderWidth(0, 1, 0, 1).BorderColor(pal.cardBorder)
+	return ui.Row(c).Background(pal.codeBg)
 }
 
 // forceOpen reports whether a collapsed file shows its lines anyway, as
@@ -346,18 +345,24 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 	viewed := w.isViewed(f)
 	// The band above the header spaces the cards, and hides the lines
 	// scrolling under it while it is pinned.
-	band := ui.Column(c).Background(pal.appBg).Padding(12, 0, 0, 0)
+	band := ui.Column(c).Background(pal.appBg).Padding(gapBlock, 0, 0, 0)
 	var h ui.Element
 	band.Children(func() {
-		h = ui.Row(c).Height(46).Padding(0, 8, 0, 6).Gap(8).Background(pal.headerBg).Border(1, pal.cardBorder)
+		h = ui.Row(c).Height(lineHeader).Padding(0, 8, 0, 6).Gap(8).Background(pal.surface).
+			BorderWidth(1, 1, 1, 1).BorderColor(ui.Transparent)
 	})
 	if collapsed {
-		h.Radius(cardRadius)
+		h.Radius(radiusCard)
 	} else {
-		h.Radius(cardRadius, cardRadius, 0, 0)
+		h.Radius(radiusCard, radiusCard, 0, 0)
 	}
-	if idx == w.current && focused {
+	switch {
+	case idx == w.current && focused:
 		h.Border(1, t.Accent.Alpha(0.6))
+	case idx == w.current, h.Hovered():
+		// The file shown, and the one under the pointer, take the one line a
+		// card draws: the rest stand apart by their ground alone.
+		h.Border(1, pal.border)
 	}
 	h.ContextMenu(func(m *ui.Menu) {
 		if m.Item("Open in Editor").Disabled(f.Status == diff.Deleted).Chosen() {
@@ -397,7 +402,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 				ui.Icon(c, iconChevronRight).FontSize(10).TextColor(t.TextMuted).Shrink(0)
 			})
 		}
-		toggle := ui.ButtonBase(c).Gap(8).Grow(1).Shrink(1).MinWidth(0).Height(46).Label(f.Path).Tooltip(f.Path)
+		toggle := ui.ButtonBase(c).Gap(8).Grow(1).Shrink(1).MinWidth(0).Height(lineHeader).Label(f.Path).Tooltip(f.Path)
 		if toggle.Clicked() {
 			f.collapsed = !collapsed
 			if !f.collapsed && w.searching() {
@@ -451,18 +456,18 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 			w.openInEditor(f.Path, firstLine(f))
 		}
 		if countable(f) && (f.Additions > 0 || f.Deletions > 0) {
-			ui.Row(c).Gap(8).Padding(4, 9).Radius(14).Background(pal.pill).Shrink(0).
+			ui.Row(c).Gap(8).Padding(4, 9).Radius(radiusChip).Background(pal.pill).Shrink(0).
 				Tooltip(lines(f.Additions, "added") + ", " + lines(f.Deletions, "removed")).Children(func() {
 				ui.Text(c, "+"+thousands(f.Additions)).Font(w.codeFont()).FontSize(12).FontWeight(600).TextColor(pal.addText)
 				ui.Text(c, "-"+thousands(f.Deletions)).Font(w.codeFont()).FontSize(12).FontWeight(600).TextColor(pal.delText)
 			})
 		}
 		if f.Generated {
-			ui.Text(c, "Generated").FontSize(11).FontWeight(600).Padding(4, 9).Radius(14).
+			ui.Text(c, "Generated").FontSize(11).FontWeight(600).Padding(4, 9).Radius(radiusChip).
 				Background(pal.ref.Alpha(0.15)).TextColor(pal.ref).Shrink(0)
 		}
 		if n := w.openThreads(f.Path); n > 0 {
-			ui.Row(c).Gap(4).Padding(4, 9).Radius(14).Background(pal.pill).TextColor(t.TextMuted).Shrink(0).
+			ui.Row(c).Gap(4).Padding(4, 9).Radius(radiusChip).Background(pal.pill).TextColor(t.TextMuted).Shrink(0).
 				Tooltip(plural(n, "unresolved thread")).Children(func() {
 				ui.Icon(c, iconComment).FontSize(12)
 				ui.Text(c, itoa(n)).Font(w.codeFont()).FontSize(12).FontWeight(600)
@@ -476,11 +481,11 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 func (w *window) viewedButton(c *ui.Context, pal *palette, f *fileState, viewed bool) {
 	t := c.Theme()
 	on := viewed
-	b := ui.CheckboxBase(c, &on).Gap(7).Height(30).Padding(0, 11).Radius(14).Shrink(0).
+	b := ui.CheckboxBase(c, &on).Gap(7).Height(30).Padding(0, 11).Radius(radiusChip).Shrink(0).
 		Border(1, ui.RGBA(127, 127, 127, 0.22)).Label("Viewed")
 	b.OnClick(func() { w.setViewed(f, on) })
 	if b.Hovered() {
-		b.Background(pal.hover)
+		b.Background(pal.surfaceHover)
 	}
 	if viewed {
 		b.Border(1, pal.viewed.Alpha(0.44)).TextColor(pal.viewed)
@@ -717,7 +722,7 @@ func (w *window) lineRow(c *ui.Context, pal *palette, f *fileState, r *row) {
 		ui.Row(c).Grow(1).Basis(0).MinWidth(0).AlignItems(ui.Stretch).Children(func() {
 			w.lineCell(c, pal, f, r, left, sideOld, gutter, hs, false)
 		})
-		ui.Box(c).Width(1).Shrink(0).Background(pal.cardBorder)
+		ui.Box(c).Width(1).Shrink(0).Background(pal.border)
 		ui.Row(c).Grow(1).Basis(0).MinWidth(0).AlignItems(ui.Stretch).Children(func() {
 			w.lineCell(c, pal, f, r, right, sideNew, gutter, hs, false)
 		})
@@ -741,8 +746,8 @@ func (w *window) lineCell(c *ui.Context, pal *palette, f *fileState, r *row, s l
 	}
 	cell := ui.Row(c).Grow(1).MinWidth(0).AlignItems(ui.Stretch).Background(bg)
 	if w.isSelectedLine(f, s) {
-		cell.Background(blend(bg, pal.selected))
-		gutterBg = blend(gutterBg, pal.selected)
+		cell.Background(blend(bg, pal.selection))
+		gutterBg = blend(gutterBg, pal.selection)
 	} else if cell.Hovered() {
 		cell.Background(blend(bg, pal.hover.Alpha(0.5)))
 		gutterBg = blend(gutterBg, pal.hover.Alpha(0.5))
@@ -863,9 +868,9 @@ func (w *window) commentRow(c *ui.Context, pal *palette, f *fileState, cm *comme
 	t := c.Theme()
 	w.card(c, pal).Padding(8, 16).Gap(10).AlignItems(ui.Start).Children(func() {
 		ui.Avatar(c, w.userName(), nil).Size(28, 28).Shrink(0)
-		box := ui.Column(c).Grow(1).MinWidth(0).Radius(12).Border(1, pal.cardBorder).Background(pal.headerBg).Clip()
+		box := ui.Column(c).Grow(1).MinWidth(0).Radius(12).Border(1, pal.border).Background(pal.surface).Clip()
 		box.Children(func() {
-			ui.Row(c).Height(32).Padding(0, 4, 0, 10).Gap(8).BorderWidth(0, 0, 1, 0).BorderColor(pal.cardBorder).Children(func() {
+			ui.Row(c).Height(32).Padding(0, 4, 0, 10).Gap(8).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
 				ui.Text(c, w.userName()).FontSize(12).Bold()
 				ui.Text(c, cm.label()).FontSize(11).TextColor(t.TextMuted)
 				ui.Spacer(c)
@@ -934,7 +939,7 @@ func (w *window) imageRow(c *ui.Context, pal *palette, f *fileState) {
 			}
 			iw, ih := img.Size()
 			scale := min(float32(1), 320/float32(max(ih, 1)))
-			ui.Box(c).Size(float32(iw)*scale, float32(ih)*scale).MaxWidthPercent(100).Radius(4).Border(1, pal.cardBorder).Clip().
+			ui.Box(c).Size(float32(iw)*scale, float32(ih)*scale).MaxWidthPercent(100).Radius(4).Border(1, pal.border).Clip().
 				Stripes(ui.RGBA(127, 127, 127, 0.12), 6, 6, 45).Children(func() {
 				ui.Image(c, img).Fill()
 			})
@@ -949,7 +954,7 @@ func (w *window) imageRow(c *ui.Context, pal *palette, f *fileState) {
 			pane("Old", f.oldImage, f.oldSize, pal.delBar)
 		}
 		if f.Status != diff.Deleted && f.Status != diff.Added && f.Status != diff.Untracked {
-			ui.Box(c).Width(1).Background(pal.cardBorder)
+			ui.Box(c).Width(1).Background(pal.border)
 		}
 		if f.Status != diff.Deleted {
 			pane("New", f.newImage, f.newSize, pal.addBar)

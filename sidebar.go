@@ -223,7 +223,7 @@ func statusColor(s diff.Status, pal *palette, t *ui.Theme) ui.Color {
 	case diff.Conflict:
 		return t.Danger
 	}
-	return ui.Hex("#d4a72c")
+	return pal.warning
 }
 
 func statusLetter(f *fileState) string {
@@ -330,15 +330,12 @@ func (w *window) sidebar(c *ui.Context) {
 }
 
 // sidebarBg is the sidebar's background: none on macOS, where the
-// window's material shows through, else the theme's surface.
+// window's material shows through, else the panel's own ground.
 func (w *window) sidebarBg(t *ui.Theme) ui.Color {
 	if runtime.GOOS == "darwin" && w.win != nil {
 		return ui.Transparent
 	}
-	if t.Dark {
-		return ui.Hex("#262628")
-	}
-	return ui.Hex("#ebebed")
+	return paletteFor(t).surface
 }
 
 // titleBarHeight is the height of the bars along the top, which centers
@@ -363,7 +360,7 @@ func (w *window) tabControl(c *ui.Context) bool {
 		for i, it := range items {
 			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
 			if i == w.tab {
-				s.Background(pal.headerBg).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
+				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
 			}
 			s.Children(func() { ui.Icon(c, it.icon).FontSize(15) })
 		}
@@ -528,16 +525,17 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			return
 		}
 		selected := key == w.treeSel
-		row := ui.Row(c).Height(28).Padding(0, 8, 0, 6+float32(rows[i].depth)*14).Gap(5).Radius(6).MinWidth(0)
+		row := ui.Row(c).Height(lineFile).Padding(0, 8, 0, 6+float32(rows[i].depth)*14).Gap(5).Radius(6).MinWidth(0)
 		textColor := t.Text
 		switch {
 		case selected && focused:
-			row.Background(t.Accent)
-			textColor = t.AccentText
+			// The row the keys are on: a low ground, and the body color, so
+			// that the accent stays for what can be pressed.
+			row.Background(pal.selection)
 		case selected:
-			row.Background(ui.RGBA(127, 127, 127, 0.2))
+			row.Background(pal.surfaceHover)
 		case row.Hovered():
-			row.Background(ui.RGBA(127, 127, 127, 0.08))
+			row.Background(pal.hover)
 		}
 		if row.Pressed() && !n.missing && (!selected || w.commitOpen) {
 			choose(key)
@@ -553,9 +551,6 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			choose(key)
 		}
 		muted := t.TextMuted
-		if selected && focused {
-			muted = t.AccentText.Alpha(0.8)
-		}
 		row.TextColor(textColor).Children(func() {
 			arrow := ui.Box(c).Size(14, 14).Center().Shrink(0)
 			if n.dir {
@@ -581,10 +576,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			}
 			f := w.files[n.file]
 			viewed := w.isViewed(f)
-			icon := fileIcon(c, f, 14)
-			if selected && focused {
-				icon.TextColor(muted)
-			}
+			fileIcon(c, f, 14)
 			name := ui.Text(c, n.name).FontSize(13).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 			if viewed && !(selected && focused) {
 				name.TextColor(t.TextMuted)
@@ -593,10 +585,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 				// The file has notes of the agent's review.
 				color := t.Accent
 				if slices.ContainsFunc(notes, func(n *aiNote) bool { return n.critical }) {
-					color = t.Danger
-				}
-				if selected && focused {
-					color = t.AccentText
+					color = careTone(pal)
 				}
 				ui.Icon(c, iconSparkle).FontSize(11).TextColor(color).Shrink(0).Tooltip(plural(len(notes), "AI note"))
 			}
@@ -607,8 +596,6 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			}
 			letter := statusColor(f.Status, pal, t)
 			switch {
-			case selected && focused:
-				letter = t.AccentText
 			case viewed:
 				letter = t.TextMuted
 			case w.reloaded[f.Path]:
@@ -676,13 +663,9 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 	}
 }
 
-// groupRowHeight is the height of a group's row in the sidebar: its name,
-// and under it what its files change.
-const groupRowHeight = 38
-
 // groupTreeRow is a group in the sidebar: the heading of the files under
-// it, with what they change and how much of it was viewed. The whole row
-// folds its files away, and the chevron only says which way the fold goes.
+// it, with how much of it was viewed. The whole row folds its files away,
+// and the chevron only says which way the fold goes.
 //
 // A group is a switch, not a row a click may choose: a click writes nothing
 // but the fold. It writes no treeSel, so no group takes a selected ground
@@ -694,9 +677,9 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 	t := c.Theme()
 	g := &w.groups[gi]
 	files := w.groupFiles(gi)
-	viewed, adds, dels := w.groupStats(gi)
+	viewed, _, _ := w.groupStats(gi)
 	open := !w.closedDirs[key]
-	row := ui.Row(c).MinHeight(groupRowHeight).Padding(2, 8, 2, 4).Gap(6).Radius(6).
+	row := ui.Row(c).MinHeight(lineGroup).Padding(2, 8, 2, 4).Gap(6).Radius(6).
 		AlignItems(ui.Center).MinWidth(0).Label(g.label).KeepFocus()
 	switch {
 	case key == w.treeSel && focused:
@@ -704,7 +687,7 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 		// would read as a choice the user did not make.
 		row.Border(1, ui.RGBA(127, 127, 127, 0.45))
 	case row.Hovered():
-		row.Background(t.Accent.Alpha(0.07).Over(pal.headerBg))
+		row.Background(pal.surfaceHover)
 	}
 	if row.Clicked() {
 		w.closedDirs[key] = open
@@ -746,26 +729,19 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 				svg, accent := groupMark(g)
 				icon := ui.Icon(c, svg).FontSize(13).TextColor(categoryColor(accent, t, pal)).Shrink(0)
 				if g.critical {
-					icon.TextColor(t.Danger)
+					icon.TextColor(careTone(pal))
 				}
 				ui.Text(c, g.label).FontSize(13).FontWeight(600).SingleLine().Grow(1).Shrink(1).
 					MinWidth(0).Tooltip(g.summary)
 				if g.critical {
-					ui.Icon(c, iconAlert).FontSize(11).TextColor(t.Danger).Shrink(0).Tooltip("Needs care")
+					ui.Icon(c, iconAlert).FontSize(11).TextColor(careTone(pal)).Shrink(0).Tooltip("Needs care")
 				}
 				count := ui.Textf(c, "%d/%d", viewed, len(files)).Font(w.codeFont()).FontSize(10).
 					FontWeight(600).TextColor(t.TextMuted).Shrink(0).Tooltip("Viewed files")
 				if viewed == len(files) && len(files) > 0 {
 					count.TextColor(pal.viewed)
 				}
-				ui.Progress(c, ratio(viewed, len(files))).Width(40).Shrink(0)
-			})
-			ui.Row(c).Gap(6).AlignItems(ui.Center).MinWidth(0).Children(func() {
-				ui.RichText(c,
-					ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
-					ui.Span{Text: "+" + compact(adds), Color: pal.addText},
-					ui.Span{Text: " −" + compact(dels), Color: pal.delText},
-				).Font(w.codeFont()).FontSize(10).FontWeight(600).Shrink(0)
+				progressBar(c, pal, ratio(viewed, len(files))).Width(40).Shrink(0)
 			})
 		})
 	})
@@ -851,12 +827,11 @@ func (w *window) historyView(c *ui.Context) {
 		muted, ref := t.TextMuted, pal.ref
 		switch {
 		case i == current && focused:
-			row.Background(t.Accent).TextColor(t.AccentText)
-			muted, ref = t.AccentText.Alpha(0.75), t.AccentText
+			row.Background(pal.selection)
 		case i == current:
-			row.Background(ui.RGBA(127, 127, 127, 0.2))
+			row.Background(pal.surfaceHover)
 		case row.Hovered():
-			row.Background(ui.RGBA(127, 127, 127, 0.08))
+			row.Background(pal.hover)
 		}
 		if (row.Pressed() || row.Clicked()) && i != current {
 			if debugFrames {
@@ -963,7 +938,7 @@ func (w *window) sidebarFooter(c *ui.Context, pal *palette) {
 	if !(counted && w.tab == 0) && !canCommit {
 		return
 	}
-	ui.Row(c).MinHeight(40).Padding(6, 10).Gap(8).BorderWidth(1, 0, 0, 0).BorderColor(pal.cardBorder).Children(func() {
+	ui.Row(c).MinHeight(40).Padding(6, 10).Gap(8).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 		if counted && w.tab == 0 {
 			ui.Row(c).Gap(6).Tooltip("Total change: " + lines(adds, "added") + ", " + lines(dels, "removed")).Children(func() {
 				ui.Text(c, "Total:").FontSize(11).FontWeight(600).TextColor(t.TextMuted)
@@ -990,7 +965,7 @@ func (w *window) sidebarFooter(c *ui.Context, pal *palette) {
 
 // sidebarResizer is the edge of the sidebar the user drags.
 func (w *window) sidebarResizer(c *ui.Context, pal *palette) {
-	ui.Box(c).Width(1).Shrink(0).Background(pal.cardBorder).Children(func() {
+	ui.Box(c).Width(1).Shrink(0).Background(pal.border).Children(func() {
 		handle := ui.Box(c).Absolute().Top(0).Bottom(0).Left(-4).Width(9).Cursor(ui.CursorResizeEW)
 		if dx, _, held := handle.Dragged(); held {
 			w.dragWidth += dx
@@ -1037,7 +1012,7 @@ func (w *window) foldAllRow(c *ui.Context, pal *palette) {
 			b := b
 			btn := ui.ButtonBase(c).Padding(2, 6).Radius(5).Label(b.tip).Tooltip(b.tip)
 			if btn.Hovered() {
-				btn.Background(pal.hover)
+				btn.Background(pal.surfaceHover)
 			}
 			btn.Children(func() {
 				ui.Text(c, b.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)

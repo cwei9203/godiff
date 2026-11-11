@@ -76,7 +76,7 @@ func (w *window) commitView(c *ui.Context) {
 		}
 	}
 	ui.Column(c).Grow(1).MinHeight(0).Background(pal.appBg).Children(func() {
-		ui.Row(c).Padding(12, 20).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(pal.cardBorder).Children(func() {
+		ui.Row(c).Padding(12, 20).Gap(12).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
 			ui.Text(c, "Commit").FontSize(22).Bold()
 			if w.branch != "" {
 				ui.Row(c).Gap(5).Padding(3, 8).Radius(12).Background(pal.ref.Alpha(0.13)).TextColor(pal.ref).Children(func() {
@@ -102,7 +102,7 @@ func (w *window) commitView(c *ui.Context) {
 					})
 				}
 				subj := ui.TextInputBase(c, &w.subject).Placeholder("Summarize the change in one line…").Label("Subject").
-					Font(w.codeFont()).FontSize(17).FontWeight(600).Padding(14, 16).Radius(14).Background(pal.codeBg).Border(1, pal.cardBorder)
+					Font(w.codeFont()).FontSize(17).FontWeight(600).Padding(14, 16).Radius(14).Background(pal.codeBg).Border(1, pal.border)
 				if w.commitFocus {
 					subj.Focus()
 					w.commitFocus = false
@@ -120,7 +120,7 @@ func (w *window) commitView(c *ui.Context) {
 				}
 				ui.Text(c, "Summary").FontSize(13).Bold().Margin(6, 0, 0)
 				body := ui.TextAreaBase(c, &w.body).Placeholder("Describe the change in a paragraph or two…").Label("Summary").
-					FontSize(13).MinHeight(120).Padding(12, 14).Radius(14).Background(pal.codeBg).Border(1, pal.cardBorder)
+					FontSize(13).MinHeight(120).Padding(12, 14).Radius(14).Background(pal.codeBg).Border(1, pal.border)
 				if body.Focused() {
 					body.Border(1, t.Accent.Alpha(0.6)).Shadow(0, 0, 0, 3, t.Accent.Alpha(0.2))
 				}
@@ -129,7 +129,7 @@ func (w *window) commitView(c *ui.Context) {
 					ui.Spacer(c)
 					ui.Textf(c, "%d of %d selected", chosen, len(files)).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted)
 				})
-				ui.Column(c).Radius(14).Background(pal.codeBg).Border(1, pal.cardBorder).Padding(6).Gap(2).Children(func() {
+				ui.Column(c).Radius(14).Background(pal.codeBg).Border(1, pal.border).Padding(6).Gap(2).Children(func() {
 					all := chosen == len(files) && len(files) > 0
 					group := ui.ButtonBase(c).Gap(10).Padding(6, 8).Radius(8).Label("Changed files")
 					if group.Hovered() {
@@ -175,8 +175,8 @@ func (w *window) commitView(c *ui.Context) {
 					}
 				})
 				if w.commitOutput != "" {
-					ui.Column(c).Margin(10, 0, 0).Radius(12).Border(1, pal.cardBorder).Background(pal.codeBg).Clip().Children(func() {
-						ui.Row(c).Padding(6, 6, 6, 12).BorderWidth(0, 0, 1, 0).BorderColor(pal.cardBorder).Children(func() {
+					ui.Column(c).Margin(10, 0, 0).Radius(12).Border(1, pal.border).Background(pal.codeBg).Clip().Children(func() {
+						ui.Row(c).Padding(6, 6, 6, 12).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
 							ui.Text(c, "Commit output").FontSize(12).Bold().Grow(1)
 							if iconButton(c, iconClose, "Dismiss").Size(24, 24).Clicked() {
 								w.commitOutput = ""
@@ -187,7 +187,7 @@ func (w *window) commitView(c *ui.Context) {
 				}
 			})
 		})
-		ui.Row(c).Padding(10, 20).Gap(12).BorderWidth(1, 0, 0, 0).BorderColor(pal.cardBorder).Children(func() {
+		ui.Row(c).Padding(10, 20).Gap(12).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 			if w.commitErr != "" {
 				ui.Text(c, w.commitErr).FontSize(12).TextColor(t.Danger).Grow(1).Shrink(1).MaxLines(2)
 			} else {

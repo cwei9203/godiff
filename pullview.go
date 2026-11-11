@@ -88,12 +88,13 @@ func (w *window) pullsView(c *ui.Context) {
 		selected := i == current && focused
 		switch {
 		case selected:
-			row.Background(t.Accent).TextColor(t.AccentText)
-			muted, ref = t.AccentText.Alpha(0.75), t.AccentText
+			// The pull request the surface shows: a low ground, the body
+			// color kept, as the rows the keys are on.
+			row.Background(pal.selection)
 		case i == current:
-			row.Background(ui.RGBA(127, 127, 127, 0.2))
+			row.Background(pal.surfaceHover)
 		case row.Hovered():
-			row.Background(ui.RGBA(127, 127, 127, 0.08))
+			row.Background(pal.hover)
 		}
 		if (row.Pressed() || row.Clicked()) && i != current {
 			open(i)
@@ -122,7 +123,7 @@ func (w *window) pullsView(c *ui.Context) {
 						ui.Icon(c, iconXCircle).FontSize(12).TextColor(pickColor(selected, t.AccentText, t.Danger)).Tooltip("Changes requested").Shrink(0)
 					}
 					if p.Checks != "" {
-						color := map[string]ui.Color{"success": pal.addBar, "failure": t.Danger, "pending": ui.Hex("#d4a72c")}[p.Checks]
+						color := map[string]ui.Color{"success": pal.addBar, "failure": t.Danger, "pending": pal.warning}[p.Checks]
 						ui.Box(c).Size(7, 7).Radius(4).Background(color).Tooltip("Checks: " + p.Checks).Shrink(0)
 					}
 				})
@@ -190,7 +191,7 @@ func (w *window) pullHeader(c *ui.Context, pal *palette) ui.Element {
 	t := c.Theme()
 	p := w.pr
 	m := p.meta
-	return ui.Column(c).Padding(14, 16).Gap(10).Radius(cardRadius).Background(pal.headerBg).Border(1, pal.cardBorder).Children(func() {
+	return ui.Column(c).Padding(padCard, 16).Gap(10).Radius(radiusCard).Background(pal.surface).Border(1, pal.border).Children(func() {
 		ui.Row(c).Gap(10).AlignItems(ui.Start).Children(func() {
 			stateBadge(c, pal, m)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(4).Children(func() {
@@ -243,7 +244,7 @@ func (w *window) pullHeader(c *ui.Context, pal *palette) ui.Element {
 		})
 		if body := plainBody(m.Body); body != "" {
 			ui.Column(c).Gap(4).Children(func() {
-				text := ui.Text(c, body).FontSize(13).Selectable().TextColor(t.Text.Alpha(0.88))
+				text := ui.Text(c, body).FontSize(13).Selectable().TextColor(t.Text)
 				long := strings.Count(body, "\n") > 6 || len(body) > 600
 				if long && !p.descOpen {
 					text.MaxLines(6)
@@ -263,7 +264,7 @@ func (w *window) pullHeader(c *ui.Context, pal *palette) ui.Element {
 			})
 		}
 		if r := p.reviews; r != nil && len(r.Summaries) > 0 {
-			ui.Column(c).Gap(8).Padding(10, 0, 0).BorderWidth(1, 0, 0, 0).BorderColor(pal.cardBorder).Children(func() {
+			ui.Column(c).Gap(8).Padding(10, 0, 0).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 				for _, s := range r.Summaries {
 					w.reviewSummary(c, pal, s)
 				}
@@ -314,7 +315,7 @@ func (w *window) reviewSummary(c *ui.Context, pal *palette, s github.ReviewSumma
 			).FontSize(12)
 		})
 		if body := plainBody(s.Body); body != "" {
-			ui.Text(c, body).FontSize(13).Selectable().Padding(0, 0, 0, 44).TextColor(t.Text.Alpha(0.88))
+			ui.Text(c, body).FontSize(13).Selectable().Padding(0, 0, 0, 44).TextColor(t.Text)
 		}
 	})
 }
@@ -358,14 +359,14 @@ func (w *window) threadRow(c *ui.Context, pal *palette, f *fileState, th *github
 	}
 	folded := (th.Resolved || th.Outdated) && !p.opened[th.RootID]
 	w.card(c, pal).Padding(8, 16).Children(func() {
-		box := ui.Column(c).Grow(1).MinWidth(0).Radius(12).Border(1, pal.cardBorder).Background(pal.headerBg).Clip()
+		box := ui.Column(c).Grow(1).MinWidth(0).Radius(12).Border(1, pal.border).Background(pal.surface).Clip()
 		if th.Pending {
 			box.Border(1, pal.ref.Alpha(0.45))
 		}
 		box.Children(func() {
 			head := ui.Row(c).Height(34).Padding(0, 4, 0, 10).Gap(8)
 			if !folded {
-				head.BorderWidth(0, 0, 1, 0).BorderColor(pal.cardBorder)
+				head.BorderWidth(0, 0, 1, 0).BorderColor(pal.border)
 			}
 			head.Children(func() {
 				ui.Icon(c, iconComment).FontSize(13).TextColor(t.TextMuted)
@@ -510,9 +511,9 @@ func (w *window) replyBox(c *ui.Context, pal *palette, th *github.Thread) {
 		text = new(string)
 		p.replies[th.RootID] = text
 	}
-	ui.Column(c).Gap(8).Padding(8, 12, 10).BorderWidth(1, 0, 0, 0).BorderColor(pal.cardBorder).Children(func() {
+	ui.Column(c).Gap(8).Padding(8, 12, 10).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 		area := ui.TextAreaBase(c, text).Placeholder("Reply…").MinHeight(34).Padding(7, 10).FontSize(13).Radius(8).
-			Background(pal.codeBg).Border(1, pal.cardBorder).Label("Reply to the thread")
+			Background(pal.codeBg).Border(1, pal.border).Label("Reply to the thread")
 		focused := area.Focused()
 		if focused {
 			w.typing = true
@@ -554,7 +555,7 @@ func (w *window) prCommentActions(c *ui.Context, pal *palette, cm *comment) {
 	if p == nil {
 		return
 	}
-	ui.Row(c).Gap(8).Padding(8, 10).BorderWidth(1, 0, 0, 0).BorderColor(pal.cardBorder).Children(func() {
+	ui.Row(c).Gap(8).Padding(8, 10).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
 		switch {
 		case cm.postErr != "":
 			ui.Text(c, cm.postErr).FontSize(12).TextColor(t.Danger).Grow(1).Shrink(1).MinWidth(0).MaxLines(3).Selectable()
