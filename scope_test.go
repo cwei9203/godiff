@@ -123,9 +123,12 @@ func TestScopeGroupShowsItsFiles(t *testing.T) {
 			t.Errorf("the card of %s shows, of another group", w.files[r.file].Path)
 		}
 	}
-	// The files section lists that group alone.
-	if rows := w.visibleFiles(); len(rows) != len(files) {
-		t.Errorf("%d rows in the files section, want %d", len(rows), len(files))
+	// The tree keeps every file: the scope decides the diffs, not the way
+	// to them, so the other groups stay a click away.
+	for _, other := range []string{"README.md", "go.mod", "app.go"} {
+		if !w.inFiles(other) {
+			t.Errorf("the tree lost %s while the group %s shows alone", other, w.groups[gi].label)
+		}
 	}
 }
 
@@ -227,52 +230,23 @@ func TestScopeShortcutShowsAll(t *testing.T) {
 	}
 }
 
-// TestScopeKeepsTheAside checks that the aside follows the scope: the group
-// shown, the group of a file shown alone with that file marked in it, and
-// the group at the top of every change.
-func TestScopeKeepsTheAside(t *testing.T) {
-	w, tt := wideWindow(t, asideRepo(t))
-	if !w.asideOn() {
-		t.Fatalf("no aside in %v wide", w.columnW)
-	}
-	w.showGroup(1)
+// TestScopeMarksTheGroup checks that the group shown has its row in the
+// tree, and its files under it: the one place saying where the reader is.
+func TestScopeMarksTheGroup(t *testing.T) {
+	w, tt := scopeWindow(t)
+	gi := groupIndex(t, w, "code")
+	w.showGroup(gi)
 	tt.Frame()
-	tt.Frame()
-	if got := w.topGroup(); got != 1 {
-		t.Errorf("the aside lists group %d, want 1", got)
+	rows := w.visibleTree()
+	at := slices.IndexFunc(rows, func(r treeRow) bool { return r.key == "g:"+w.groups[gi].key })
+	if at < 0 {
+		t.Fatalf("no row of %s in the tree: %q", w.groups[gi].label, tt.Texts())
 	}
-	if !tt.HasText("Files in " + w.groups[1].label) {
-		t.Errorf("the aside heads no block of %s: %q", w.groups[1].label, tt.Texts())
+	if rows[at].depth != 0 {
+		t.Errorf("the group shows at depth %d", rows[at].depth)
 	}
-	// A file of another group, shown alone: the aside follows its group, and
-	// the file is the one it marked.
-	other := w.groupFiles(2)[0]
-	w.showFile(other)
-	tt.Frame()
-	tt.Frame()
-	if got := w.topGroup(); got != 2 {
-		t.Errorf("the aside lists group %d, want the 2 of %s", got, w.files[other].Path)
-	}
-	if at := slices.Index(w.groupFiles(2), other); w.asideAt != at {
-		t.Errorf("the aside marks the file at %d, want %d", w.asideAt, at)
-	}
-	// Every change: the group at the top of the surface.
-	w.showAll()
-	tt.Frame()
-	tt.Frame()
-	if got, want := w.topGroup(), w.files[w.current].group; got != want {
-		t.Errorf("the aside lists group %d, want the %d at the top", got, want)
-	}
-}
-
-// TestFileRowsMarkTheirGroup checks the mark at the end of a file's row: the
-// icon of the group it belongs to, named for a reader who cannot see it.
-func TestFileRowsMarkTheirGroup(t *testing.T) {
-	_, tt := scopeWindow(t)
-	for _, want := range []string{"In group Docs", "In group Code", "In group Tests"} {
-		if _, ok := tt.Find(want); !ok {
-			t.Errorf("no mark %q in %q", want, tt.Texts())
-		}
+	if at+1 >= len(rows) || rows[at+1].depth <= rows[at].depth {
+		t.Errorf("the group heads no files: %v", rows)
 	}
 }
 

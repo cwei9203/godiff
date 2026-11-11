@@ -3,7 +3,6 @@ package main
 import (
 	"image/color"
 	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 
@@ -104,10 +103,11 @@ func groupByKind(t *testing.T) (*window, *ui.Tester) {
 	return w, tt
 }
 
-func TestSidebarGroupsSection(t *testing.T) {
+// TestSidebarGroupsInTheTree checks the groups of the sidebar: a row each,
+// with the count, the change and the share viewed of its files, and the
+// files of each under it.
+func TestSidebarGroupsInTheTree(t *testing.T) {
 	w, tt := groupByKind(t)
-	// The groups come first, each with its files' count, its change, and
-	// the share of them viewed.
 	for _, name := range []string{"Docs", "Code"} {
 		if r, ok := tt.Find(name); !ok || r.X >= w.sidebarWidth {
 			t.Errorf("%q is not a row of the sidebar: %v %v", name, r, ok)
@@ -115,10 +115,27 @@ func TestSidebarGroupsSection(t *testing.T) {
 	}
 	for _, want := range []string{"1 file · +1 −1", "0/1", "3 files · +5 −2", "0/3"} {
 		if !tt.HasText(want) {
-			t.Errorf("the groups section misses %q", want)
+			t.Errorf("the groups miss %q: %q", want, tt.Texts())
 		}
 	}
-	// A group's row takes the surface to the group.
+	// The files of a group come under it, indented.
+	rows := w.visibleTree()
+	gi := groupIndex(t, w, "code")
+	at := slices.IndexFunc(rows, func(r treeRow) bool { return r.key == "g:"+w.groups[gi].key })
+	if at < 0 {
+		t.Fatalf("no row of the group in %q", tt.Texts())
+	}
+	if rows[at].depth != 0 {
+		t.Errorf("the group shows at depth %d, not at the top", rows[at].depth)
+	}
+	for _, i := range w.groupFiles(gi) {
+		key := "f:" + w.files[i].Path
+		j := slices.IndexFunc(rows, func(r treeRow) bool { return r.key == key })
+		if j < at || rows[j].depth <= rows[at].depth {
+			t.Errorf("%s shows at %d, depth %d, not under its group", w.files[i].Path, j, rows[j].depth)
+		}
+	}
+	// A group's row shows that part of the review.
 	r, ok := tt.Find("Code")
 	if !ok {
 		t.Fatal("the Code group has no row")
@@ -126,30 +143,42 @@ func TestSidebarGroupsSection(t *testing.T) {
 	tt.Press(r.X+r.W/2, r.Y+r.H/2)
 	tt.Release(r.X+r.W/2, r.Y+r.H/2)
 	tt.Frame()
-	if w.current < 0 || w.files[w.current].group != 1 {
+	if w.current < 0 || w.files[w.current].group != gi {
 		t.Fatalf("the surface stayed on file %d, group %v", w.current, w.files[w.current].group)
 	}
 }
 
-func TestSidebarGroupsIgnoreTheFilter(t *testing.T) {
+// TestSidebarTreeShowsEveryGroup checks that the navigation keeps every
+// file while the surface shows one part of the review: the scope changes
+// the diffs, not the tree.
+func TestSidebarTreeShowsEveryGroup(t *testing.T) {
 	w, tt := groupByKind(t)
+	w.showGroup(groupIndex(t, w, "code"))
+	tt.Frame()
+	rows := w.visibleTree()
+	for _, path := range []string{"main.go", "docs/long.txt", "old.txt"} {
+		if !slices.ContainsFunc(rows, func(r treeRow) bool { return r.key == "f:"+path }) {
+			t.Errorf("no row of %s while the Code group shows alone", path)
+		}
+	}
+	// The groups count every file, the one the filter hid as well.
 	w.filter = "src/new.go"
 	w.buildTree()
 	w.rowsDirty = true
 	tt.Frame()
-	// The groups count every file, the one the filter hid as well.
 	if len(w.groups) != 2 || !tt.HasText("3 files · +5 −2") {
 		t.Fatalf("the filter reached the groups: %d groups, %q", len(w.groups), tt.Texts())
 	}
-	// The files show only those the filter keeps.
-	for _, r := range w.visibleFiles() {
+	for _, r := range w.visibleTree() {
 		if n := w.treeItems[r.key]; n != nil && !n.dir && n.name != "new.go" {
-			t.Errorf("the files section kept %s", n.name)
+			t.Errorf("the tree kept %s", n.name)
 		}
 	}
 }
 
-func TestSidebarSectionsCollapse(t *testing.T) {
+// TestSidebarGroupFolds checks the room a group takes: its chevron folds
+// its files away, and the group stays, with its counts.
+func TestSidebarGroupFolds(t *testing.T) {
 	w, tt := groupByKind(t)
 	if err := tt.Click("Hide the files of Docs"); err != nil {
 		t.Fatal(err)
@@ -158,29 +187,25 @@ func TestSidebarSectionsCollapse(t *testing.T) {
 	if !w.closedDirs["g:docs"] || w.inFiles("docs/long.txt") {
 		t.Fatalf("Docs closed: %v, files %q", w.closedDirs, tt.Texts())
 	}
-	if err := tt.Click("Files"); err != nil {
+	if !tt.HasText("1 file · +1 −1") {
+		t.Errorf("the group folded its counts away: %q", tt.Texts())
+	}
+	if err := tt.Click("Show the files of Docs"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if _, ok := tt.Find("Changed files"); ok {
-		t.Fatalf("the Files section shows closed: %q", tt.Texts())
-	}
-	if _, ok := tt.Find("Groups"); !ok {
-		t.Fatal("closing the files closed the groups too")
-	}
-	if groups, _ := state.sections(); !groups {
-		t.Error("the store closed the Groups section too")
-	}
-	if _, files := state.sections(); files {
-		t.Error("the store did not keep the Files section closed")
+	if w.closedDirs["g:docs"] || !w.inFiles("docs/long.txt") {
+		t.Fatalf("Docs did not open: %v", w.closedDirs)
 	}
 }
 
-// inFiles reports whether a file has a row in the files section.
+// inFiles reports whether a file has a row in the files tree.
 func (w *window) inFiles(path string) bool {
-	return slices.ContainsFunc(w.visibleFiles(), func(r treeRow) bool { return r.key == "f:"+path })
+	return slices.ContainsFunc(w.visibleTree(), func(r treeRow) bool { return r.key == "f:"+path })
 }
 
+// TestOnePlaceForTheGroups checks that the groups show in one place: the
+// sidebar, which names each once, while the surface's chips stay away.
 func TestOnePlaceForTheGroups(t *testing.T) {
 	w, tt := groupByKind(t)
 	count := func(s string) int {
@@ -192,11 +217,8 @@ func TestOnePlaceForTheGroups(t *testing.T) {
 		}
 		return n
 	}
-	// The sidebar shows the groups: the surface shows them once more, as
-	// the headings of its blocks, and the chips, which say the same, stay
-	// away.
-	if _, ok := tt.Find("Groups"); !ok {
-		t.Fatal("the sidebar has no Groups section")
+	if _, ok := tt.Find("Code"); !ok {
+		t.Fatal("the sidebar has no row of the groups")
 	}
 	if got := count("0/1"); got != 1 {
 		t.Fatalf("with the sidebar: %d counts of Docs, want 1", got)
@@ -207,26 +229,14 @@ func TestOnePlaceForTheGroups(t *testing.T) {
 	w.sidebarShown = false
 	tt.Frame()
 	// Hidden, the groups show as chips, which count as the sidebar did.
-	if _, ok := tt.Find("Groups"); ok {
-		t.Error("the sidebar showed, hidden")
+	if _, ok := tt.Find("Filter files"); ok {
+		t.Error("the tree showed, hidden")
 	}
 	if got := count("0/1"); got != 1 {
 		t.Fatalf("without the sidebar: %d counts of Docs, want 1", got)
 	}
 	if !tt.HasText("0/1 viewed") {
 		t.Error("the surface's group heading lost its count")
-	}
-}
-
-func TestSidebarSectionsRoundTrip(t *testing.T) {
-	dir := t.TempDir()
-	s := &store{}
-	s.openAt(filepath.Join(dir, "state.json"))
-	s.setSections(false, true)
-	again := &store{}
-	again.openAt(filepath.Join(dir, "state.json"))
-	if groups, files := again.sections(); groups || !files {
-		t.Fatalf("kept groups %v, files %v", groups, files)
 	}
 }
 

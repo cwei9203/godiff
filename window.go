@@ -75,10 +75,6 @@ type window struct {
 	// The sidebar.
 	sidebarShown bool
 	sidebarWidth float32
-	// groupsOpen and filesOpen say whether the two sections of the
-	// sidebar's files tab show.
-	groupsOpen   bool
-	filesOpen    bool
 	tab          int // 0 files, 1 history
 	filter       string
 	filterFocus  bool
@@ -105,20 +101,9 @@ type window struct {
 	rowsDirty bool
 	list      ui.ListState
 	current   int // the file shown at the top of the surface
-	// columnW is the width of the review beside its sidebar, measured the
-	// frame before: the aside shows on a window wide enough for it.
-	columnW float32
 	// shownFor is the file whose rows the surface laid out last, in the
 	// file view: another one replaces them, from its top.
-	shownFor int
-	// The aside listing the files of the group shown.
-	asideWidth float32
-	asideDrag  float32
-	asideMoved bool // the divisor is dragging, its width to be kept
-	asideList  ui.ListState
-	asideFor   int // the group the aside lists, -1 for none yet
-	asideAt    int // the file the aside scrolled to, -1 for none yet
-	asideMore  map[string]bool
+	shownFor   int
 	hscroll    map[string]float32
 	revealedAt time.Time
 	now        time.Time
@@ -317,7 +302,6 @@ func openWindow(dir string, src source) error {
 // repository.
 func newWindow(repo *git.Repo, src source) *window {
 	width, shown := state.layout()
-	groupsOpen, filesOpen := state.sections()
 	w := &window{
 		repo:         repo,
 		launch:       src,
@@ -325,9 +309,6 @@ func newWindow(repo *git.Repo, src source) *window {
 		settings:     cfg.Get(),
 		sidebarShown: shown,
 		sidebarWidth: width,
-		asideWidth:   state.asideWidth(),
-		groupsOpen:   groupsOpen,
-		filesOpen:    filesOpen,
 		historyLimit: historyPage,
 		viewed:       state.viewed(viewedKey(repo.Root, src)),
 		hscroll:      map[string]float32{},
@@ -338,9 +319,6 @@ func newWindow(repo *git.Repo, src source) *window {
 		selFile:      -1,
 		selHunk:      -1,
 		shownFor:     -1,
-		asideFor:     -1,
-		asideAt:      -1,
-		asideMore:    map[string]bool{},
 		prs:          map[source]*pullState{},
 		analyses:     map[source]*analysisState{},
 	}
@@ -350,7 +328,6 @@ func newWindow(repo *git.Repo, src source) *window {
 	}
 	w.loadAnalysis(src)
 	w.dragWidth = w.sidebarWidth
-	w.asideDrag = w.asideWidth
 	w.list.Key = func(i int) any { return w.key(&w.rows[i]) }
 	w.list.Header = func(i int) bool { return w.rows[i].kind == rowHeader }
 	return w
