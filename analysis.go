@@ -445,7 +445,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 	return ui.Column(c).Padding(padCard, 16).Gap(gapCard).Radius(radiusCard).
 		Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Children(func() {
 		ui.Row(c).Height(lineCardHead).Gap(8).Children(func() {
-			ui.Icon(c, iconSparkle).FontSize(15).TextColor(t.Accent)
+			uiIcon(c, iconSparkle, iconBase).TextColor(t.Accent)
 			ui.Text(c, textAIReview()).FontSize(14).Bold().Shrink(0)
 			if mark := w.reviewMark(st); mark != "" {
 				ui.Text(c, mark).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
@@ -455,7 +455,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			case st.running:
 				// The one action of a review at work: stop it.
 				b := ui.Button(c, "").Height(26).Children(func() {
-					ui.Icon(c, iconStop).FontSize(12)
+					uiIcon(c, iconStop, iconBase)
 					ui.Text(c, textStop()).FontSize(12)
 				})
 				if b.Clicked() {
@@ -535,7 +535,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 				}
 				b.Children(func() {
 					ui.Text(c, line).FontSize(13).TextColor(t.Text).SingleLine().Grow(1).Shrink(1).MinWidth(0)
-					ui.Icon(c, iconChevronRight).FontSize(12).TextColor(t.TextMuted).Shrink(0)
+					uiIcon(c, iconChevronRight, iconSmall).TextColor(t.TextMuted).Shrink(0)
 				})
 			}
 		}
@@ -547,7 +547,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			ui.Text(c, msg().GroupsNotes(len(a.Groups), notes)).FontSize(12).TextColor(t.TextMuted)
 			if n := a.Critical(); n > 0 {
 				ui.Row(c).Gap(4).Children(func() {
-					ui.Icon(c, iconAlert).FontSize(12).TextColor(careTone(pal))
+					uiIcon(c, iconAlert, iconSmall).TextColor(careTone(pal))
 					ui.Text(c, msg().ToTakeCare(n)).FontSize(12).FontWeight(600).TextColor(careTone(pal))
 				})
 			}
@@ -649,12 +649,12 @@ func (w *window) cardRunning(c *ui.Context, pal *palette, st *analysisState) {
 				switch {
 				case i < at:
 					row.Children(func() {
-						ui.Icon(c, iconCheck).FontSize(11).TextColor(pal.viewed).Shrink(0)
+						uiIcon(c, iconCheck, iconSmall).TextColor(pal.viewed).Shrink(0)
 						ui.Text(c, step.label).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 					})
 				case i == at:
 					row.Children(func() {
-						ui.Icon(c, iconSparkle).FontSize(11).TextColor(t.Accent).Shrink(0)
+						uiIcon(c, iconSparkle, iconSmall).TextColor(t.Accent).Shrink(0)
 						ui.Text(c, step.label).FontSize(11).FontWeight(600).TextColor(t.Text).Shrink(0)
 					})
 				default:
@@ -730,7 +730,7 @@ func (w *window) noteList(c *ui.Context, pal *palette, st *analysisState) {
 			}
 			b.Children(func() {
 				ui.Row(c).Gap(8).Grow(1).MinWidth(0).Children(func() {
-					ui.Icon(c, icon).FontSize(12).TextColor(accent).Shrink(0)
+					uiIcon(c, icon, iconSmall).TextColor(accent).Shrink(0)
 					ui.Text(c, where).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(0).MaxWidth(260)
 					ui.Text(c, n.text).FontSize(12).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 				})

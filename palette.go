@@ -229,7 +229,7 @@ func (w *window) palette(c *ui.Context) {
 			Shadow(0, 20, 60, 0, ui.RGBA(0, 0, 0, 0.28)).Clip().Label(msg().CommandBar())
 		var field ui.Element
 		search := ui.Row(c).Padding(4, 10).Gap(10).Radius(8).BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Children(func() {
-			ui.Icon(c, iconCommand).FontSize(16).TextColor(t.TextMuted)
+			uiIcon(c, iconCommand, iconBase).TextColor(t.TextMuted)
 			input := ui.TextInputBase(c, &w.paletteQuery).Placeholder(msg().TypeCommand()).Label(msg().CommandLabel()).FontSize(15).Grow(1).AutoFocus()
 			field = input
 			if input.Changed() {

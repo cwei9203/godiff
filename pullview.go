@@ -109,7 +109,7 @@ func (w *window) pullsView(c *ui.Context) {
 			if selected {
 				color = t.AccentText
 			}
-			ui.Icon(c, icon).FontSize(14).TextColor(color).Margin(1, 0, 0).Shrink(0)
+			uiIcon(c, icon, iconSmall).TextColor(color).Margin(1, 0, 0).Shrink(0)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(3).Children(func() {
 				ui.Text(c, p.Title).FontSize(12).FontWeight(500).MaxLines(2)
 				ui.Row(c).Gap(5).Children(func() {
@@ -119,9 +119,9 @@ func (w *window) pullsView(c *ui.Context) {
 					ui.Spacer(c)
 					switch p.ReviewDecision {
 					case "approved":
-						ui.Icon(c, iconCheck).FontSize(12).TextColor(pickColor(selected, t.AccentText, pal.addBar)).Tooltip(msg().ApprovedTip()).Shrink(0)
+						uiIcon(c, iconCheck, iconSmall).TextColor(pickColor(selected, t.AccentText, pal.addBar)).Tooltip(msg().ApprovedTip()).Shrink(0)
 					case "changes_requested":
-						ui.Icon(c, iconXCircle).FontSize(12).TextColor(pickColor(selected, t.AccentText, t.Danger)).Tooltip(msg().ChangesRequestedTip()).Shrink(0)
+						uiIcon(c, iconXCircle, iconSmall).TextColor(pickColor(selected, t.AccentText, t.Danger)).Tooltip(msg().ChangesRequestedTip()).Shrink(0)
 					}
 					if p.Checks != "" {
 						color := map[string]ui.Color{"success": pal.addBar, "failure": t.Danger, "pending": pal.warning}[p.Checks]
@@ -183,7 +183,7 @@ func stateBadge(c *ui.Context, pal *palette, m *github.PullRequest) ui.Element {
 		icon, color = iconPullClosed, t.Danger
 	}
 	return ui.Row(c).Gap(5).Padding(4, 10, 4, 8).Radius(14).Background(color).TextColor(ui.RGB(255, 255, 255)).Shrink(0).Children(func() {
-		ui.Icon(c, icon).FontSize(13)
+		uiIcon(c, icon, iconSmall)
 		ui.Text(c, stateLabel(status)).FontSize(12).FontWeight(700)
 	})
 }
@@ -287,7 +287,7 @@ func (w *window) pullHeader(c *ui.Context, pal *palette) ui.Element {
 		}
 		hint := func(icon *ui.SVG, text string, color ui.Color, dismiss func()) {
 			ui.Row(c).Gap(8).Padding(6, 6, 6, 10).Radius(8).Background(color.Alpha(0.08)).Children(func() {
-				ui.Icon(c, icon).FontSize(14).TextColor(color)
+				uiIcon(c, icon, iconSmall).TextColor(color)
 				ui.Text(c, text).FontSize(12).TextColor(color.Mix(t.Text, 0.4)).Grow(1).Shrink(1).MinWidth(0).Selectable()
 				if dismiss != nil && iconButton(c, iconClose, msg().Dismiss()).Size(22, 22).Clicked() {
 					dismiss()
@@ -321,7 +321,7 @@ func (w *window) reviewSummary(c *ui.Context, pal *palette, s github.ReviewSumma
 	}
 	ui.Column(c).Gap(4).Children(func() {
 		ui.Row(c).Gap(6).Children(func() {
-			ui.Icon(c, icon).FontSize(14).TextColor(color)
+			uiIcon(c, icon, iconSmall).TextColor(color)
 			avatar(c, s.Author, 18)
 			ui.RichText(c,
 				ui.Span{Text: s.Author.Login, Weight: 600},
@@ -384,7 +384,7 @@ func (w *window) threadRow(c *ui.Context, pal *palette, f *fileState, th *github
 				head.BorderWidth(0, 0, 1, 0).BorderColor(pal.border)
 			}
 			head.Children(func() {
-				ui.Icon(c, iconComment).FontSize(13).TextColor(t.TextMuted)
+				uiIcon(c, iconComment, iconSmall).TextColor(t.TextMuted)
 				ui.Text(c, threadLabel(th)).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
 				badge := func(text string, color ui.Color) {
 					ui.Text(c, text).FontSize(10).FontWeight(700).Padding(1, 6).Radius(8).Background(color.Alpha(0.14)).TextColor(color).Shrink(0)
@@ -608,7 +608,7 @@ func (w *window) reviewButton(c *ui.Context, pal *palette) {
 		pending = p.reviews.PendingComments()
 	}
 	b := ui.Button(c, "").Height(28).Disabled(!p.canWrite()).Children(func() {
-		ui.Icon(c, iconCheckCircle).FontSize(14)
+		uiIcon(c, iconCheckCircle, iconBase)
 		ui.Text(c, msg().ReviewLabel()).SingleLine()
 		if pending > 0 {
 			ui.Text(c, itoa(pending)).FontSize(11).FontWeight(700).Padding(0, 6).Radius(8).Background(pal.ref.Alpha(0.2)).TextColor(pal.ref)

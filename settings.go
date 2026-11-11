@@ -450,7 +450,7 @@ func (sw *settingsWindow) aiPage(c *ui.Context, pal *palette) {
 	section(c, msg().SettingsAI(), msg().SettingsAIDetail())
 	if known && len(installed) == 0 {
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
-			ui.Icon(c, iconAlert).FontSize(14).TextColor(pal.warning)
+			uiIcon(c, iconAlert, iconSmall).TextColor(pal.warning)
 			ui.Text(c, msg().SettingsNoAgent()).FontSize(12).TextColor(t.TextMuted).Wrap().Grow(1)
 		})
 	}

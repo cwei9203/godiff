@@ -80,7 +80,7 @@ func (w *window) commitView(c *ui.Context) {
 			ui.Text(c, msg().CommitTitle()).FontSize(22).Bold()
 			if w.branch != "" {
 				ui.Row(c).Gap(5).Padding(3, 8).Radius(12).Background(pal.ref.Alpha(0.13)).TextColor(pal.ref).Children(func() {
-					ui.Icon(c, iconBranch).FontSize(12)
+					uiIcon(c, iconBranch, iconSmall)
 					ui.Text(c, w.branch).Font(w.codeFont()).FontSize(11).FontWeight(600)
 				})
 			}
@@ -94,7 +94,7 @@ func (w *window) commitView(c *ui.Context) {
 			ui.Column(c).MaxWidth(760).FillWidth().Margin(0, ui.Auto).Padding(24, 24, 32).Gap(10).Children(func() {
 				if w.commitDone != "" {
 					ui.Row(c).Gap(10).Padding(12, 14).Radius(12).Background(pal.viewed.Alpha(0.1)).Border(1, pal.viewed.Alpha(0.25)).Children(func() {
-						ui.Icon(c, iconCheckCircle).FontSize(20).TextColor(pal.viewed)
+						uiIcon(c, iconCheckCircle, iconBase).TextColor(pal.viewed)
 						ui.Column(c).Gap(2).Children(func() {
 							ui.Text(c, msg().CommittedFiles(w.committedFiles)).Bold()
 							ui.Textf(c, "%s · onto %s", w.commitDone, w.branch).Font(w.codeFont()).FontSize(12).TextColor(t.TextMuted)
@@ -159,7 +159,7 @@ func (w *window) commitView(c *ui.Context) {
 						}
 						row.Children(func() {
 							checkMark(c, pal, on, false)
-							fileIcon(c, f, 14)
+							fileIcon(c, f, iconSmall)
 							ui.RichText(c,
 								ui.Span{Text: f.Dir(), Color: t.TextMuted},
 								ui.Span{Text: f.Name()},
@@ -201,7 +201,7 @@ func (w *window) commitView(c *ui.Context) {
 				label = msg().Committed()
 			}
 			b := ui.PrimaryButton(c, "").Disabled(!can).Children(func() {
-				ui.Icon(c, iconCommit).FontSize(15)
+				uiIcon(c, iconCommit, iconBase)
 				ui.Text(c, label).SingleLine()
 				if chosen < len(files) && chosen > 0 {
 					ui.Text(c, msg().FilesCount(chosen)).FontSize(11).Padding(1, 6).Radius(8).Background(ui.RGBA(255, 255, 255, 0.22))
@@ -223,7 +223,7 @@ func checkMark(c *ui.Context, pal *palette, on, mixed bool) {
 	box := ui.Box(c).Size(16, 16).Radius(4).Center().Shrink(0)
 	switch {
 	case on:
-		box.Background(t.Accent).Children(func() { ui.Icon(c, iconCheck).FontSize(11).TextColor(t.AccentText) })
+		box.Background(t.Accent).Children(func() { uiIcon(c, iconCheck, iconSmall).TextColor(t.AccentText) })
 	case mixed:
 		box.Background(t.Accent).Children(func() { ui.Box(c).Size(8, 2).Radius(1).Background(t.AccentText) })
 	default:

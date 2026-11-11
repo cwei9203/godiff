@@ -368,7 +368,7 @@ func (w *window) tabControl(c *ui.Context) bool {
 			if i == shown {
 				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
 			}
-			s.Children(func() { ui.Icon(c, it.icon).FontSize(15) })
+			s.Children(func() { uiIcon(c, it.icon, iconBase) })
 		}
 	})
 	w.tab = tabs[shown]
@@ -402,7 +402,7 @@ func searchInput(c *ui.Context, query *string, placeholder string, focus *bool, 
 	changed := false
 	box := ui.Row(c).Height(28).Padding(0, 6, 0, 8).Gap(6).Radius(7).Background(ui.RGBA(127, 127, 127, 0.12))
 	box.Children(func() {
-		ui.Icon(c, iconSearch).FontSize(13).TextColor(t.TextMuted)
+		uiIcon(c, iconSearch, iconSmall).TextColor(t.TextMuted)
 		in := ui.TextInputBase(c, query).Placeholder(placeholder).Label(placeholder).FontSize(13).Grow(1).MinWidth(0)
 		if *focus {
 			in.Focus()
@@ -417,7 +417,7 @@ func searchInput(c *ui.Context, query *string, placeholder string, focus *bool, 
 		}
 		if *query != "" {
 			clear := ui.ButtonBase(c).Size(16, 16).Radius(8).Center().Background(t.TextMuted.Alpha(0.45)).Label(msg().ClearLabel()).FocusRing(false)
-			clear.Children(func() { ui.Icon(c, iconClose).FontSize(10).TextColor(t.Background) })
+			clear.Children(func() { uiIcon(c, iconClose, iconSmall).TextColor(t.Background) })
 			if clear.Clicked() || in.Shortcut(0, ui.KeyEscape) {
 				*query = ""
 				changed = true
@@ -436,7 +436,7 @@ func iconButton(c *ui.Context, svg *ui.SVG, tip string) ui.Element {
 	} else if b.Hovered() {
 		b.Background(ui.RGBA(127, 127, 127, 0.13))
 	}
-	b.Children(func() { ui.Icon(c, svg).FontSize(16) })
+	b.Children(func() { uiIcon(c, svg, iconBase) })
 	return b
 }
 
@@ -559,20 +559,20 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			arrow := ui.Box(c).Size(14, 14).Center().Shrink(0)
 			if n.dir {
 				arrow.Children(func() {
-					ic := ui.Icon(c, iconChevronDown).FontSize(12).TextColor(muted)
+					ic := uiIcon(c, iconChevronDown, iconSmall).TextColor(muted)
 					target := float32(0)
 					if w.closedDirs[key] {
 						target = -90
 					}
 					ic.Rotate(ic.Animate("rot", target, 150*time.Millisecond))
 				})
-				ui.Icon(c, iconFolder).FontSize(14).TextColor(muted)
+				uiIcon(c, iconFolder, iconSmall).TextColor(muted)
 				ui.Text(c, n.name).FontSize(13).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 				return
 			}
 			if n.missing {
 				// A path the review groups, which the diff no longer holds.
-				ui.Icon(c, iconXCircle).FontSize(12).TextColor(muted).Shrink(0)
+				uiIcon(c, iconXCircle, iconSmall).TextColor(muted).Shrink(0)
 				ui.Text(c, n.name).Font(w.codeFont()).FontSize(12).TextColor(muted).SingleLine().Grow(1).Shrink(1).MinWidth(0).Tooltip(n.path)
 				ui.Text(c, msg().NotInDiff()).FontSize(10).TextColor(muted).Shrink(0).
 					Tooltip(msg().NotInDiffTip())
@@ -580,7 +580,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			}
 			f := w.files[n.file]
 			viewed := w.isViewed(f)
-			fileIcon(c, f, 14)
+			fileIcon(c, f, iconSmall)
 			name := ui.Text(c, n.name).FontSize(13).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 			if viewed && !(selected && focused) {
 				name.TextColor(t.TextMuted)
@@ -591,7 +591,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 				if slices.ContainsFunc(notes, func(n *aiNote) bool { return n.critical }) {
 					color = careTone(pal)
 				}
-				ui.Icon(c, iconSparkle).FontSize(11).TextColor(color).Shrink(0).Tooltip(msg().AiNotesCount(len(notes)))
+				uiIcon(c, iconSparkle, iconSmall).TextColor(color).Shrink(0).Tooltip(msg().AiNotesCount(len(notes)))
 			}
 			if countable(f) && (f.Additions > 0 || f.Deletions > 0) {
 				ui.Textf(c, "+%s -%s", compact(f.Additions), compact(f.Deletions)).
@@ -720,9 +720,9 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 		}
 		// The chevron says which way the fold goes, and takes no click of its
 		// own: a click on it is a click on the row, one fold per click.
-		arrow := ui.Box(c).Size(12, 12).Center().Shrink(0).Label(tip).Tooltip(tip)
+		arrow := ui.Box(c).Size(iconBase, iconBase).Center().Shrink(0).Label(tip).Tooltip(tip)
 		arrow.Children(func() {
-			ic := ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted)
+			ic := uiIcon(c, iconChevronDown, iconBase).TextColor(t.TextMuted)
 			target := float32(0)
 			if !open {
 				target = -90
@@ -732,14 +732,14 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(1).Children(func() {
 			ui.Row(c).Gap(5).MinWidth(0).AlignItems(ui.Center).Children(func() {
 				svg, accent := groupMark(g)
-				icon := ui.Icon(c, svg).FontSize(13).TextColor(categoryColor(accent, t, pal)).Shrink(0)
+				icon := uiIcon(c, svg, iconBase).TextColor(categoryColor(accent, t, pal)).Shrink(0)
 				if g.critical {
 					icon.TextColor(careTone(pal))
 				}
 				ui.Text(c, g.label).FontSize(13).FontWeight(600).SingleLine().Grow(1).Shrink(1).
 					MinWidth(0).Tooltip(g.summary)
 				if g.critical {
-					ui.Icon(c, iconAlert).FontSize(11).TextColor(careTone(pal)).Shrink(0).Tooltip(msg().NeedsCare())
+					uiIcon(c, iconAlert, iconBase).TextColor(careTone(pal)).Shrink(0).Tooltip(msg().NeedsCare())
 				}
 				count := ui.Textf(c, "%d/%d", viewed, len(files)).Font(w.codeFont()).FontSize(10).
 					FontWeight(600).TextColor(t.TextMuted).Shrink(0).Tooltip(msg().ViewedFilesTip())
@@ -959,7 +959,7 @@ func (w *window) sidebarFooter(c *ui.Context, pal *palette) {
 				label = msg().ReviewAction()
 			}
 			b := ui.Button(c, "").Children(func() {
-				ui.Icon(c, iconCommit).FontSize(14)
+				uiIcon(c, iconCommit, iconBase)
 				ui.Text(c, label).SingleLine()
 			})
 			if b.Clicked() {

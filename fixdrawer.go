@@ -498,18 +498,18 @@ func (w *window) fixHeader(c *ui.Context, st *fixState) {
 		case fixRunning:
 			ui.Spinner(c).Size(13, 13)
 		case fixSucceeded:
-			ui.Icon(c, iconCheckCircle).FontSize(13).TextColor(t.Accent)
+			uiIcon(c, iconCheckCircle, iconSmall).TextColor(t.Accent)
 		case fixStopped:
-			ui.Icon(c, iconStop).FontSize(13).TextColor(t.TextMuted)
+			uiIcon(c, iconStop, iconSmall).TextColor(t.TextMuted)
 		default:
-			ui.Icon(c, iconAlert).FontSize(13).TextColor(t.Danger)
+			uiIcon(c, iconAlert, iconSmall).TextColor(t.Danger)
 		}
 		ui.Text(c, st.headline(w.now)).FontSize(12).FontWeight(600).SingleLine().Shrink(1).MinWidth(0)
 		ui.Spacer(c)
 		if st.phase == fixRunning {
 			b := ui.Button(c, "").Height(24)
 			b.Children(func() {
-				ui.Icon(c, iconStop).FontSize(11)
+				uiIcon(c, iconStop, iconBase)
 				ui.Text(c, textStop()).FontSize(12)
 			})
 			if b.Disabled(st.stopped).Clicked() {

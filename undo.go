@@ -44,7 +44,7 @@ func (w *window) undoBar(c *ui.Context, pal *palette) {
 	ui.Row(c).Absolute().Left(0).Right(0).Bottom(gapBlock).Justify(ui.Center).PassThrough().Children(func() {
 		ui.Row(c).Height(34).Padding(0, 6, 0, 12).Gap(10).Radius(radiusCard).Background(pal.surface).
 			Border(1, pal.border).Shadow(0, 10, 28, 0, ui.RGBA(0, 0, 0, 0.22)).Children(func() {
-			ui.Icon(c, iconCheckCircle).FontSize(13).TextColor(pal.viewed).Shrink(0)
+			uiIcon(c, iconCheckCircle, iconSmall).TextColor(pal.viewed).Shrink(0)
 			ui.Text(c, u.label).FontSize(12).FontWeight(600).Shrink(1).MinWidth(0)
 			b := ui.ButtonBase(c).Height(22).Padding(0, 8).Radius(6).Label(textUndo()).Tooltip(msg().UndoDismiss())
 			if b.Hovered() {
