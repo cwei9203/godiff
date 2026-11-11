@@ -567,7 +567,7 @@ func TestAINotes(t *testing.T) {
 	if w.noteSel != nil {
 		t.Error("Escape kept the note marked")
 	}
-	if !slices.ContainsFunc(w.commands(), func(c command) bool { return c.title == "Next AI Note" && c.run != nil }) {
+	if !slices.ContainsFunc(w.commands(), func(c command) bool { return c.title == "Next AI note" && c.run != nil }) {
 		t.Error("no command to go to the next note")
 	}
 }

@@ -218,6 +218,8 @@ type window struct {
 	changed   bool
 	signature string
 	help      bool
+	// undo is the one-tap action the bar under the surface offers back.
+	undo *undo
 }
 
 var (
@@ -382,6 +384,14 @@ func (w *window) applySettings(s Settings) {
 		w.shownFor = -1
 		w.list.ScrollTo(0, ui.Start)
 	}
+}
+
+// applySetting writes one setting of the surface, and shows it at once: the
+// native menus write the same settings, and a window hears of them through the
+// change they make.
+func (w *window) applySetting(fn func(s *Settings)) {
+	cfg.Update(fn)
+	w.applySettings(cfg.Get())
 }
 
 // background runs fn on a goroutine of its own, or at once in tests,

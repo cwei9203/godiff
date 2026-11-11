@@ -198,11 +198,11 @@ func TestReviewDocumentScopes(t *testing.T) {
 func TestFixCommand(t *testing.T) {
 	w, _ := newTestWindow(t, testRepo(t))
 	w.settings.FixAgent = "claude"
-	if cmd, ok := findCommand(w, "Fix Review Comments…"); !ok || cmd.run != nil {
+	if cmd, ok := findCommand(w, "Fix comments with an agent"); !ok || cmd.run != nil {
 		t.Error("the repair is offered with no comment to fix")
 	}
 	addText(w, "main.go", sideNew, 3, 3, "Name it for what it returns.")
-	cmd, ok := findCommand(w, "Fix Review Comments…")
+	cmd, ok := findCommand(w, "Fix comments with an agent")
 	if !ok || cmd.run == nil {
 		t.Fatal("the repair is not offered with a comment to fix")
 	}
@@ -216,21 +216,21 @@ func TestFixCommand(t *testing.T) {
 		t.Errorf("without an agent of its own, the repair names %q", got)
 	}
 	w.settings.AIAgent = ""
-	if cmd, ok := findCommand(w, "Fix Review Comments…"); !ok || cmd.run != nil {
+	if cmd, ok := findCommand(w, "Fix comments with an agent"); !ok || cmd.run != nil {
 		t.Error("the repair is offered with no agent installed")
 	}
-	if cmd, ok := findCommand(w, "Export Review Task"); !ok || cmd.run == nil {
+	if cmd, ok := findCommand(w, "Export review task"); !ok || cmd.run == nil {
 		t.Error("the export went with the repair")
 	}
 }
 
 func TestExportNeedsComments(t *testing.T) {
 	w, _ := newTestWindow(t, testRepo(t))
-	if cmd, ok := findCommand(w, "Export Review Task"); ok && cmd.run != nil {
+	if cmd, ok := findCommand(w, "Export review task"); ok && cmd.run != nil {
 		t.Error("the export is offered with no comment to export")
 	}
 	addText(w, "main.go", sideNew, 3, 3, "Name it.")
-	if cmd, ok := findCommand(w, "Export Review Task"); !ok || cmd.run == nil {
+	if cmd, ok := findCommand(w, "Export review task"); !ok || cmd.run == nil {
 		t.Error("the export is not offered with a comment to export")
 	}
 }

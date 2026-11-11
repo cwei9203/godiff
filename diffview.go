@@ -103,8 +103,11 @@ func (w *window) diffList(c *ui.Context) {
 			w.list.ScrollTo(0, ui.Start)
 		}
 	}
-	ui.List(c, &w.list, len(w.rows), func(i int) { w.diffRow(c, pal, i, w.list.FocusWithin(c)) }).
-		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Label("Changes")
+	// The review is a place the keys go, as the tree and the drawer are: Tab
+	// stops on it before the buttons of its cards.
+	changes := ui.List(c, &w.list, len(w.rows), func(i int) { w.diffRow(c, pal, i, w.list.FocusWithin(c)) }).
+		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Focusable().Label("Changes")
+	focusRing(changes, pal, 0)
 
 	// The file at the top follows the scrolling, and the tree with it.
 	first, _ := w.list.Visible()
@@ -191,7 +194,19 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 		step(iconChevronRight, 0, 1, "Next file (\u005d)")
 		if w.unviewedMiss {
 			// The step found nothing: every file of the review is viewed.
-			ui.Text(c, everyFileViewed).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+			emptyState(c, pal, emptyBox{shape: emptyLine, icon: iconEye, title: textAllViewed, detail: "",
+				actions: func() {
+					b := ui.ButtonBase(c).Padding(0, 4).Radius(4).Label(textResetReview)
+					if b.Hovered() {
+						b.Background(pal.hover)
+					}
+					b.Children(func() {
+						ui.Text(c, textResetReview).FontSize(11).FontWeight(600).TextColor(t.Accent)
+					})
+					if b.Clicked() {
+						w.resetReviewState()
+					}
+				}})
 		}
 		// The same step for the reader who reviews by what is left: the first
 		// file not viewed yet, round from this one.

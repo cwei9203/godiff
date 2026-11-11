@@ -292,7 +292,6 @@ func (w *window) sidebar(c *ui.Context) {
 			if w.tabControl(c) {
 				w.commitOpen = false
 			}
-			w.sidebarToggle(c)
 			if !mac {
 				ui.Spacer(c)
 			}
@@ -461,18 +460,15 @@ func (w *window) visibleTree() []treeRow {
 // group folds its files away, which is how much room it takes is decided.
 func (w *window) fileTree(c *ui.Context) {
 	pal := paletteFor(c.Theme())
-	t := c.Theme()
 	if len(w.treeRoots) == 0 {
-		ui.Column(c).Grow(1).Center().Padding(16).Children(func() {
-			msg := "No changed files"
-			switch {
-			case w.loading && len(w.files) == 0:
-				msg = "Loading…"
-			case strings.TrimSpace(w.filter) != "":
-				msg = "No matching files"
-			}
-			ui.Text(c, msg).FontSize(12).TextColor(t.TextMuted)
-		})
+		box := emptyBox{shape: emptySmall, icon: iconTree, title: textNoChangesDir}
+		switch {
+		case w.loading && len(w.files) == 0:
+			box.title, box.detail = "Loading…", abbreviateHome(w.repo.Root)
+		case strings.TrimSpace(w.filter) != "":
+			box.title, box.detail = textNoMatchFiles, strings.TrimSpace(w.filter)
+		}
+		emptyState(c, pal, box)
 		return
 	}
 	rows := w.visibleTree()
@@ -510,7 +506,7 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 		}
 		return ""
 	}
-	ui.List(c, &w.treeList, len(rows), func(i int) {
+	tree := ui.List(c, &w.treeList, len(rows), func(i int) {
 		focused := w.treeList.FocusWithin(c)
 		key := rows[i].key
 		n := w.treeItems[key]
@@ -604,7 +600,8 @@ func (w *window) fileTreeList(c *ui.Context, pal *palette, rows []treeRow) {
 			ui.Text(c, statusLetter(f)).Font(w.codeFont()).FontSize(11).FontWeight(700).TextColor(letter).
 				Width(12).TextAlign(ui.Center).Shrink(0).Tooltip(f.Status.Label())
 		})
-	}).Grow(1).Padding(2, 8).Gap(1).Focusable().FocusRing(false).Label("Changed files")
+	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label("Changed files")
+	focusRing(tree, pal, 6)
 
 	// The keys move the choice, open and close directories.
 	at := -1
@@ -815,7 +812,7 @@ func (w *window) historyView(c *ui.Context) {
 		return entries[i].commit.Subject
 	}
 	now := time.Now()
-	list := ui.List(c, &w.historyList, len(entries), func(i int) {
+	history := ui.List(c, &w.historyList, len(entries), func(i int) {
 		focused := w.historyList.FocusWithin(c) || w.focusHistory
 		e := entries[i]
 		row := ui.Row(c).Gap(8).Padding(5, 8).Radius(6).AlignItems(ui.Start).Role(ui.RoleButton)
@@ -861,13 +858,14 @@ func (w *window) historyView(c *ui.Context) {
 				})
 			})
 		})
-	}).Grow(1).Padding(2, 8).Gap(1).Focusable().FocusRing(false).Label("History")
+	}).Grow(1).Padding(2, 8).Gap(1).Focusable().Label("History")
+	focusRing(history, pal, 6)
 	if w.focusHistory && w.historyList.Focus(c) {
 		w.focusHistory = false
 	}
-	list.Children(func() {
+	history.Children(func() {
 		if len(entries) == 0 {
-			ui.Text(c, "No matching commits").FontSize(12).TextColor(t.TextMuted).Padding(12)
+			emptyState(c, pal, emptyBox{shape: emptySmall, icon: iconHistory, title: textNoCommitsTab, detail: q})
 		}
 	})
 	if w.historyList.Shortcut(c, 0, ui.KeyDown) {
@@ -1006,8 +1004,8 @@ func (w *window) foldAllRow(c *ui.Context, pal *palette) {
 			label, tip string
 			fold       bool
 		}{
-			{"Collapse", "Collapse every group and folder", true},
-			{"Expand", "Expand every group and folder", false},
+			{"Fold all", "Fold every group and folder", true},
+			{"Unfold all", "Unfold every group and folder", false},
 		} {
 			b := b
 			btn := ui.ButtonBase(c).Padding(2, 6).Radius(5).Label(b.tip).Tooltip(b.tip)
@@ -1027,7 +1025,11 @@ func (w *window) foldAllRow(c *ui.Context, pal *palette) {
 // foldAll folds every group and every folder of the tree, and the cards of
 // every file where the surface stacks them; unfold opens them whole. The file
 // read keeps its place, as a fold is no navigation.
+//
+// A fold of the whole tree is one click that loses where every group stood, so
+// it keeps what it found and offers it back for a few seconds.
 func (w *window) foldAll(fold bool) {
+	before := w.folded()
 	for key, n := range w.treeItems {
 		if n != nil && n.dir {
 			w.closedDirs[key] = fold
@@ -1042,4 +1044,18 @@ func (w *window) foldAll(fold bool) {
 		w.revealedAt = w.now
 	}
 	w.rowsDirty = true
+	verb := "Folded all "
+	if !fold {
+		verb = "Unfolded all "
+	}
+	w.offerUndo(verb+w.foldedWhat(), func() { w.refold(before) })
+}
+
+// foldedWhat says how much a fold of the whole tree took: its groups, or its
+// files where the rules group none.
+func (w *window) foldedWhat() string {
+	if n := len(w.groups); n > 0 {
+		return plural(n, "group")
+	}
+	return plural(len(w.files), "file")
 }

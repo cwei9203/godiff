@@ -90,10 +90,6 @@ func (w *window) stepFile(dir int) {
 	w.showFile(files[slices.Index(files, w.shownFile())+dir])
 }
 
-// everyFileViewed is what the bar says when there is no file left to step
-// to: a review every file of is viewed stays where it is.
-const everyFileViewed = "Every file is viewed"
-
 // nextUnviewed shows the next (dir 1) or the previous (dir -1) file not
 // viewed yet, from the one shown: the review is a circle, so the files are
 // searched round from the last to the first, and reports whether it found

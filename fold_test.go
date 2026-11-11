@@ -426,7 +426,7 @@ func TestFoldAll(t *testing.T) {
 	w, tt := kindWindow(t)
 	tt.Frame()
 	open := len(w.visibleTree())
-	if err := tt.Click("Collapse"); err != nil {
+	if err := tt.Click("Fold every group and folder"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -445,7 +445,7 @@ func TestFoldAll(t *testing.T) {
 		}
 		_ = i
 	}
-	if err := tt.Click("Expand"); err != nil {
+	if err := tt.Click("Unfold every group and folder"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

@@ -430,34 +430,38 @@ func (w *window) changedSince(st *analysisState) int {
 	return n
 }
 
-// summaryCard shows the agent's review of the changes: its summary, or
-// what it does while at work.
+// summaryCard shows the agent's review of the changes, in one of its three
+// states: offered and not started, at work, or the review it gave — or the
+// failure that ended it.
+//
+// The three have one head, one padding and one rhythm, so that the card holds
+// still as the review moves from one state to the next: the head says where the
+// review stands and holds the one action of the state, and the body says the
+// rest.
 func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 	t := c.Theme()
 	st := w.analyses[w.source]
-	return ui.Column(c).Padding(padCard, 16).Gap(8).Radius(radiusCard).Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Children(func() {
-		ui.Row(c).Gap(8).Children(func() {
+	offered := st.result == nil && !st.running && st.err == ""
+	return ui.Column(c).Padding(padCard, 16).Gap(gapCard).Radius(radiusCard).
+		Background(pal.surface).Border(1, t.Accent.Alpha(0.3)).Children(func() {
+		ui.Row(c).Height(lineCardHead).Gap(8).Children(func() {
 			ui.Icon(c, iconSparkle).FontSize(15).TextColor(t.Accent)
-			ui.Text(c, "AI Review").FontSize(14).Bold().Shrink(0)
-			if a := st.result; a != nil && !st.running {
-				by := a.Agent
-				if ag, ok := agent.ByName(a.Agent); ok {
-					by = ag.Label
-				}
-				if a.Model != "" {
-					by += " · " + a.Model
-				}
-				by += " · " + relativeTime(w.now, a.GeneratedAt)
-				ui.Text(c, by).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
+			ui.Text(c, textAIReview).FontSize(14).Bold().Shrink(0)
+			if mark := w.reviewMark(st); mark != "" {
+				ui.Text(c, mark).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 			}
 			ui.Spacer(c)
-			if st.result == nil && !st.running && st.err == "" {
-				// Offered: nothing runs until asked.
-				w.agentMenu(c)
-				w.modelMenu(c)
-				if ui.PrimaryButton(c, "Review with AI").Height(26).Clicked() {
-					w.runAnalysis()
+			switch {
+			case st.running:
+				// The one action of a review at work: stop it.
+				b := ui.Button(c, "").Height(26).Children(func() {
+					ui.Icon(c, iconStop).FontSize(12)
+					ui.Text(c, textStop).FontSize(12)
+				})
+				if b.Clicked() {
+					w.stopAnalysis()
 				}
+			case offered:
 				if iconButton(c, iconClose, "Dismiss").Size(26, 26).Clicked() {
 					st.offered = false
 					if w.groupPref == groupAI {
@@ -465,53 +469,31 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 					}
 					w.regroupSoon()
 				}
-				return
-			}
-			if st.running {
-				if ui.Button(c, "").Height(26).Children(func() {
-					ui.Icon(c, iconStop).FontSize(12)
-					ui.Text(c, "Stop")
-				}).Clicked() {
-					w.stopAnalysis()
+			default:
+				if st.result != nil {
+					// The summary shows whole, or else as its first line alone.
+					svg, tip := iconChevronDown, "Hide the summary"
+					if !w.settings.SummaryExpanded {
+						svg, tip = iconChevronRight, "Show the summary"
+					}
+					if iconButton(c, svg, tip).Size(26, 26).Clicked() {
+						cfg.Update(func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded })
+					}
 				}
-				return
-			}
-			w.agentMenu(c)
-			w.modelMenu(c)
-			label := "Review Again"
-			if st.result == nil {
-				label = "Try Again"
-			}
-			if ui.Button(c, label).Height(26).Clicked() {
-				w.runAnalysis()
-			}
-			if st.result != nil && w.settings.OverallSummary {
-				// The summary shows whole, or else as its first line alone.
-				svg, tip := iconChevronDown, "Hide the summary"
-				if !w.settings.SummaryExpanded {
-					svg, tip = iconChevronRight, "Show the summary"
+				label := textTryAgain
+				if st.result != nil {
+					label = textReviewAgain
 				}
-				if iconButton(c, svg, tip).Size(26, 26).Clicked() {
-					cfg.Update(func(s *Settings) { s.SummaryExpanded = !s.SummaryExpanded })
+				if ui.Button(c, label).Height(26).Clicked() {
+					w.runAnalysis()
 				}
 			}
 		})
-		if st.running {
-			ui.Row(c).Gap(8).Children(func() {
-				ui.Spinner(c).Size(14, 14)
-				who := st.agent
-				if who == "" {
-					who = "The agent"
-				}
-				ui.Text(c, who+": "+st.progress.Detail).FontSize(12).TextColor(t.TextMuted).SingleLine().Grow(1).Shrink(1).MinWidth(0)
-				elapsed := w.now.Sub(st.started).Truncate(time.Second)
-				ui.Text(c, elapsed.String()).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).Shrink(0)
-				c.After(time.Second)
-			})
-		}
-		if st.result == nil && !st.running && st.err == "" {
-			ui.Text(c, "A coding agent on this machine can summarize these changes, group the files by intent and note what deserves attention. It reads, never writes, and starts only when you ask.").
-				FontSize(13).TextColor(t.TextMuted)
+		switch {
+		case st.running:
+			w.cardRunning(c, pal, st)
+		case offered:
+			w.cardOffered(c, pal)
 		}
 		if st.err != "" {
 			ui.Text(c, st.err).FontSize(12).TextColor(t.Danger).Selectable().MaxLines(6)
@@ -533,7 +515,7 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 			}
 		}
 		a := st.result
-		if a == nil || st.running {
+		if a == nil {
 			return
 		}
 		summary := strings.TrimSpace(a.OverallSummary)
@@ -585,6 +567,133 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 		})
 		w.noteList(c, pal, st)
 	})
+}
+
+// The card's own measures, on the steps of the review: its head, its shortest
+// body, and the gap between them.
+const (
+	lineCardHead = 28
+	cardBodyMin  = 44
+	gapCard      = 8
+)
+
+// reviewMark says where the review comes from, in the card's head: the agent,
+// its model and when it ran; or where the review stands, while it is not one.
+func (w *window) reviewMark(st *analysisState) string {
+	switch {
+	case st.running:
+		return st.agent
+	case st.err != "":
+		return textReviewFailed
+	case st.result == nil:
+		return textNotRun
+	}
+	a := st.result
+	by := a.Agent
+	if ag, ok := agent.ByName(a.Agent); ok {
+		by = ag.Label
+	}
+	if a.Model != "" {
+		by += " · " + a.Model
+	}
+	if since := relativeTime(w.now, a.GeneratedAt); since != "" {
+		by += " · " + since
+	}
+	return by
+}
+
+// cardOffered is the card before the review runs: what an agent would do, and
+// the choice of the agent and the model beneath it, as the second thing the
+// card says rather than the first.
+func (w *window) cardOffered(c *ui.Context, pal *palette) {
+	t := c.Theme()
+	ui.Column(c).Gap(gapCard).MinHeight(cardBodyMin).Children(func() {
+		ui.Text(c, textOffered).FontSize(13).TextColor(t.TextMuted)
+		ui.Row(c).Gap(6).Children(func() {
+			w.agentMenu(c)
+			w.modelMenu(c)
+			ui.Spacer(c)
+			if ui.PrimaryButton(c, textReviewWithAI).Height(26).Clicked() {
+				w.runAnalysis()
+			}
+		})
+	})
+}
+
+// cardRunning is the card while the agent works: the three steps of a review
+// and where it stands among them, what it does now, and how long it has taken.
+func (w *window) cardRunning(c *ui.Context, pal *palette, st *analysisState) {
+	t := c.Theme()
+	steps := []struct {
+		kind  agent.ProgressKind
+		label string
+	}{
+		{agent.ProgressThinking, textThinking},
+		{agent.ProgressReading, textReading},
+		{agent.ProgressOrganizing, textOrganizing},
+	}
+	at := slices.IndexFunc(steps, func(s struct {
+		kind  agent.ProgressKind
+		label string
+	}) bool {
+		return s.kind == st.progress.Kind
+	})
+	if at < 0 {
+		at = 0
+	}
+	ui.Column(c).Gap(gapCard).MinHeight(cardBodyMin).Children(func() {
+		// The steps, in the order a review takes them: done, now, waiting.
+		ui.Row(c).Gap(14).Children(func() {
+			for i, step := range steps {
+				row := ui.Row(c).Gap(5).Shrink(0)
+				switch {
+				case i < at:
+					row.Children(func() {
+						ui.Icon(c, iconCheck).FontSize(11).TextColor(pal.viewed).Shrink(0)
+						ui.Text(c, step.label).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+					})
+				case i == at:
+					row.Children(func() {
+						ui.Icon(c, iconSparkle).FontSize(11).TextColor(t.Accent).Shrink(0)
+						ui.Text(c, step.label).FontSize(11).FontWeight(600).TextColor(t.Text).Shrink(0)
+					})
+				default:
+					row.Children(func() {
+						ui.Box(c).Size(5, 5).Radius(3).Background(t.TextMuted.Alpha(0.4)).AlignSelf(ui.Center).Shrink(0)
+						ui.Text(c, step.label).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+					})
+				}
+			}
+		})
+		ui.Row(c).Gap(8).Children(func() {
+			ui.Spinner(c).Size(13, 13)
+			who := st.agent
+			ui.Text(c, progressLine(st.progress)).FontSize(12).TextColor(t.TextMuted).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+			if who != "" {
+				ui.Text(c, who).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+			}
+			elapsed := w.now.Sub(st.started).Truncate(time.Second)
+			ui.Text(c, elapsed.String()).Font(w.codeFont()).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+			c.After(time.Second)
+		})
+	})
+}
+
+// progressLine is the step the agent is on, in the review's own words: the
+// sentence moves with the kind, rather than standing still through the run.
+func progressLine(p agent.Progress) string {
+	switch p.Kind {
+	case agent.ProgressThinking:
+		return textThinking
+	case agent.ProgressReading:
+		if n := len(p.Paths); n > 0 {
+			return "Reading " + plural(n, "file")
+		}
+		return textReading
+	case agent.ProgressOrganizing:
+		return textOrganizing
+	}
+	return textStarting
 }
 
 // listedNotes is how many notes the card lists before it is asked for all.
@@ -885,41 +994,6 @@ func installedAgents() ([]agent.Agent, bool) {
 		}()
 	}
 	return agentsFound.list, agentsFound.done
-}
-
-// groupControl chooses how the files group: not at all, by kind, or by
-// the agent's review, which it asks for when there is none.
-func (w *window) groupControl(c *ui.Context, pal *palette) {
-	t := c.Theme()
-	modes := []groupMode{groupNone, groupKind, groupAI}
-	current := slices.Index(modes, w.grouping())
-	st := w.analyses[w.source]
-	running := st != nil && st.running
-	choice := current
-	seg := ui.SegmentedBase(c, &choice, len(modes))
-	seg.Track.Padding(2).Gap(2).Radius(8).Background(ui.RGBA(127, 127, 127, 0.1)).Label("Group files").Children(func() {
-		for i, it := range []struct {
-			icon *ui.SVG
-			name string
-		}{{iconList, "No groups"}, {iconLayers, "Group by kind"}, {iconSparkle, "Group by an AI review"}} {
-			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
-			if i == current {
-				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
-			}
-			s.OnClick(func() { w.chooseGrouping(modes[i]) })
-			s.Children(func() {
-				if i == 2 && running {
-					// A review under way. A spinner is painted again, as
-					// the card's, where an animation of the icon would
-					// build the window again at every frame.
-					ui.Spinner(c).Size(14, 14)
-					return
-				}
-				ui.Icon(c, it.icon).FontSize(15)
-			})
-		}
-	})
-
 }
 
 // chooseGrouping groups the files as the user chose. Grouping by an AI
