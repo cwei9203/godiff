@@ -103,23 +103,8 @@ func (w *window) diffList(c *ui.Context) {
 			w.list.ScrollTo(0, ui.Start)
 		}
 	}
-	// The aside lists the group at the top of the surface. It sits beside
-	// the list rather than in it: a row holds only its own height, and
-	// stops being built as it scrolls out, so nothing inside the list can
-	// stay in sight for a whole block of files.
-	aside, gi := w.asideOn(), w.topGroup()
-	row := ui.Row(c).Grow(1).MinWidth(0).AlignItems(ui.Stretch)
-	if aside {
-		row.Children(func() {
-			w.groupAside(c, pal, gi)
-			w.asideResizer(c, pal)
-		})
-	}
-	row.Children(func() {
-		ui.List(c, &w.list, len(w.rows), func(i int) { w.diffRow(c, pal, i, w.list.FocusWithin(c)) }).
-			Grow(1).Padding(0, 12, 24).Background(pal.appBg).Label("Changes")
-	})
-	w.columnW = row.Bounds().W
+	ui.List(c, &w.list, len(w.rows), func(i int) { w.diffRow(c, pal, i, w.list.FocusWithin(c)) }).
+		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Label("Changes")
 
 	// The file at the top follows the scrolling, and the tree with it.
 	first, _ := w.list.Visible()
@@ -346,15 +331,8 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 	collapsed := f.collapsed && !w.forceOpen(idx)
 	viewed := w.isViewed(f)
 	// The band above the header spaces the cards, and hides the lines
-	// scrolling under it while it is pinned: of a block, it is as tall as
-	// the group's strip, which heads the block and rides the pinned
-	// header to the top of the surface.
-	band := ui.Column(c).Background(pal.appBg)
-	if w.asideOn() {
-		band.Children(func() { w.groupStrip(c, pal, f.group, idx) })
-	} else {
-		band.Padding(12, 0, 0, 0)
-	}
+	// scrolling under it while it is pinned.
+	band := ui.Column(c).Background(pal.appBg).Padding(12, 0, 0, 0)
 	var h ui.Element
 	band.Children(func() {
 		h = ui.Row(c).Height(46).Padding(0, 8, 0, 6).Gap(8).Background(pal.headerBg).Border(1, pal.cardBorder)

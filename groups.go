@@ -453,7 +453,7 @@ func (w *window) scopeUp(gi int) {
 }
 
 // setScope changes what the surface shows: the rows of the new scope from
-// its top, the file at the top, and the aside and the file tree with them.
+// its top, the file at the top, and the file tree with them.
 func (w *window) setScope(s scope) {
 	w.scope = s
 	// The agent's review summarizes every change, so it folds back to a
@@ -467,19 +467,16 @@ func (w *window) setScope(s scope) {
 	switch s.kind {
 	case scopeOneFile:
 		if s.file >= 0 && s.file < len(w.files) {
-			// The aside lists the file's group, the file marked in it.
 			w.current = s.file
 			w.selectTreeFile(s.file)
-			w.asideFor, w.asideAt = w.files[s.file].group, -1
 		}
 	case scopeOneGroup:
 		if files := w.groupFiles(s.group); len(files) > 0 {
 			w.current = files[0]
 			w.selectTreeFile(files[0])
 		}
-		w.asideFor, w.asideAt = s.group, -1
 	default:
-		// The group at the top of the surface, which the aside lists.
+		// The group at the top of the surface.
 		for _, r := range w.rows {
 			if !r.banner() {
 				if i := int(r.file); i >= 0 && i < len(w.files) {
@@ -489,7 +486,6 @@ func (w *window) setScope(s scope) {
 				break
 			}
 		}
-		w.asideFor, w.asideAt = -1, -1
 	}
 }
 
@@ -499,49 +495,6 @@ func groupIcon(g *fileGroup) *ui.SVG {
 		return iconSparkle
 	}
 	return iconLayers
-}
-
-// The aside's size: the width it shows at, and the bounds a drag keeps it
-// in.
-const (
-	asideDefault = 240
-	asideMin     = 220
-	asideMax     = 260
-)
-
-// asideBreak is how wide the review beside the sidebar must be to show the
-// aside there: narrower, it keeps one column.
-const asideBreak = 1100
-
-// groupStripH is the height of the strip heading a group's block, and of
-// the band it stands in atop the block's file headers.
-const groupStripH = 30
-
-// blockGap spaces the blocks of the groups, above the strip heading one.
-const blockGap = 18
-
-// asideOn reports whether the review shows the aside: the files are
-// grouped, and the window is wide enough for the diffs beside it.
-func (w *window) asideOn() bool {
-	return w.grouping() != groupNone && len(w.groups) > 0 && w.columnW >= asideBreak
-}
-
-// topGroup returns the group whose files show at the top of the surface,
-// which the aside lists.
-func (w *window) topGroup() int {
-	first, _ := w.list.Visible()
-	for first >= 0 && first < len(w.rows) && w.rows[first].banner() {
-		first++
-	}
-	if first >= 0 && first < len(w.rows) {
-		if i := int(w.rows[first].file); i >= 0 && i < len(w.files) {
-			return w.files[i].group
-		}
-	}
-	if w.current >= 0 && w.current < len(w.files) {
-		return w.files[w.current].group
-	}
-	return -1
 }
 
 // groupStats counts how many files of a group were viewed, and the lines
@@ -558,292 +511,6 @@ func (w *window) groupStats(gi int) (viewed, adds, dels int) {
 		}
 	}
 	return
-}
-
-// groupStrip heads a group's block: its mark, its name, what it changes,
-// and how much of it was viewed. It shows above the first file of the
-// group, and above the file at the top of the surface, whose header is
-// pinned there: the strip rides that header to the top, so the group read
-// names itself while its diffs scroll. The list pins one row at a time, so
-// a strip of its own row would cost the file's header its place there, and
-// a file shown by ScrollTo would hide under it.
-func (w *window) groupStrip(c *ui.Context, pal *palette, gi, idx int) {
-	t := c.Theme()
-	strip := ui.Row(c).Height(groupStripH).Background(pal.appBg)
-	if gi < 0 || gi >= len(w.groups) {
-		return
-	}
-	files := w.groupFiles(gi)
-	first := len(files) > 0 && files[0] == idx
-	if !first && idx != w.current {
-		// The band of a file inside the block spaces it from the one above.
-		return
-	}
-	g := &w.groups[gi]
-	viewed, adds, dels := w.groupStats(gi)
-	allCollapsed := true
-	for _, i := range files {
-		if !w.files[i].collapsed {
-			allCollapsed = false
-		}
-	}
-	collapse := func() {
-		for _, i := range files {
-			w.files[i].collapsed = !allCollapsed
-		}
-		w.rowsDirty = true
-	}
-	strip.Children(func() {
-		// The group's name goes back to every change; the counts beside it
-		// collapse or expand the block.
-		name := ui.ButtonBase(c).Height(groupStripH).Padding(0, 4, 0, 8).Gap(8).Shrink(0).
-			Label("All changes, away from " + g.label).Tooltip("Show every change (\u2318\u21e7A)")
-		name.FocusRing(false)
-		if name.Hovered() {
-			name.Background(pal.hover.Alpha(0.7))
-		}
-		if name.Clicked() {
-			w.showAll()
-		}
-		name.Children(func() {
-			icon := ui.Icon(c, groupIcon(g)).FontSize(13).TextColor(t.TextMuted)
-			if g.critical {
-				icon.TextColor(t.Danger)
-			}
-			ui.Text(c, g.label).FontSize(13).FontWeight(600).SingleLine().Shrink(0)
-			ui.Icon(c, iconChevronRight).FontSize(10).TextColor(t.TextMuted).Shrink(0)
-		})
-		toggle := ui.ButtonBase(c).Height(groupStripH).Padding(0, 10, 0, 8).Gap(8).Shrink(1).MinWidth(0).
-			Label("Collapse or expand " + g.label)
-		toggle.FocusRing(false)
-		if toggle.Hovered() {
-			toggle.Background(pal.hover.Alpha(0.7))
-		}
-		if toggle.Clicked() {
-			collapse()
-		}
-		toggle.Children(func() {
-			ui.RichText(c,
-				ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
-				ui.Span{Text: "+" + thousands(adds), Color: pal.addText},
-				ui.Span{Text: " −" + thousands(dels), Color: pal.delText},
-			).FontSize(11).FontWeight(600).Shrink(0)
-			ui.Box(c).Width(54).Height(3).Radius(2).Background(pal.pill).Clip().Shrink(0).Children(func() {
-				ui.Box(c).WidthPercent(float32(viewed) / float32(len(files)) * 100).Height(3).Radius(2).Background(pal.viewed)
-			})
-			count := ui.Textf(c, "%d/%d viewed", viewed, len(files)).FontSize(11).TextColor(t.TextMuted).Shrink(0)
-			if viewed == len(files) {
-				count.TextColor(pal.viewed)
-			}
-			if g.critical {
-				ui.Text(c, "Needs care").FontSize(10).FontWeight(600).Padding(2, 6).Radius(8).
-					Background(t.Danger.Alpha(0.14)).TextColor(t.Danger).Shrink(0)
-			}
-		})
-		ui.Spacer(c)
-		// The group's own control, for a review of several groups.
-		if len(w.groups) > 1 {
-			label := "Collapse all"
-			if allCollapsed {
-				label = "Expand all"
-			}
-			b := ui.ButtonBase(c).Height(groupStripH).Padding(0, 12, 0, 10).Label(label + " of " + g.label)
-			if b.Hovered() {
-				b.Background(pal.hover.Alpha(0.7))
-			}
-			b.Children(func() {
-				ui.Text(c, label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
-			})
-			if b.Clicked() {
-				collapse()
-			}
-		}
-	})
-}
-
-// groupAside lists the files of a group beside its diffs, so that the
-// files stay in sight while their diffs scroll. It is pinned above the
-// surface rather than bound to the block's rows: a row of the surface
-// holds no more than its own height, and stops being built as it scrolls
-// out, so what the aside shows follows the group at the top instead.
-func (w *window) groupAside(c *ui.Context, pal *palette, gi int) {
-	t := c.Theme()
-	panel := ui.Column(c).Width(w.asideWidth).Shrink(0).Margin(12, 0, 24, 12).Radius(cardRadius).
-		Border(1, pal.cardBorder).Background(pal.headerBg).Clip()
-	if gi < 0 || gi >= len(w.groups) {
-		return
-	}
-	g := &w.groups[gi]
-	files := w.groupFiles(gi)
-	if len(files) == 0 {
-		return
-	}
-	if w.asideFor != gi {
-		// Another group: its files list from its top, then follow the file
-		// read.
-		w.asideFor, w.asideAt = gi, -1
-		w.asideList.ScrollTo(0, ui.Start)
-	}
-	if at := slices.Index(files, w.current); at >= 0 && at != w.asideAt {
-		// The file read shows in the list, which stays where it was put
-		// while that file shows.
-		w.asideAt = at
-		w.asideList.ScrollIntoView(at)
-	}
-	viewed, adds, dels := w.groupStats(gi)
-	allCollapsed := true
-	for _, i := range files {
-		if !w.files[i].collapsed {
-			allCollapsed = false
-		}
-	}
-	whole := w.asideMore[g.key]
-	panel.Children(func() {
-		ui.Column(c).Padding(12, 12, 8).Gap(6).Children(func() {
-			ui.Row(c).Gap(7).Children(func() {
-				icon := ui.Icon(c, groupIcon(g)).FontSize(14).TextColor(t.TextMuted)
-				if g.critical {
-					icon.TextColor(t.Danger)
-				}
-				ui.Text(c, g.label).FontSize(13).Bold().SingleLine().Grow(1).Shrink(1).MinWidth(0)
-				if g.critical {
-					ui.Text(c, "Needs care").FontSize(10).FontWeight(600).Padding(2, 6).Radius(8).
-						Background(t.Danger.Alpha(0.14)).TextColor(t.Danger).Shrink(0)
-				}
-			})
-			// The counts, the progress and the count viewed read in one
-			// line, the strip above the block saying them too.
-			ui.Row(c).Gap(8).Children(func() {
-				ui.RichText(c,
-					ui.Span{Text: plural(len(files), "file") + " · ", Color: t.TextMuted},
-					ui.Span{Text: "+" + thousands(adds), Color: pal.addText},
-					ui.Span{Text: " −" + thousands(dels), Color: pal.delText},
-				).FontSize(11).FontWeight(600).Shrink(0)
-				ui.Box(c).Height(3).Radius(2).Background(pal.pill).Clip().Grow(1).Children(func() {
-					ui.Box(c).WidthPercent(float32(viewed) / float32(len(files)) * 100).Height(3).Radius(2).Background(pal.viewed)
-				})
-				count := ui.Textf(c, "%d/%d", viewed, len(files)).FontSize(11).TextColor(t.TextMuted).Shrink(0).
-					Tooltip(itoa(viewed) + " of " + plural(len(files), "file") + " viewed")
-				if viewed == len(files) {
-					count.TextColor(pal.viewed)
-				}
-			})
-		})
-		if g.summary != "" {
-			ui.Column(c).Padding(0, 12, 6).Gap(2).Children(func() {
-				summary := ui.Text(c, g.summary).FontSize(12).TextColor(t.Text.Alpha(0.75)).Selectable()
-				if !whole {
-					summary.MaxLines(4)
-				}
-				if summaryLines(g.summary) > 4 {
-					label := "Show more"
-					if whole {
-						label = "Show less"
-					}
-					b := ui.ButtonBase(c).Padding(2, 0).AlignSelf(ui.Start).Label(label)
-					if b.Hovered() {
-						b.TextColor(t.Text)
-					}
-					b.Children(func() {
-						ui.Text(c, label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
-					})
-					if b.Clicked() {
-						w.asideMore[g.key] = !whole
-					}
-				}
-			})
-		}
-		ui.Row(c).Gap(4).Padding(0, 10, 6).Children(func() {
-			label := "Collapse all"
-			if allCollapsed {
-				label = "Expand all"
-			}
-			b := ui.ButtonBase(c).Padding(3, 8).Radius(6).Label(label)
-			if b.Hovered() {
-				b.Background(pal.hover)
-			}
-			b.Children(func() {
-				ui.Text(c, label).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
-			})
-			if b.Clicked() {
-				for _, i := range files {
-					w.files[i].collapsed = !allCollapsed
-				}
-				w.rowsDirty = true
-			}
-		})
-		ui.List(c, &w.asideList, len(files), func(i int) { w.asideFileRow(c, pal, files[i]) }).
-			Grow(1).Padding(0, 6, 6).Label("Files in " + g.label)
-	})
-}
-
-// asideFileRow is a file of the group in the aside: its name, its counts,
-// and how far it is reviewed. A click shows it in the diffs.
-func (w *window) asideFileRow(c *ui.Context, pal *palette, i int) {
-	t := c.Theme()
-	f := w.files[i]
-	here := i == w.current
-	viewed := w.isViewed(f)
-	row := ui.Row(c).MinHeight(30).Padding(0, 10, 0, 8).Gap(6).Radius(6).Cursor(ui.CursorPointer).
-		Label(f.Path).Tooltip(f.Path)
-	switch {
-	case here:
-		row.Background(t.Accent.Alpha(0.12))
-	case row.Hovered():
-		row.Background(pal.hover)
-	}
-	if row.Clicked() {
-		w.revealFile(i)
-		// The keys go back to the diffs, which the click showed.
-		w.focusList = true
-	}
-	row.Children(func() {
-		fileIcon(c, f, 13)
-		name := ui.Text(c, f.Name()).FontSize(12).SingleLine().Grow(1).Shrink(1).MinWidth(0)
-		switch {
-		case here:
-			name.FontWeight(600)
-		case viewed || f.collapsed:
-			name.TextColor(t.TextMuted)
-		}
-		if countable(f) && (f.Additions > 0 || f.Deletions > 0) {
-			ui.Text(c, "+"+thousands(f.Additions)).Font(w.codeFont()).FontSize(10).FontWeight(600).TextColor(pal.addText).Shrink(0)
-			ui.Text(c, "−"+thousands(f.Deletions)).Font(w.codeFont()).FontSize(10).FontWeight(600).TextColor(pal.delText).Shrink(0)
-		}
-		ui.Text(c, string(rune(f.Status))).Font(w.codeFont()).FontSize(10).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
-		if len(w.notes[f.Path]) > 0 {
-			ui.Box(c).Size(5, 5).Radius(3).Background(t.Accent).Shrink(0).Tooltip("Has notes from the AI review")
-		}
-		if viewed {
-			ui.Icon(c, iconCheck).FontSize(11).TextColor(pal.viewed).Shrink(0)
-		}
-	})
-}
-
-// asideChars is how many characters a line of the summary takes in the
-// aside.
-const asideChars = 34
-
-// summaryLines estimates how many lines a summary takes in the aside.
-func summaryLines(summary string) int {
-	return strings.Count(summary, "\n") + (len(summary)+asideChars-1)/asideChars
-}
-
-// asideResizer drags the aside wider or narrower, and keeps its width.
-func (w *window) asideResizer(c *ui.Context, pal *palette) {
-	ui.Box(c).Width(1).Shrink(0).Background(pal.cardBorder).Children(func() {
-		handle := ui.Box(c).Absolute().Top(0).Bottom(0).Left(-4).Width(9).Cursor(ui.CursorResizeEW)
-		if dx, _, held := handle.Dragged(); held {
-			w.asideDrag += dx
-			w.asideWidth = min(max(w.asideDrag, asideMin), asideMax)
-			w.asideMoved = true
-		} else if _, _, done := handle.DragEnded(); done && w.asideMoved {
-			// The width the drag left is the one kept.
-			w.asideMoved = false
-			w.asideDrag = w.asideWidth
-			go state.setAsideWidth(w.asideWidth)
-		}
-	})
 }
 
 // categoryAccent names the tone of a category's icon: a theme has no color for
@@ -1034,12 +701,6 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 	t := c.Theme()
 	if gi < 0 || gi >= len(w.groups) {
 		ui.Box(c).Height(0)
-		return
-	}
-	if w.asideOn() {
-		// The aside heads the group beside its files, so the block needs
-		// no band of its own: a gap spaces it from the one above.
-		ui.Box(c).Height(blockGap).Background(pal.appBg)
 		return
 	}
 	g := &w.groups[gi]

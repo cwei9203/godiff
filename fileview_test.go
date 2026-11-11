@@ -300,40 +300,6 @@ func TestFileViewSummaryFolds(t *testing.T) {
 	}
 }
 
-// TestFileViewSelectsFromTheAside checks the files of the group listed
-// beside the diffs: a click shows that file, alone, and the navigation bar
-// names it.
-func TestFileViewSelectsFromTheAside(t *testing.T) {
-	w, tt := wideWindow(t, fileViewRepo(t))
-	w.settings.FileView = fileViewOne
-	w.regroup()
-	w.current = 0
-	tt.Frame()
-	tt.Frame()
-	if !w.asideOn() {
-		t.Fatalf("no aside in %v wide", w.columnW)
-	}
-	files := w.groupFiles(w.topGroup())
-	if len(files) < 2 {
-		t.Fatalf("%d files in the group of the file shown", len(files))
-	}
-	other := files[1]
-	if err := tt.Click(w.files[other].Path); err != nil {
-		t.Fatal(err)
-	}
-	tt.Frame()
-	tt.Frame()
-	if w.current != other {
-		t.Errorf("%s shows, want %s", w.files[w.current].Path, w.files[other].Path)
-	}
-	if got := countRows(w, rowHeader); got != 1 {
-		t.Errorf("%d file cards, want 1", got)
-	}
-	if at, total := w.fileNav(); at != 2 || total != len(w.files) {
-		t.Errorf("%d / %d, want 2 / %d", at, total, len(w.files))
-	}
-}
-
 // TestFileViewSelectsFromTheTree checks a file of the Files section: it
 // shows alone, the navigation bar counting 1 of 1.
 func TestFileViewSelectsFromTheTree(t *testing.T) {
@@ -361,30 +327,29 @@ func TestFileViewSnapshots(t *testing.T) {
 	if os.Getenv("GODIFF_SNAPSHOTS") == "" {
 		t.Skip("no GODIFF_SNAPSHOTS")
 	}
-	// One file at a time, wide enough for the aside of the group.
-	w, tt := newTestWindow(t, fileViewRepo(t))
-	tt.SetSize(1600, 1000)
-	w.sidebarShown = false
-	w.groupPref = groupKind
-	w.settings.FileView = fileViewOne
-	w.regroup()
-	w.current = 3
-	tt.Frame()
-	tt.Frame()
+	one := func(width, height int) (*window, *ui.Tester) {
+		w, tt := newTestWindow(t, fileViewRepo(t))
+		tt.SetSize(width, height)
+		w.groupPref = groupKind
+		w.settings.FileView = fileViewOne
+		w.regroup()
+		w.current = 3
+		tt.Frame()
+		tt.Frame()
+		return w, tt
+	}
+	// One file at a time, a window wide enough for the sidebar and the
+	// diffs beside it.
+	_, tt := one(1600, 1000)
 	snapshot(t, tt, "fileview-one")
-	// The same, in a window too narrow for the aside.
-	w, tt = newTestWindow(t, fileViewRepo(t))
-	w.groupPref = groupKind
-	w.settings.FileView = fileViewOne
-	w.regroup()
-	w.current = 3
-	tt.Frame()
-	tt.Frame()
+	// The same, narrower.
+	_, tt = one(1280, 860)
 	snapshot(t, tt, "fileview-one-narrow")
-	// Every file, one under the other.
-	w, tt = newTestWindow(t, fileViewRepo(t))
+	// Every file, one under the other, from the top of the review.
+	w, tt := newTestWindow(t, fileViewRepo(t))
 	w.groupPref = groupKind
 	w.regroup()
+	w.list.ScrollTo(0, ui.Start)
 	tt.Frame()
 	tt.Frame()
 	snapshot(t, tt, "fileview-stack")

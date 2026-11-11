@@ -232,6 +232,7 @@ const (
 
 // buildRows lays out the rows of the files.
 func (w *window) buildRows() {
+	had := len(w.rows)
 	rows := w.rows[:0]
 	if w.source.kind == sourceCommit && w.commit != nil {
 		// The message scrolls with the changes, long as it may be.
@@ -259,7 +260,9 @@ func (w *window) buildRows() {
 			continue
 		}
 		idx := int32(fi)
-		if f.group >= 0 && f.group != group {
+		// One file at a time needs no band heading its group: the bar above
+		// the file names the group it belongs to already.
+		if f.group >= 0 && f.group != group && shown < 0 {
 			group = f.group
 			rows = append(rows, row{kind: rowGroup, file: idx, gap: int32(group)})
 		}
@@ -366,6 +369,12 @@ func (w *window) buildRows() {
 	}
 	w.rows = rows
 	w.rowsDirty = false
+	if had == 0 && len(rows) > 0 {
+		// Rows where there were none open the surface at its top, where the
+		// band of the first group heads it: the list pins the header of the
+		// file under the band, and nothing hangs above the top.
+		w.list.ScrollTo(0, ui.Start)
+	}
 }
 
 // threads returns the review threads of a file of the pull request shown.
