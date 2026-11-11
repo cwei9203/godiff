@@ -16,7 +16,7 @@ func welcomeWith(t *testing.T, err error, roots ...string) (*welcome, *ui.Tester
 	t.Helper()
 	state.clearRecent()
 	for i := len(roots) - 1; i >= 0; i-- {
-		state.addRecent(roots[i])
+		state.addRecent(roots[i], maxRecentDefault)
 	}
 	t.Cleanup(state.clearRecent)
 	v := &welcome{err: err, choice: -1}

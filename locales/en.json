@@ -350,5 +350,358 @@
   "followSystem": "Follow the System",
   "@followSystem": {
     "description": "The Language submenu: the interface takes the language of the system's languages."
+  },
+
+  "settingsMenuItem": "Settings…",
+  "@settingsMenuItem": {
+    "description": "The app menu's item that opens the window of the settings, with the keys that do, and the title of that window."
+  },
+  "settingsCommand": "Open settings",
+  "@settingsCommand": {
+    "description": "The command bar's action opening the window of the settings."
+  },
+  "configFile": "Open Config File…",
+  "@configFile": {
+    "description": "The app menu's item opening the settings file itself, in the editor the settings name."
+  },
+
+  "settingsAppearance": "Appearance",
+  "@settingsAppearance": {
+    "description": "The settings window: the page of the colors, the language, the code's font and the layouts."
+  },
+  "settingsReview": "Review",
+  "@settingsReview": {
+    "description": "The settings window: the page of what an agent is asked for, and of what the review shows of it."
+  },
+  "settingsAI": "AI",
+  "@settingsAI": {
+    "description": "The settings window: the page of the agent and the model."
+  },
+  "settingsGitHub": "GitHub",
+  "@settingsGitHub": {
+    "description": "The settings window: the page of the token that reads and reviews pull requests."
+  },
+  "settingsWorkspace": "Workspace",
+  "@settingsWorkspace": {
+    "description": "The settings window: the page of the sidebar, of how a review opens, and of what is remembered of it."
+  },
+  "settingsAdvanced": "Advanced",
+  "@settingsAdvanced": {
+    "description": "The settings window: the page of the cache, of the logs, and of the command line tool."
+  },
+
+  "settingsLanguage": "Interface language",
+  "@settingsLanguage": {
+    "description": "The Appearance page: the language the app says its own words in."
+  },
+  "settingsCodeFont": "Code font",
+  "@settingsCodeFont": {
+    "description": "The Appearance page: the font of the diffs."
+  },
+  "settingsCodeFontDefault": "System monospace",
+  "@settingsCodeFontDefault": {
+    "description": "The Appearance page: what the field of the code font shows while it is empty."
+  },
+  "settingsCodeFontDetail": "The font of the diffs. Empty, the system's own monospace.",
+  "@settingsCodeFontDetail": {
+    "description": "The Appearance page: what the field of the code font says under it."
+  },
+  "settingsFontSize": "Font size",
+  "@settingsFontSize": {
+    "description": "The Appearance page: how large the code of the diffs is drawn."
+  },
+  "settingsDiffLayout": "Diff layout",
+  "@settingsDiffLayout": {
+    "description": "The Appearance page: the two halves of a changed line, side by side or one under the other."
+  },
+  "settingsFileView": "File view",
+  "@settingsFileView": {
+    "description": "The Appearance page: one file at a time, or every file stacked."
+  },
+
+  "settingsReviewDetail": "What the agent is asked for, and what the review shows of it.",
+  "@settingsReviewDetail": {
+    "description": "The Review page: what the settings under it decide."
+  },
+  "settingsSmartGrouping": "Smart grouping",
+  "@settingsSmartGrouping": {
+    "description": "The Review page: the groups of the files are asked of an agent, rather than made by the rules alone."
+  },
+  "settingsOverallSummary": "Overall summary",
+  "@settingsOverallSummary": {
+    "description": "The Review page: the review asks for the summary of the whole change."
+  },
+  "settingsSummaryExpanded": "Open the summary",
+  "@settingsSummaryExpanded": {
+    "description": "The Review page: the summary shows in full at once, rather than its first line."
+  },
+  "settingsNotes": "Notes on files and lines",
+  "@settingsNotes": {
+    "description": "The Review page: the review looks for what deserves attention, and the surface draws it."
+  },
+  "settingsReviewLanguage": "Review language",
+  "@settingsReviewLanguage": {
+    "description": "The Review page: the language the agent writes its review in."
+  },
+  "settingsMaxFiles": "Files an agent groups",
+  "@settingsMaxFiles": {
+    "description": "The Review page: how many files an agent is asked to group at most."
+  },
+  "settingsMaxFilesDetail": "Beyond this many files, the rules group them instead.",
+  "@settingsMaxFilesDetail": {
+    "description": "The Review page: what the count of files an agent groups says under it."
+  },
+  "settingsAutoAnalyze": "Review with AI as a repository opens",
+  "@settingsAutoAnalyze": {
+    "description": "The Review page: the agent is asked for its review as a repository opens, rather than when the card is asked."
+  },
+
+  "settingsAIDetail": "The agent that reads the changes, and the one that repairs the comments.",
+  "@settingsAIDetail": {
+    "description": "The AI page: what the settings under it decide."
+  },
+  "settingsNoAgent": "No coding agent was found on this machine. Install one, then Rescan.",
+  "@settingsNoAgent": {
+    "description": "The AI page: no agent is installed, and what to do about it."
+  },
+  "settingsAgent": "Agent",
+  "@settingsAgent": {
+    "description": "The AI page: the agent that reviews the changes."
+  },
+  "settingsRescan": "Rescan",
+  "@settingsRescan": {
+    "description": "The AI page: the button that looks for the agents and their models again."
+  },
+  "settingsLookedForAgents": "{count, plural, =0 {No agent is installed} one {# agent is installed} other {# agents are installed}}",
+  "@settingsLookedForAgents": {
+    "description": "The AI page: how many coding agents were found on this machine.",
+    "placeholders": {
+      "count": { "type": "int", "example": "2" }
+    }
+  },
+  "settingsModel": "Model",
+  "@settingsModel": {
+    "description": "The AI page: the model the agent reviews with."
+  },
+  "settingsFixAgent": "Agent for fixes",
+  "@settingsFixAgent": {
+    "description": "The AI page: the agent that repairs the comments of a review."
+  },
+  "settingsFixAgentDetail": "Empty, the agent that reviews repairs as well.",
+  "@settingsFixAgentDetail": {
+    "description": "The AI page: what the field of the agent for fixes says under it."
+  },
+  "settingsFixModel": "Model for fixes",
+  "@settingsFixModel": {
+    "description": "The AI page: the model the agent repairs with."
+  },
+  "settingsReadOnlyNote": "The review only reads the changes; a repair writes in the working tree.",
+  "@settingsReadOnlyNote": {
+    "description": "The AI page: what the review and a repair do with the repository."
+  },
+  "settingsAutomatic": "Automatic",
+  "@settingsAutomatic": {
+    "description": "The AI page: no agent is chosen, and the first one installed is used."
+  },
+  "settingsNotInstalled": "{agent} (not installed)",
+  "@settingsNotInstalled": {
+    "description": "The AI page: an agent the settings name, that this machine does not have.",
+    "placeholders": {
+      "agent": { "type": "String", "example": "Codex" }
+    }
+  },
+  "settingsNoModel": "No agent to take a model from: choose one above.",
+  "@settingsNoModel": {
+    "description": "The AI page: there is no agent whose models could be listed."
+  },
+  "settingsDefaultModel": "The agent's default",
+  "@settingsDefaultModel": {
+    "description": "The AI page: no model is chosen, and the agent's own default is used."
+  },
+  "settingsModelsLoading": "Asking the agent for its models…",
+  "@settingsModelsLoading": {
+    "description": "The AI page: the agent is being asked which models it has."
+  },
+  "settingsModelTyped": "The agent listed no model: type one.",
+  "@settingsModelTyped": {
+    "description": "The AI page: the model is typed by hand, as the agent lists none."
+  },
+  "settingsModelPlaceholder": "A model id, as sonnet",
+  "@settingsModelPlaceholder": {
+    "description": "The AI page: what the field of a model typed by hand shows while it is empty."
+  },
+  "settingsModelsFailed": "The agent could not list its models: type one. {reason}",
+  "@settingsModelsFailed": {
+    "description": "The AI page: the agent failed to list its models, and why.",
+    "placeholders": {
+      "reason": { "type": "String", "example": "codex is not logged in" }
+    }
+  },
+
+  "settingsGitHubDetail": "The token that reads and reviews pull requests.",
+  "@settingsGitHubDetail": {
+    "description": "The GitHub page: what the settings under it decide."
+  },
+  "settingsToken": "Token",
+  "@settingsToken": {
+    "description": "The GitHub page: the personal access token GitHub is read and written with."
+  },
+  "settingsTokenPlaceholder": "A personal access token",
+  "@settingsTokenPlaceholder": {
+    "description": "The GitHub page: what the field of the token shows while it is empty."
+  },
+  "settingsClearToken": "Clear",
+  "@settingsClearToken": {
+    "description": "The GitHub page: the button putting the token away."
+  },
+  "settingsTokenDetail": "Empty, the token of the GitHub CLI is used, when it is signed in.",
+  "@settingsTokenDetail": {
+    "description": "The GitHub page: what the field of the token says under it."
+  },
+  "settingsGitHubChecking": "Checking the token…",
+  "@settingsGitHubChecking": {
+    "description": "The GitHub page: GitHub is being asked whose the token is."
+  },
+  "settingsGitHubSignedIn": "Signed in as {login}",
+  "@settingsGitHubSignedIn": {
+    "description": "The GitHub page: the account the token is.",
+    "placeholders": {
+      "login": { "type": "String", "example": "egoist" }
+    }
+  },
+  "settingsGitHubBad": "GitHub refused the token: {reason}",
+  "@settingsGitHubBad": {
+    "description": "The GitHub page: the token GitHub would not take, and why.",
+    "placeholders": {
+      "reason": { "type": "String", "example": "Bad credentials" }
+    }
+  },
+  "settingsGitHubNoToken": "No token: pull requests are read from what the repository's remote serves.",
+  "@settingsGitHubNoToken": {
+    "description": "The GitHub page: there is no token, and what the app does without one."
+  },
+
+  "settingsWorkspaceDetail": "The sidebar, how a review opens, and what is remembered of it.",
+  "@settingsWorkspaceDetail": {
+    "description": "The Workspace page: what the settings under it decide."
+  },
+  "settingsShowSidebar": "Show the sidebar",
+  "@settingsShowSidebar": {
+    "description": "The Workspace page: a review opens with its sidebar."
+  },
+  "settingsSidebarSide": "Sidebar position",
+  "@settingsSidebarSide": {
+    "description": "The Workspace page: the side of the window the sidebar stands on."
+  },
+  "settingsLeft": "Left",
+  "@settingsLeft": {
+    "description": "The Workspace page: the sidebar stands on the left."
+  },
+  "settingsRight": "Right",
+  "@settingsRight": {
+    "description": "The Workspace page: the sidebar stands on the right."
+  },
+  "settingsCollapseGroups": "Start with the groups folded",
+  "@settingsCollapseGroups": {
+    "description": "The Workspace page: a review opens with the groups of its sidebar folded."
+  },
+  "settingsCollapseFiles": "Start with the files closed",
+  "@settingsCollapseFiles": {
+    "description": "The Workspace page: a review opens with the cards of its files closed."
+  },
+  "settingsRestorePosition": "Come back to the file read last",
+  "@settingsRestorePosition": {
+    "description": "The Workspace page: a repository opens at the file shown when it was closed last."
+  },
+  "settingsMaxRecent": "Repositories in Open Recent",
+  "@settingsMaxRecent": {
+    "description": "The Workspace page: how many repositories File → Open Recent lists."
+  },
+  "settingsMaxRecentDetail": "The newest of them.",
+  "@settingsMaxRecentDetail": {
+    "description": "The Workspace page: what the count of recent repositories says under it."
+  },
+
+  "settingsAdvancedDetail": "The cache, the logs, and the command line tool.",
+  "@settingsAdvancedDetail": {
+    "description": "The Advanced page: what the settings under it decide."
+  },
+  "settingsCacheUnknown": "Reading the cache…",
+  "@settingsCacheUnknown": {
+    "description": "The Advanced page: how much room the cache takes, before it is read."
+  },
+  "settingsCacheUsage": "The cache takes {size}.",
+  "@settingsCacheUsage": {
+    "description": "The Advanced page: how much room the reviews and the logs take.",
+    "placeholders": {
+      "size": { "type": "String", "example": "4.1 MB" }
+    }
+  },
+  "settingsCacheCleared": "Cache cleared: {size} freed.",
+  "@settingsCacheCleared": {
+    "description": "The Advanced page: what clearing the cache freed.",
+    "placeholders": {
+      "size": { "type": "String", "example": "4.1 MB" }
+    }
+  },
+  "settingsClearCache": "Clear cache",
+  "@settingsClearCache": {
+    "description": "The Advanced page: the button that deletes the saved reviews and the logs, with the button of the alert that does it."
+  },
+  "settingsClearCacheTitle": "Clear the cache?",
+  "@settingsClearCacheTitle": {
+    "description": "The alert the Advanced page asks before the cache goes: its title."
+  },
+  "settingsClearCacheDetail": "The saved reviews and the logs of the repairs go. The repositories stay as they are.",
+  "@settingsClearCacheDetail": {
+    "description": "The alert the Advanced page asks before the cache goes: what it deletes, and what it leaves."
+  },
+  "settingsCancel": "Cancel",
+  "@settingsCancel": {
+    "description": "The button of an alert that leaves what it asks alone."
+  },
+  "settingsAnalysesKept": "Reviews kept in the cache",
+  "@settingsAnalysesKept": {
+    "description": "The Advanced page: how many reviews of each repository are kept."
+  },
+  "settingsAnalysesKeptDetail": "Of each repository, the newest.",
+  "@settingsAnalysesKeptDetail": {
+    "description": "The Advanced page: which reviews of a repository the cache keeps."
+  },
+  "settingsRunsKept": "Fix logs kept",
+  "@settingsRunsKept": {
+    "description": "The Advanced page: how many logs of the repairs are kept in all."
+  },
+  "settingsRunsKeptDetail": "The newest runs of the agents, in all.",
+  "@settingsRunsKeptDetail": {
+    "description": "The Advanced page: which run logs the cache keeps."
+  },
+  "settingsLogFolder": "Logs",
+  "@settingsLogFolder": {
+    "description": "The Advanced page: where the logs of the repairs are."
+  },
+  "settingsOpenLogFolder": "Open the folder",
+  "@settingsOpenLogFolder": {
+    "description": "The Advanced page: the button opening the folder of the logs."
+  },
+  "settingsInstallCLI": "Install Command Line Tool…",
+  "@settingsInstallCLI": {
+    "description": "The Advanced page: the button installing the godiff command in the shell's path."
+  },
+  "settingsOpenFailed": "Could not open the folder",
+  "@settingsOpenFailed": {
+    "description": "The alert shown when the folder of the logs cannot be opened."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "The title of the window of the settings, in its title bar and in the window's list."
+  },
+  "settingsClearCacheConfirm": "Clear",
+  "@settingsClearCacheConfirm": {
+    "description": "The alert the Advanced page asks before the cache goes: the button that deletes what the app wrote."
+  },
+  "settingsGitHubUnchecked": "Press Enter to have GitHub check the token.",
+  "@settingsGitHubUnchecked": {
+    "description": "The GitHub page: a token is typed, and GitHub was not asked whose it is yet."
   }
 }

@@ -1117,3 +1117,1187 @@ func FollowSystem() string { return In(i18n.Locale()).FollowSystem() }
 func (msgs Messages) FollowSystem() string {
 	return Catalog.Format(msgs.locale, "followSystem", nil)
 }
+
+// SettingsMenuItem says "Settings…"
+// in the language the app shows.
+//
+// The app menu's item that opens the window of the settings, with the keys
+// that do, and the title of that window.
+func SettingsMenuItem() string { return In(i18n.Locale()).SettingsMenuItem() }
+
+// SettingsMenuItem says "Settings…"
+// in the language of msgs.
+//
+// The app menu's item that opens the window of the settings, with the keys
+// that do, and the title of that window.
+func (msgs Messages) SettingsMenuItem() string {
+	return Catalog.Format(msgs.locale, "settingsMenuItem", nil)
+}
+
+// SettingsCommand says "Open settings"
+// in the language the app shows.
+//
+// The command bar's action opening the window of the settings.
+func SettingsCommand() string { return In(i18n.Locale()).SettingsCommand() }
+
+// SettingsCommand says "Open settings"
+// in the language of msgs.
+//
+// The command bar's action opening the window of the settings.
+func (msgs Messages) SettingsCommand() string {
+	return Catalog.Format(msgs.locale, "settingsCommand", nil)
+}
+
+// ConfigFile says "Open Config File…"
+// in the language the app shows.
+//
+// The app menu's item opening the settings file itself, in the editor the
+// settings name.
+func ConfigFile() string { return In(i18n.Locale()).ConfigFile() }
+
+// ConfigFile says "Open Config File…"
+// in the language of msgs.
+//
+// The app menu's item opening the settings file itself, in the editor the
+// settings name.
+func (msgs Messages) ConfigFile() string {
+	return Catalog.Format(msgs.locale, "configFile", nil)
+}
+
+// SettingsAppearance says "Appearance"
+// in the language the app shows.
+//
+// The settings window: the page of the colors, the language, the code's
+// font and the layouts.
+func SettingsAppearance() string { return In(i18n.Locale()).SettingsAppearance() }
+
+// SettingsAppearance says "Appearance"
+// in the language of msgs.
+//
+// The settings window: the page of the colors, the language, the code's
+// font and the layouts.
+func (msgs Messages) SettingsAppearance() string {
+	return Catalog.Format(msgs.locale, "settingsAppearance", nil)
+}
+
+// SettingsReview says "Review"
+// in the language the app shows.
+//
+// The settings window: the page of what an agent is asked for, and of what
+// the review shows of it.
+func SettingsReview() string { return In(i18n.Locale()).SettingsReview() }
+
+// SettingsReview says "Review"
+// in the language of msgs.
+//
+// The settings window: the page of what an agent is asked for, and of what
+// the review shows of it.
+func (msgs Messages) SettingsReview() string {
+	return Catalog.Format(msgs.locale, "settingsReview", nil)
+}
+
+// SettingsAI says "AI"
+// in the language the app shows.
+//
+// The settings window: the page of the agent and the model.
+func SettingsAI() string { return In(i18n.Locale()).SettingsAI() }
+
+// SettingsAI says "AI"
+// in the language of msgs.
+//
+// The settings window: the page of the agent and the model.
+func (msgs Messages) SettingsAI() string {
+	return Catalog.Format(msgs.locale, "settingsAI", nil)
+}
+
+// SettingsGitHub says "GitHub"
+// in the language the app shows.
+//
+// The settings window: the page of the token that reads and reviews pull
+// requests.
+func SettingsGitHub() string { return In(i18n.Locale()).SettingsGitHub() }
+
+// SettingsGitHub says "GitHub"
+// in the language of msgs.
+//
+// The settings window: the page of the token that reads and reviews pull
+// requests.
+func (msgs Messages) SettingsGitHub() string {
+	return Catalog.Format(msgs.locale, "settingsGitHub", nil)
+}
+
+// SettingsWorkspace says "Workspace"
+// in the language the app shows.
+//
+// The settings window: the page of the sidebar, of how a review opens, and
+// of what is remembered of it.
+func SettingsWorkspace() string { return In(i18n.Locale()).SettingsWorkspace() }
+
+// SettingsWorkspace says "Workspace"
+// in the language of msgs.
+//
+// The settings window: the page of the sidebar, of how a review opens, and
+// of what is remembered of it.
+func (msgs Messages) SettingsWorkspace() string {
+	return Catalog.Format(msgs.locale, "settingsWorkspace", nil)
+}
+
+// SettingsAdvanced says "Advanced"
+// in the language the app shows.
+//
+// The settings window: the page of the cache, of the logs, and of the
+// command line tool.
+func SettingsAdvanced() string { return In(i18n.Locale()).SettingsAdvanced() }
+
+// SettingsAdvanced says "Advanced"
+// in the language of msgs.
+//
+// The settings window: the page of the cache, of the logs, and of the
+// command line tool.
+func (msgs Messages) SettingsAdvanced() string {
+	return Catalog.Format(msgs.locale, "settingsAdvanced", nil)
+}
+
+// SettingsLanguage says "Interface language"
+// in the language the app shows.
+//
+// The Appearance page: the language the app says its own words in.
+func SettingsLanguage() string { return In(i18n.Locale()).SettingsLanguage() }
+
+// SettingsLanguage says "Interface language"
+// in the language of msgs.
+//
+// The Appearance page: the language the app says its own words in.
+func (msgs Messages) SettingsLanguage() string {
+	return Catalog.Format(msgs.locale, "settingsLanguage", nil)
+}
+
+// SettingsCodeFont says "Code font"
+// in the language the app shows.
+//
+// The Appearance page: the font of the diffs.
+func SettingsCodeFont() string { return In(i18n.Locale()).SettingsCodeFont() }
+
+// SettingsCodeFont says "Code font"
+// in the language of msgs.
+//
+// The Appearance page: the font of the diffs.
+func (msgs Messages) SettingsCodeFont() string {
+	return Catalog.Format(msgs.locale, "settingsCodeFont", nil)
+}
+
+// SettingsCodeFontDefault says "System monospace"
+// in the language the app shows.
+//
+// The Appearance page: what the field of the code font shows while it is
+// empty.
+func SettingsCodeFontDefault() string { return In(i18n.Locale()).SettingsCodeFontDefault() }
+
+// SettingsCodeFontDefault says "System monospace"
+// in the language of msgs.
+//
+// The Appearance page: what the field of the code font shows while it is
+// empty.
+func (msgs Messages) SettingsCodeFontDefault() string {
+	return Catalog.Format(msgs.locale, "settingsCodeFontDefault", nil)
+}
+
+// SettingsCodeFontDetail says "The font of the diffs. Empty, the system's own monospace."
+// in the language the app shows.
+//
+// The Appearance page: what the field of the code font says under it.
+func SettingsCodeFontDetail() string { return In(i18n.Locale()).SettingsCodeFontDetail() }
+
+// SettingsCodeFontDetail says "The font of the diffs. Empty, the system's own monospace."
+// in the language of msgs.
+//
+// The Appearance page: what the field of the code font says under it.
+func (msgs Messages) SettingsCodeFontDetail() string {
+	return Catalog.Format(msgs.locale, "settingsCodeFontDetail", nil)
+}
+
+// SettingsFontSize says "Font size"
+// in the language the app shows.
+//
+// The Appearance page: how large the code of the diffs is drawn.
+func SettingsFontSize() string { return In(i18n.Locale()).SettingsFontSize() }
+
+// SettingsFontSize says "Font size"
+// in the language of msgs.
+//
+// The Appearance page: how large the code of the diffs is drawn.
+func (msgs Messages) SettingsFontSize() string {
+	return Catalog.Format(msgs.locale, "settingsFontSize", nil)
+}
+
+// SettingsDiffLayout says "Diff layout"
+// in the language the app shows.
+//
+// The Appearance page: the two halves of a changed line, side by side or
+// one under the other.
+func SettingsDiffLayout() string { return In(i18n.Locale()).SettingsDiffLayout() }
+
+// SettingsDiffLayout says "Diff layout"
+// in the language of msgs.
+//
+// The Appearance page: the two halves of a changed line, side by side or
+// one under the other.
+func (msgs Messages) SettingsDiffLayout() string {
+	return Catalog.Format(msgs.locale, "settingsDiffLayout", nil)
+}
+
+// SettingsFileView says "File view"
+// in the language the app shows.
+//
+// The Appearance page: one file at a time, or every file stacked.
+func SettingsFileView() string { return In(i18n.Locale()).SettingsFileView() }
+
+// SettingsFileView says "File view"
+// in the language of msgs.
+//
+// The Appearance page: one file at a time, or every file stacked.
+func (msgs Messages) SettingsFileView() string {
+	return Catalog.Format(msgs.locale, "settingsFileView", nil)
+}
+
+// SettingsReviewDetail says "What the agent is asked for, and what the review shows of it."
+// in the language the app shows.
+//
+// The Review page: what the settings under it decide.
+func SettingsReviewDetail() string { return In(i18n.Locale()).SettingsReviewDetail() }
+
+// SettingsReviewDetail says "What the agent is asked for, and what the review shows of it."
+// in the language of msgs.
+//
+// The Review page: what the settings under it decide.
+func (msgs Messages) SettingsReviewDetail() string {
+	return Catalog.Format(msgs.locale, "settingsReviewDetail", nil)
+}
+
+// SettingsSmartGrouping says "Smart grouping"
+// in the language the app shows.
+//
+// The Review page: the groups of the files are asked of an agent, rather
+// than made by the rules alone.
+func SettingsSmartGrouping() string { return In(i18n.Locale()).SettingsSmartGrouping() }
+
+// SettingsSmartGrouping says "Smart grouping"
+// in the language of msgs.
+//
+// The Review page: the groups of the files are asked of an agent, rather
+// than made by the rules alone.
+func (msgs Messages) SettingsSmartGrouping() string {
+	return Catalog.Format(msgs.locale, "settingsSmartGrouping", nil)
+}
+
+// SettingsOverallSummary says "Overall summary"
+// in the language the app shows.
+//
+// The Review page: the review asks for the summary of the whole change.
+func SettingsOverallSummary() string { return In(i18n.Locale()).SettingsOverallSummary() }
+
+// SettingsOverallSummary says "Overall summary"
+// in the language of msgs.
+//
+// The Review page: the review asks for the summary of the whole change.
+func (msgs Messages) SettingsOverallSummary() string {
+	return Catalog.Format(msgs.locale, "settingsOverallSummary", nil)
+}
+
+// SettingsSummaryExpanded says "Open the summary"
+// in the language the app shows.
+//
+// The Review page: the summary shows in full at once, rather than its first
+// line.
+func SettingsSummaryExpanded() string { return In(i18n.Locale()).SettingsSummaryExpanded() }
+
+// SettingsSummaryExpanded says "Open the summary"
+// in the language of msgs.
+//
+// The Review page: the summary shows in full at once, rather than its first
+// line.
+func (msgs Messages) SettingsSummaryExpanded() string {
+	return Catalog.Format(msgs.locale, "settingsSummaryExpanded", nil)
+}
+
+// SettingsNotes says "Notes on files and lines"
+// in the language the app shows.
+//
+// The Review page: the review looks for what deserves attention, and the
+// surface draws it.
+func SettingsNotes() string { return In(i18n.Locale()).SettingsNotes() }
+
+// SettingsNotes says "Notes on files and lines"
+// in the language of msgs.
+//
+// The Review page: the review looks for what deserves attention, and the
+// surface draws it.
+func (msgs Messages) SettingsNotes() string {
+	return Catalog.Format(msgs.locale, "settingsNotes", nil)
+}
+
+// SettingsReviewLanguage says "Review language"
+// in the language the app shows.
+//
+// The Review page: the language the agent writes its review in.
+func SettingsReviewLanguage() string { return In(i18n.Locale()).SettingsReviewLanguage() }
+
+// SettingsReviewLanguage says "Review language"
+// in the language of msgs.
+//
+// The Review page: the language the agent writes its review in.
+func (msgs Messages) SettingsReviewLanguage() string {
+	return Catalog.Format(msgs.locale, "settingsReviewLanguage", nil)
+}
+
+// SettingsMaxFiles says "Files an agent groups"
+// in the language the app shows.
+//
+// The Review page: how many files an agent is asked to group at most.
+func SettingsMaxFiles() string { return In(i18n.Locale()).SettingsMaxFiles() }
+
+// SettingsMaxFiles says "Files an agent groups"
+// in the language of msgs.
+//
+// The Review page: how many files an agent is asked to group at most.
+func (msgs Messages) SettingsMaxFiles() string {
+	return Catalog.Format(msgs.locale, "settingsMaxFiles", nil)
+}
+
+// SettingsMaxFilesDetail says "Beyond this many files, the rules group them instead."
+// in the language the app shows.
+//
+// The Review page: what the count of files an agent groups says under it.
+func SettingsMaxFilesDetail() string { return In(i18n.Locale()).SettingsMaxFilesDetail() }
+
+// SettingsMaxFilesDetail says "Beyond this many files, the rules group them instead."
+// in the language of msgs.
+//
+// The Review page: what the count of files an agent groups says under it.
+func (msgs Messages) SettingsMaxFilesDetail() string {
+	return Catalog.Format(msgs.locale, "settingsMaxFilesDetail", nil)
+}
+
+// SettingsAutoAnalyze says "Review with AI as a repository opens"
+// in the language the app shows.
+//
+// The Review page: the agent is asked for its review as a repository opens,
+// rather than when the card is asked.
+func SettingsAutoAnalyze() string { return In(i18n.Locale()).SettingsAutoAnalyze() }
+
+// SettingsAutoAnalyze says "Review with AI as a repository opens"
+// in the language of msgs.
+//
+// The Review page: the agent is asked for its review as a repository opens,
+// rather than when the card is asked.
+func (msgs Messages) SettingsAutoAnalyze() string {
+	return Catalog.Format(msgs.locale, "settingsAutoAnalyze", nil)
+}
+
+// SettingsAIDetail says "The agent that reads the changes, and the one that repairs the comments."
+// in the language the app shows.
+//
+// The AI page: what the settings under it decide.
+func SettingsAIDetail() string { return In(i18n.Locale()).SettingsAIDetail() }
+
+// SettingsAIDetail says "The agent that reads the changes, and the one that repairs the comments."
+// in the language of msgs.
+//
+// The AI page: what the settings under it decide.
+func (msgs Messages) SettingsAIDetail() string {
+	return Catalog.Format(msgs.locale, "settingsAIDetail", nil)
+}
+
+// SettingsNoAgent says "No coding agent was found on this machine. Install one, then Rescan."
+// in the language the app shows.
+//
+// The AI page: no agent is installed, and what to do about it.
+func SettingsNoAgent() string { return In(i18n.Locale()).SettingsNoAgent() }
+
+// SettingsNoAgent says "No coding agent was found on this machine. Install one, then Rescan."
+// in the language of msgs.
+//
+// The AI page: no agent is installed, and what to do about it.
+func (msgs Messages) SettingsNoAgent() string {
+	return Catalog.Format(msgs.locale, "settingsNoAgent", nil)
+}
+
+// SettingsAgent says "Agent"
+// in the language the app shows.
+//
+// The AI page: the agent that reviews the changes.
+func SettingsAgent() string { return In(i18n.Locale()).SettingsAgent() }
+
+// SettingsAgent says "Agent"
+// in the language of msgs.
+//
+// The AI page: the agent that reviews the changes.
+func (msgs Messages) SettingsAgent() string {
+	return Catalog.Format(msgs.locale, "settingsAgent", nil)
+}
+
+// SettingsRescan says "Rescan"
+// in the language the app shows.
+//
+// The AI page: the button that looks for the agents and their models again.
+func SettingsRescan() string { return In(i18n.Locale()).SettingsRescan() }
+
+// SettingsRescan says "Rescan"
+// in the language of msgs.
+//
+// The AI page: the button that looks for the agents and their models again.
+func (msgs Messages) SettingsRescan() string {
+	return Catalog.Format(msgs.locale, "settingsRescan", nil)
+}
+
+// SettingsLookedForAgents says "{count, plural, =0 {No agent is installed} one {# agent is installed} other {# agents are installed}}"
+// in the language the app shows.
+//
+// The AI page: how many coding agents were found on this machine.
+func SettingsLookedForAgents(count int) string {
+	return In(i18n.Locale()).SettingsLookedForAgents(count)
+}
+
+// SettingsLookedForAgents says "{count, plural, =0 {No agent is installed} one {# agent is installed} other {# agents are installed}}"
+// in the language of msgs.
+//
+// The AI page: how many coding agents were found on this machine.
+func (msgs Messages) SettingsLookedForAgents(count int) string {
+	return Catalog.Format(msgs.locale, "settingsLookedForAgents", map[string]any{"count": count})
+}
+
+// SettingsModel says "Model"
+// in the language the app shows.
+//
+// The AI page: the model the agent reviews with.
+func SettingsModel() string { return In(i18n.Locale()).SettingsModel() }
+
+// SettingsModel says "Model"
+// in the language of msgs.
+//
+// The AI page: the model the agent reviews with.
+func (msgs Messages) SettingsModel() string {
+	return Catalog.Format(msgs.locale, "settingsModel", nil)
+}
+
+// SettingsFixAgent says "Agent for fixes"
+// in the language the app shows.
+//
+// The AI page: the agent that repairs the comments of a review.
+func SettingsFixAgent() string { return In(i18n.Locale()).SettingsFixAgent() }
+
+// SettingsFixAgent says "Agent for fixes"
+// in the language of msgs.
+//
+// The AI page: the agent that repairs the comments of a review.
+func (msgs Messages) SettingsFixAgent() string {
+	return Catalog.Format(msgs.locale, "settingsFixAgent", nil)
+}
+
+// SettingsFixAgentDetail says "Empty, the agent that reviews repairs as well."
+// in the language the app shows.
+//
+// The AI page: what the field of the agent for fixes says under it.
+func SettingsFixAgentDetail() string { return In(i18n.Locale()).SettingsFixAgentDetail() }
+
+// SettingsFixAgentDetail says "Empty, the agent that reviews repairs as well."
+// in the language of msgs.
+//
+// The AI page: what the field of the agent for fixes says under it.
+func (msgs Messages) SettingsFixAgentDetail() string {
+	return Catalog.Format(msgs.locale, "settingsFixAgentDetail", nil)
+}
+
+// SettingsFixModel says "Model for fixes"
+// in the language the app shows.
+//
+// The AI page: the model the agent repairs with.
+func SettingsFixModel() string { return In(i18n.Locale()).SettingsFixModel() }
+
+// SettingsFixModel says "Model for fixes"
+// in the language of msgs.
+//
+// The AI page: the model the agent repairs with.
+func (msgs Messages) SettingsFixModel() string {
+	return Catalog.Format(msgs.locale, "settingsFixModel", nil)
+}
+
+// SettingsReadOnlyNote says "The review only reads the changes; a repair writes in the working tree."
+// in the language the app shows.
+//
+// The AI page: what the review and a repair do with the repository.
+func SettingsReadOnlyNote() string { return In(i18n.Locale()).SettingsReadOnlyNote() }
+
+// SettingsReadOnlyNote says "The review only reads the changes; a repair writes in the working tree."
+// in the language of msgs.
+//
+// The AI page: what the review and a repair do with the repository.
+func (msgs Messages) SettingsReadOnlyNote() string {
+	return Catalog.Format(msgs.locale, "settingsReadOnlyNote", nil)
+}
+
+// SettingsAutomatic says "Automatic"
+// in the language the app shows.
+//
+// The AI page: no agent is chosen, and the first one installed is used.
+func SettingsAutomatic() string { return In(i18n.Locale()).SettingsAutomatic() }
+
+// SettingsAutomatic says "Automatic"
+// in the language of msgs.
+//
+// The AI page: no agent is chosen, and the first one installed is used.
+func (msgs Messages) SettingsAutomatic() string {
+	return Catalog.Format(msgs.locale, "settingsAutomatic", nil)
+}
+
+// SettingsNotInstalled says "{agent} (not installed)"
+// in the language the app shows.
+//
+// The AI page: an agent the settings name, that this machine does not have.
+func SettingsNotInstalled(agent string) string { return In(i18n.Locale()).SettingsNotInstalled(agent) }
+
+// SettingsNotInstalled says "{agent} (not installed)"
+// in the language of msgs.
+//
+// The AI page: an agent the settings name, that this machine does not have.
+func (msgs Messages) SettingsNotInstalled(agent string) string {
+	return Catalog.Format(msgs.locale, "settingsNotInstalled", map[string]any{"agent": agent})
+}
+
+// SettingsNoModel says "No agent to take a model from: choose one above."
+// in the language the app shows.
+//
+// The AI page: there is no agent whose models could be listed.
+func SettingsNoModel() string { return In(i18n.Locale()).SettingsNoModel() }
+
+// SettingsNoModel says "No agent to take a model from: choose one above."
+// in the language of msgs.
+//
+// The AI page: there is no agent whose models could be listed.
+func (msgs Messages) SettingsNoModel() string {
+	return Catalog.Format(msgs.locale, "settingsNoModel", nil)
+}
+
+// SettingsDefaultModel says "The agent's default"
+// in the language the app shows.
+//
+// The AI page: no model is chosen, and the agent's own default is used.
+func SettingsDefaultModel() string { return In(i18n.Locale()).SettingsDefaultModel() }
+
+// SettingsDefaultModel says "The agent's default"
+// in the language of msgs.
+//
+// The AI page: no model is chosen, and the agent's own default is used.
+func (msgs Messages) SettingsDefaultModel() string {
+	return Catalog.Format(msgs.locale, "settingsDefaultModel", nil)
+}
+
+// SettingsModelsLoading says "Asking the agent for its models…"
+// in the language the app shows.
+//
+// The AI page: the agent is being asked which models it has.
+func SettingsModelsLoading() string { return In(i18n.Locale()).SettingsModelsLoading() }
+
+// SettingsModelsLoading says "Asking the agent for its models…"
+// in the language of msgs.
+//
+// The AI page: the agent is being asked which models it has.
+func (msgs Messages) SettingsModelsLoading() string {
+	return Catalog.Format(msgs.locale, "settingsModelsLoading", nil)
+}
+
+// SettingsModelTyped says "The agent listed no model: type one."
+// in the language the app shows.
+//
+// The AI page: the model is typed by hand, as the agent lists none.
+func SettingsModelTyped() string { return In(i18n.Locale()).SettingsModelTyped() }
+
+// SettingsModelTyped says "The agent listed no model: type one."
+// in the language of msgs.
+//
+// The AI page: the model is typed by hand, as the agent lists none.
+func (msgs Messages) SettingsModelTyped() string {
+	return Catalog.Format(msgs.locale, "settingsModelTyped", nil)
+}
+
+// SettingsModelPlaceholder says "A model id, as sonnet"
+// in the language the app shows.
+//
+// The AI page: what the field of a model typed by hand shows while it is
+// empty.
+func SettingsModelPlaceholder() string { return In(i18n.Locale()).SettingsModelPlaceholder() }
+
+// SettingsModelPlaceholder says "A model id, as sonnet"
+// in the language of msgs.
+//
+// The AI page: what the field of a model typed by hand shows while it is
+// empty.
+func (msgs Messages) SettingsModelPlaceholder() string {
+	return Catalog.Format(msgs.locale, "settingsModelPlaceholder", nil)
+}
+
+// SettingsModelsFailed says "The agent could not list its models: type one. {reason}"
+// in the language the app shows.
+//
+// The AI page: the agent failed to list its models, and why.
+func SettingsModelsFailed(reason string) string {
+	return In(i18n.Locale()).SettingsModelsFailed(reason)
+}
+
+// SettingsModelsFailed says "The agent could not list its models: type one. {reason}"
+// in the language of msgs.
+//
+// The AI page: the agent failed to list its models, and why.
+func (msgs Messages) SettingsModelsFailed(reason string) string {
+	return Catalog.Format(msgs.locale, "settingsModelsFailed", map[string]any{"reason": reason})
+}
+
+// SettingsGitHubDetail says "The token that reads and reviews pull requests."
+// in the language the app shows.
+//
+// The GitHub page: what the settings under it decide.
+func SettingsGitHubDetail() string { return In(i18n.Locale()).SettingsGitHubDetail() }
+
+// SettingsGitHubDetail says "The token that reads and reviews pull requests."
+// in the language of msgs.
+//
+// The GitHub page: what the settings under it decide.
+func (msgs Messages) SettingsGitHubDetail() string {
+	return Catalog.Format(msgs.locale, "settingsGitHubDetail", nil)
+}
+
+// SettingsToken says "Token"
+// in the language the app shows.
+//
+// The GitHub page: the personal access token GitHub is read and written
+// with.
+func SettingsToken() string { return In(i18n.Locale()).SettingsToken() }
+
+// SettingsToken says "Token"
+// in the language of msgs.
+//
+// The GitHub page: the personal access token GitHub is read and written
+// with.
+func (msgs Messages) SettingsToken() string {
+	return Catalog.Format(msgs.locale, "settingsToken", nil)
+}
+
+// SettingsTokenPlaceholder says "A personal access token"
+// in the language the app shows.
+//
+// The GitHub page: what the field of the token shows while it is empty.
+func SettingsTokenPlaceholder() string { return In(i18n.Locale()).SettingsTokenPlaceholder() }
+
+// SettingsTokenPlaceholder says "A personal access token"
+// in the language of msgs.
+//
+// The GitHub page: what the field of the token shows while it is empty.
+func (msgs Messages) SettingsTokenPlaceholder() string {
+	return Catalog.Format(msgs.locale, "settingsTokenPlaceholder", nil)
+}
+
+// SettingsClearToken says "Clear"
+// in the language the app shows.
+//
+// The GitHub page: the button putting the token away.
+func SettingsClearToken() string { return In(i18n.Locale()).SettingsClearToken() }
+
+// SettingsClearToken says "Clear"
+// in the language of msgs.
+//
+// The GitHub page: the button putting the token away.
+func (msgs Messages) SettingsClearToken() string {
+	return Catalog.Format(msgs.locale, "settingsClearToken", nil)
+}
+
+// SettingsTokenDetail says "Empty, the token of the GitHub CLI is used, when it is signed in."
+// in the language the app shows.
+//
+// The GitHub page: what the field of the token says under it.
+func SettingsTokenDetail() string { return In(i18n.Locale()).SettingsTokenDetail() }
+
+// SettingsTokenDetail says "Empty, the token of the GitHub CLI is used, when it is signed in."
+// in the language of msgs.
+//
+// The GitHub page: what the field of the token says under it.
+func (msgs Messages) SettingsTokenDetail() string {
+	return Catalog.Format(msgs.locale, "settingsTokenDetail", nil)
+}
+
+// SettingsGitHubChecking says "Checking the token…"
+// in the language the app shows.
+//
+// The GitHub page: GitHub is being asked whose the token is.
+func SettingsGitHubChecking() string { return In(i18n.Locale()).SettingsGitHubChecking() }
+
+// SettingsGitHubChecking says "Checking the token…"
+// in the language of msgs.
+//
+// The GitHub page: GitHub is being asked whose the token is.
+func (msgs Messages) SettingsGitHubChecking() string {
+	return Catalog.Format(msgs.locale, "settingsGitHubChecking", nil)
+}
+
+// SettingsGitHubSignedIn says "Signed in as {login}"
+// in the language the app shows.
+//
+// The GitHub page: the account the token is.
+func SettingsGitHubSignedIn(login string) string {
+	return In(i18n.Locale()).SettingsGitHubSignedIn(login)
+}
+
+// SettingsGitHubSignedIn says "Signed in as {login}"
+// in the language of msgs.
+//
+// The GitHub page: the account the token is.
+func (msgs Messages) SettingsGitHubSignedIn(login string) string {
+	return Catalog.Format(msgs.locale, "settingsGitHubSignedIn", map[string]any{"login": login})
+}
+
+// SettingsGitHubBad says "GitHub refused the token: {reason}"
+// in the language the app shows.
+//
+// The GitHub page: the token GitHub would not take, and why.
+func SettingsGitHubBad(reason string) string { return In(i18n.Locale()).SettingsGitHubBad(reason) }
+
+// SettingsGitHubBad says "GitHub refused the token: {reason}"
+// in the language of msgs.
+//
+// The GitHub page: the token GitHub would not take, and why.
+func (msgs Messages) SettingsGitHubBad(reason string) string {
+	return Catalog.Format(msgs.locale, "settingsGitHubBad", map[string]any{"reason": reason})
+}
+
+// SettingsGitHubNoToken says "No token: pull requests are read from what the repository's remote serves."
+// in the language the app shows.
+//
+// The GitHub page: there is no token, and what the app does without one.
+func SettingsGitHubNoToken() string { return In(i18n.Locale()).SettingsGitHubNoToken() }
+
+// SettingsGitHubNoToken says "No token: pull requests are read from what the repository's remote serves."
+// in the language of msgs.
+//
+// The GitHub page: there is no token, and what the app does without one.
+func (msgs Messages) SettingsGitHubNoToken() string {
+	return Catalog.Format(msgs.locale, "settingsGitHubNoToken", nil)
+}
+
+// SettingsWorkspaceDetail says "The sidebar, how a review opens, and what is remembered of it."
+// in the language the app shows.
+//
+// The Workspace page: what the settings under it decide.
+func SettingsWorkspaceDetail() string { return In(i18n.Locale()).SettingsWorkspaceDetail() }
+
+// SettingsWorkspaceDetail says "The sidebar, how a review opens, and what is remembered of it."
+// in the language of msgs.
+//
+// The Workspace page: what the settings under it decide.
+func (msgs Messages) SettingsWorkspaceDetail() string {
+	return Catalog.Format(msgs.locale, "settingsWorkspaceDetail", nil)
+}
+
+// SettingsShowSidebar says "Show the sidebar"
+// in the language the app shows.
+//
+// The Workspace page: a review opens with its sidebar.
+func SettingsShowSidebar() string { return In(i18n.Locale()).SettingsShowSidebar() }
+
+// SettingsShowSidebar says "Show the sidebar"
+// in the language of msgs.
+//
+// The Workspace page: a review opens with its sidebar.
+func (msgs Messages) SettingsShowSidebar() string {
+	return Catalog.Format(msgs.locale, "settingsShowSidebar", nil)
+}
+
+// SettingsSidebarSide says "Sidebar position"
+// in the language the app shows.
+//
+// The Workspace page: the side of the window the sidebar stands on.
+func SettingsSidebarSide() string { return In(i18n.Locale()).SettingsSidebarSide() }
+
+// SettingsSidebarSide says "Sidebar position"
+// in the language of msgs.
+//
+// The Workspace page: the side of the window the sidebar stands on.
+func (msgs Messages) SettingsSidebarSide() string {
+	return Catalog.Format(msgs.locale, "settingsSidebarSide", nil)
+}
+
+// SettingsLeft says "Left"
+// in the language the app shows.
+//
+// The Workspace page: the sidebar stands on the left.
+func SettingsLeft() string { return In(i18n.Locale()).SettingsLeft() }
+
+// SettingsLeft says "Left"
+// in the language of msgs.
+//
+// The Workspace page: the sidebar stands on the left.
+func (msgs Messages) SettingsLeft() string {
+	return Catalog.Format(msgs.locale, "settingsLeft", nil)
+}
+
+// SettingsRight says "Right"
+// in the language the app shows.
+//
+// The Workspace page: the sidebar stands on the right.
+func SettingsRight() string { return In(i18n.Locale()).SettingsRight() }
+
+// SettingsRight says "Right"
+// in the language of msgs.
+//
+// The Workspace page: the sidebar stands on the right.
+func (msgs Messages) SettingsRight() string {
+	return Catalog.Format(msgs.locale, "settingsRight", nil)
+}
+
+// SettingsCollapseGroups says "Start with the groups folded"
+// in the language the app shows.
+//
+// The Workspace page: a review opens with the groups of its sidebar folded.
+func SettingsCollapseGroups() string { return In(i18n.Locale()).SettingsCollapseGroups() }
+
+// SettingsCollapseGroups says "Start with the groups folded"
+// in the language of msgs.
+//
+// The Workspace page: a review opens with the groups of its sidebar folded.
+func (msgs Messages) SettingsCollapseGroups() string {
+	return Catalog.Format(msgs.locale, "settingsCollapseGroups", nil)
+}
+
+// SettingsCollapseFiles says "Start with the files closed"
+// in the language the app shows.
+//
+// The Workspace page: a review opens with the cards of its files closed.
+func SettingsCollapseFiles() string { return In(i18n.Locale()).SettingsCollapseFiles() }
+
+// SettingsCollapseFiles says "Start with the files closed"
+// in the language of msgs.
+//
+// The Workspace page: a review opens with the cards of its files closed.
+func (msgs Messages) SettingsCollapseFiles() string {
+	return Catalog.Format(msgs.locale, "settingsCollapseFiles", nil)
+}
+
+// SettingsRestorePosition says "Come back to the file read last"
+// in the language the app shows.
+//
+// The Workspace page: a repository opens at the file shown when it was
+// closed last.
+func SettingsRestorePosition() string { return In(i18n.Locale()).SettingsRestorePosition() }
+
+// SettingsRestorePosition says "Come back to the file read last"
+// in the language of msgs.
+//
+// The Workspace page: a repository opens at the file shown when it was
+// closed last.
+func (msgs Messages) SettingsRestorePosition() string {
+	return Catalog.Format(msgs.locale, "settingsRestorePosition", nil)
+}
+
+// SettingsMaxRecent says "Repositories in Open Recent"
+// in the language the app shows.
+//
+// The Workspace page: how many repositories File → Open Recent lists.
+func SettingsMaxRecent() string { return In(i18n.Locale()).SettingsMaxRecent() }
+
+// SettingsMaxRecent says "Repositories in Open Recent"
+// in the language of msgs.
+//
+// The Workspace page: how many repositories File → Open Recent lists.
+func (msgs Messages) SettingsMaxRecent() string {
+	return Catalog.Format(msgs.locale, "settingsMaxRecent", nil)
+}
+
+// SettingsMaxRecentDetail says "The newest of them."
+// in the language the app shows.
+//
+// The Workspace page: what the count of recent repositories says under it.
+func SettingsMaxRecentDetail() string { return In(i18n.Locale()).SettingsMaxRecentDetail() }
+
+// SettingsMaxRecentDetail says "The newest of them."
+// in the language of msgs.
+//
+// The Workspace page: what the count of recent repositories says under it.
+func (msgs Messages) SettingsMaxRecentDetail() string {
+	return Catalog.Format(msgs.locale, "settingsMaxRecentDetail", nil)
+}
+
+// SettingsAdvancedDetail says "The cache, the logs, and the command line tool."
+// in the language the app shows.
+//
+// The Advanced page: what the settings under it decide.
+func SettingsAdvancedDetail() string { return In(i18n.Locale()).SettingsAdvancedDetail() }
+
+// SettingsAdvancedDetail says "The cache, the logs, and the command line tool."
+// in the language of msgs.
+//
+// The Advanced page: what the settings under it decide.
+func (msgs Messages) SettingsAdvancedDetail() string {
+	return Catalog.Format(msgs.locale, "settingsAdvancedDetail", nil)
+}
+
+// SettingsCacheUnknown says "Reading the cache…"
+// in the language the app shows.
+//
+// The Advanced page: how much room the cache takes, before it is read.
+func SettingsCacheUnknown() string { return In(i18n.Locale()).SettingsCacheUnknown() }
+
+// SettingsCacheUnknown says "Reading the cache…"
+// in the language of msgs.
+//
+// The Advanced page: how much room the cache takes, before it is read.
+func (msgs Messages) SettingsCacheUnknown() string {
+	return Catalog.Format(msgs.locale, "settingsCacheUnknown", nil)
+}
+
+// SettingsCacheUsage says "The cache takes {size}."
+// in the language the app shows.
+//
+// The Advanced page: how much room the reviews and the logs take.
+func SettingsCacheUsage(size string) string { return In(i18n.Locale()).SettingsCacheUsage(size) }
+
+// SettingsCacheUsage says "The cache takes {size}."
+// in the language of msgs.
+//
+// The Advanced page: how much room the reviews and the logs take.
+func (msgs Messages) SettingsCacheUsage(size string) string {
+	return Catalog.Format(msgs.locale, "settingsCacheUsage", map[string]any{"size": size})
+}
+
+// SettingsCacheCleared says "Cache cleared: {size} freed."
+// in the language the app shows.
+//
+// The Advanced page: what clearing the cache freed.
+func SettingsCacheCleared(size string) string { return In(i18n.Locale()).SettingsCacheCleared(size) }
+
+// SettingsCacheCleared says "Cache cleared: {size} freed."
+// in the language of msgs.
+//
+// The Advanced page: what clearing the cache freed.
+func (msgs Messages) SettingsCacheCleared(size string) string {
+	return Catalog.Format(msgs.locale, "settingsCacheCleared", map[string]any{"size": size})
+}
+
+// SettingsClearCache says "Clear cache"
+// in the language the app shows.
+//
+// The Advanced page: the button that deletes the saved reviews and the
+// logs, with the button of the alert that does it.
+func SettingsClearCache() string { return In(i18n.Locale()).SettingsClearCache() }
+
+// SettingsClearCache says "Clear cache"
+// in the language of msgs.
+//
+// The Advanced page: the button that deletes the saved reviews and the
+// logs, with the button of the alert that does it.
+func (msgs Messages) SettingsClearCache() string {
+	return Catalog.Format(msgs.locale, "settingsClearCache", nil)
+}
+
+// SettingsClearCacheTitle says "Clear the cache?"
+// in the language the app shows.
+//
+// The alert the Advanced page asks before the cache goes: its title.
+func SettingsClearCacheTitle() string { return In(i18n.Locale()).SettingsClearCacheTitle() }
+
+// SettingsClearCacheTitle says "Clear the cache?"
+// in the language of msgs.
+//
+// The alert the Advanced page asks before the cache goes: its title.
+func (msgs Messages) SettingsClearCacheTitle() string {
+	return Catalog.Format(msgs.locale, "settingsClearCacheTitle", nil)
+}
+
+// SettingsClearCacheDetail says "The saved reviews and the logs of the repairs go. The repositories stay as they are."
+// in the language the app shows.
+//
+// The alert the Advanced page asks before the cache goes: what it deletes,
+// and what it leaves.
+func SettingsClearCacheDetail() string { return In(i18n.Locale()).SettingsClearCacheDetail() }
+
+// SettingsClearCacheDetail says "The saved reviews and the logs of the repairs go. The repositories stay as they are."
+// in the language of msgs.
+//
+// The alert the Advanced page asks before the cache goes: what it deletes,
+// and what it leaves.
+func (msgs Messages) SettingsClearCacheDetail() string {
+	return Catalog.Format(msgs.locale, "settingsClearCacheDetail", nil)
+}
+
+// SettingsCancel says "Cancel"
+// in the language the app shows.
+//
+// The button of an alert that leaves what it asks alone.
+func SettingsCancel() string { return In(i18n.Locale()).SettingsCancel() }
+
+// SettingsCancel says "Cancel"
+// in the language of msgs.
+//
+// The button of an alert that leaves what it asks alone.
+func (msgs Messages) SettingsCancel() string {
+	return Catalog.Format(msgs.locale, "settingsCancel", nil)
+}
+
+// SettingsAnalysesKept says "Reviews kept in the cache"
+// in the language the app shows.
+//
+// The Advanced page: how many reviews of each repository are kept.
+func SettingsAnalysesKept() string { return In(i18n.Locale()).SettingsAnalysesKept() }
+
+// SettingsAnalysesKept says "Reviews kept in the cache"
+// in the language of msgs.
+//
+// The Advanced page: how many reviews of each repository are kept.
+func (msgs Messages) SettingsAnalysesKept() string {
+	return Catalog.Format(msgs.locale, "settingsAnalysesKept", nil)
+}
+
+// SettingsAnalysesKeptDetail says "Of each repository, the newest."
+// in the language the app shows.
+//
+// The Advanced page: which reviews of a repository the cache keeps.
+func SettingsAnalysesKeptDetail() string { return In(i18n.Locale()).SettingsAnalysesKeptDetail() }
+
+// SettingsAnalysesKeptDetail says "Of each repository, the newest."
+// in the language of msgs.
+//
+// The Advanced page: which reviews of a repository the cache keeps.
+func (msgs Messages) SettingsAnalysesKeptDetail() string {
+	return Catalog.Format(msgs.locale, "settingsAnalysesKeptDetail", nil)
+}
+
+// SettingsRunsKept says "Fix logs kept"
+// in the language the app shows.
+//
+// The Advanced page: how many logs of the repairs are kept in all.
+func SettingsRunsKept() string { return In(i18n.Locale()).SettingsRunsKept() }
+
+// SettingsRunsKept says "Fix logs kept"
+// in the language of msgs.
+//
+// The Advanced page: how many logs of the repairs are kept in all.
+func (msgs Messages) SettingsRunsKept() string {
+	return Catalog.Format(msgs.locale, "settingsRunsKept", nil)
+}
+
+// SettingsRunsKeptDetail says "The newest runs of the agents, in all."
+// in the language the app shows.
+//
+// The Advanced page: which run logs the cache keeps.
+func SettingsRunsKeptDetail() string { return In(i18n.Locale()).SettingsRunsKeptDetail() }
+
+// SettingsRunsKeptDetail says "The newest runs of the agents, in all."
+// in the language of msgs.
+//
+// The Advanced page: which run logs the cache keeps.
+func (msgs Messages) SettingsRunsKeptDetail() string {
+	return Catalog.Format(msgs.locale, "settingsRunsKeptDetail", nil)
+}
+
+// SettingsLogFolder says "Logs"
+// in the language the app shows.
+//
+// The Advanced page: where the logs of the repairs are.
+func SettingsLogFolder() string { return In(i18n.Locale()).SettingsLogFolder() }
+
+// SettingsLogFolder says "Logs"
+// in the language of msgs.
+//
+// The Advanced page: where the logs of the repairs are.
+func (msgs Messages) SettingsLogFolder() string {
+	return Catalog.Format(msgs.locale, "settingsLogFolder", nil)
+}
+
+// SettingsOpenLogFolder says "Open the folder"
+// in the language the app shows.
+//
+// The Advanced page: the button opening the folder of the logs.
+func SettingsOpenLogFolder() string { return In(i18n.Locale()).SettingsOpenLogFolder() }
+
+// SettingsOpenLogFolder says "Open the folder"
+// in the language of msgs.
+//
+// The Advanced page: the button opening the folder of the logs.
+func (msgs Messages) SettingsOpenLogFolder() string {
+	return Catalog.Format(msgs.locale, "settingsOpenLogFolder", nil)
+}
+
+// SettingsInstallCLI says "Install Command Line Tool…"
+// in the language the app shows.
+//
+// The Advanced page: the button installing the godiff command in the
+// shell's path.
+func SettingsInstallCLI() string { return In(i18n.Locale()).SettingsInstallCLI() }
+
+// SettingsInstallCLI says "Install Command Line Tool…"
+// in the language of msgs.
+//
+// The Advanced page: the button installing the godiff command in the
+// shell's path.
+func (msgs Messages) SettingsInstallCLI() string {
+	return Catalog.Format(msgs.locale, "settingsInstallCLI", nil)
+}
+
+// SettingsOpenFailed says "Could not open the folder"
+// in the language the app shows.
+//
+// The alert shown when the folder of the logs cannot be opened.
+func SettingsOpenFailed() string { return In(i18n.Locale()).SettingsOpenFailed() }
+
+// SettingsOpenFailed says "Could not open the folder"
+// in the language of msgs.
+//
+// The alert shown when the folder of the logs cannot be opened.
+func (msgs Messages) SettingsOpenFailed() string {
+	return Catalog.Format(msgs.locale, "settingsOpenFailed", nil)
+}
+
+// SettingsTitle says "Settings"
+// in the language the app shows.
+//
+// The title of the window of the settings, in its title bar and in the
+// window's list.
+func SettingsTitle() string { return In(i18n.Locale()).SettingsTitle() }
+
+// SettingsTitle says "Settings"
+// in the language of msgs.
+//
+// The title of the window of the settings, in its title bar and in the
+// window's list.
+func (msgs Messages) SettingsTitle() string {
+	return Catalog.Format(msgs.locale, "settingsTitle", nil)
+}
+
+// SettingsClearCacheConfirm says "Clear"
+// in the language the app shows.
+//
+// The alert the Advanced page asks before the cache goes: the button that
+// deletes what the app wrote.
+func SettingsClearCacheConfirm() string { return In(i18n.Locale()).SettingsClearCacheConfirm() }
+
+// SettingsClearCacheConfirm says "Clear"
+// in the language of msgs.
+//
+// The alert the Advanced page asks before the cache goes: the button that
+// deletes what the app wrote.
+func (msgs Messages) SettingsClearCacheConfirm() string {
+	return Catalog.Format(msgs.locale, "settingsClearCacheConfirm", nil)
+}
+
+// SettingsGitHubUnchecked says "Press Enter to have GitHub check the token."
+// in the language the app shows.
+//
+// The GitHub page: a token is typed, and GitHub was not asked whose it is
+// yet.
+func SettingsGitHubUnchecked() string { return In(i18n.Locale()).SettingsGitHubUnchecked() }
+
+// SettingsGitHubUnchecked says "Press Enter to have GitHub check the token."
+// in the language of msgs.
+//
+// The GitHub page: a token is typed, and GitHub was not asked whose it is
+// yet.
+func (msgs Messages) SettingsGitHubUnchecked() string {
+	return Catalog.Format(msgs.locale, "settingsGitHubUnchecked", nil)
+}

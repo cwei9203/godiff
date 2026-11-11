@@ -164,6 +164,9 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 			}
 		}
 		w.viewMenu(c, pal)
+		if iconButton(c, iconGear, msg().SettingsMenuItem()+" (⌘,)").Clicked() {
+			openSettings()
+		}
 		w.sidebarToggle(c)
 	})
 }

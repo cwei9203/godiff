@@ -39,16 +39,16 @@ func TestWindowSweepsTheCacheOfItsOwn(t *testing.T) {
 	w, _ := newTestWindow(t, testRepo(t))
 	w.sweepCache()
 
-	if got := len(namesIn(t, dir)); got != analysesKept {
-		t.Errorf("%d reviews left, want the %d a repository keeps", got, analysesKept)
+	if got := len(namesIn(t, dir)); got != analysesKeptDefault {
+		t.Errorf("%d reviews left, want the %d a repository keeps", got, analysesKeptDefault)
 	}
 	for i := 10; i < 60; i++ {
 		if _, err := os.Stat(filepath.Join(dir, itoa(i)+".json")); err != nil {
-			t.Errorf("the review %d, of the newest %d, is gone", i, analysesKept)
+			t.Errorf("the review %d, of the newest %d, is gone", i, analysesKeptDefault)
 		}
 	}
-	if got := len(namesIn(t, runs)); got != runsKept {
-		t.Errorf("%d logs left, want the %d kept", got, runsKept)
+	if got := len(namesIn(t, runs)); got != runsKeptDefault {
+		t.Errorf("%d logs left, want the %d kept", got, runsKeptDefault)
 	}
 	// A window opened on another repository sweeps nothing again.
 	before := len(namesIn(t, dir))
