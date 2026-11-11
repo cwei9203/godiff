@@ -264,7 +264,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 	// on the surface when it does not: one place for them, not both.
 	groupsInSidebar := w.sidebarShown && w.tab == 0
 	if len(w.files) > 0 && w.loadErr == nil && !groupsInSidebar {
-		w.scopeBar(c, pal)
+		w.groupChips(c, pal)
 	}
 	find := ui.FindBar(c, &w.finding, &w.query, len(w.matches), &w.match).Label("Find in diffs")
 	if find.FocusWithin() {
@@ -414,10 +414,6 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	w.typing = false
 	if w.commitOpen || w.paletteOpen || w.dialogOpen || w.help || typing || !reviewBuilt || (w.pr != nil && w.pr.submitOpen) {
 		return
-	}
-	if c.Shortcut(ui.Cmd|ui.Shift, ui.KeyA) {
-		// Every change, from whatever part of the review was shown.
-		w.showAll()
 	}
 	if c.Shortcut(0, ui.KeyJ) || c.Shortcut(ui.Ctrl, ui.KeyDown) {
 		w.nextHunk(1)
