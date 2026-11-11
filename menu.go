@@ -83,8 +83,9 @@ func buildMenu() *mygo.Menu {
 		{Role: mygo.RoleAppMenu, Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleAbout},
 			mygo.Separator(),
-			{Label: "Open Config File…", Accelerator: "CmdOrCtrl+,", Click: func(*mygo.MenuItem, *mygo.Window) { openConfig() }},
-			{Label: "Install Command Line Tool…", Hidden: runtime.GOOS == "windows", Click: func(*mygo.MenuItem, *mygo.Window) { installCLI() }},
+			{ID: "settings", Label: msg().SettingsMenuItem(), Accelerator: "CmdOrCtrl+,", Click: func(*mygo.MenuItem, *mygo.Window) { openSettings() }},
+			{ID: "config-file", Label: msg().ConfigFile(), Click: func(*mygo.MenuItem, *mygo.Window) { openConfig() }},
+			{Label: msg().SettingsInstallCLI(), Hidden: runtime.GOOS == "windows", Click: func(*mygo.MenuItem, *mygo.Window) { installCLI() }},
 			mygo.Separator(),
 			{Role: mygo.RoleServices},
 			mygo.Separator(),
@@ -181,6 +182,8 @@ func buildMenu() *mygo.Menu {
 				{ID: "theme-dark", Label: textDark(), Type: mygo.MenuItemRadio, Checked: s.Theme == "dark", Click: setTheme("dark")},
 			}},
 			{Label: msg().LanguageMenu(), Submenu: languageMenuItems(s)},
+			mygo.Separator(),
+			{ID: "settings-view", Label: msg().SettingsMenuItem(), Click: func(*mygo.MenuItem, *mygo.Window) { openSettings() }},
 			mygo.Separator(),
 			{Label: "Refresh Changes", Accelerator: "CmdOrCtrl+R", Click: inWindow(func(w *window) { w.refresh() })},
 			mygo.Separator(),
@@ -309,7 +312,7 @@ func openRecent(root string) {
 
 // noteRecent puts a repository first in File → Open Recent.
 func noteRecent(root string) {
-	if state.addRecent(root) {
+	if state.addRecent(root, cfg.Get().MaxRecent) {
 		mygo.RunOnMain(func() { mygo.App.SetMenu(buildMenu()) })
 	}
 }

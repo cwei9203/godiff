@@ -967,6 +967,7 @@ func invalidateWindows() {
 		w.invalidate()
 	}
 	windowsMu.Unlock()
+	invalidateSettings()
 }
 
 // detectAgents is set by the app: tests look for no agents.
@@ -994,6 +995,21 @@ func installedAgents() ([]agent.Agent, bool) {
 		}()
 	}
 	return agentsFound.list, agentsFound.done
+}
+
+// rescanAgents looks for the agents installed and for their models again,
+// as the settings window asks: an agent installed meanwhile, or signed in
+// since, shows at once.
+func rescanAgents() {
+	agentsFound.Lock()
+	agentsFound.started, agentsFound.done, agentsFound.list = false, false, nil
+	agentsFound.Unlock()
+	modelsFound.Lock()
+	modelsFound.byAgent = nil
+	modelsFound.Unlock()
+	installedAgents()
+	invalidateWindows()
+	invalidateSettings()
 }
 
 // chooseGrouping groups the files as the user chose. Grouping by an AI

@@ -75,6 +75,7 @@ func (w *window) commands() []command {
 		{title: "Open branch", hint: "Compare with a branch", run: func() { w.openDialog(dialogBranch) }},
 		{title: "Open pull request", hint: "Review a pull request on GitHub", run: func() { w.openDialog(dialogPull) }},
 		{title: "Open folder", keys: "⌘O", run: openFolder},
+		{title: msg().SettingsCommand(), keys: "⌘,", run: openSettings},
 		{title: "Show file tree", keys: "⌘1", run: func() { w.tab, w.sidebarShown = 0, true }},
 		{title: "Show history", keys: "⌘2", run: func() { w.tab, w.sidebarShown = 1, true }},
 		{title: "Show pull requests", keys: "⌘3", run: w.showPulls},

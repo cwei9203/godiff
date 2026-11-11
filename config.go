@@ -68,6 +68,23 @@ type Settings struct {
 	// MaxFiles is the most files an agent is asked to group: beyond it the
 	// rules group them, as the list of files would run away.
 	MaxFiles int `json:"maxFiles"`
+	// AutoAnalyze asks an agent for its review as a repository opens,
+	// rather than when the card of the review is asked for.
+	AutoAnalyze bool `json:"autoAnalyze"`
+	// CollapseGroups and CollapseFiles are how a review opens: with the
+	// groups of the sidebar folded, and the cards of the files closed,
+	// rather than open.
+	CollapseGroups bool `json:"collapseGroups"`
+	CollapseFiles  bool `json:"collapseFiles"`
+	// RestorePosition opens a repository at the file shown last, off at
+	// its first file.
+	RestorePosition bool `json:"restorePosition"`
+	// MaxRecent is how many repositories File → Open Recent lists.
+	MaxRecent int `json:"maxRecent"`
+	// AnalysesKept is how many reviews of each repository the cache keeps,
+	// and RunsKept how many logs of the repairs: the oldest go past them.
+	AnalysesKept int `json:"analysesKept"`
+	RunsKept     int `json:"runsKept"`
 }
 
 func defaultSettings() Settings {
@@ -82,6 +99,10 @@ func defaultSettings() Settings {
 		SidebarPosition:      "left",
 		Theme:                "system",
 		MaxFiles:             maxFilesDefault,
+		RestorePosition:      true,
+		MaxRecent:            maxRecentDefault,
+		AnalysesKept:         analysesKeptDefault,
+		RunsKept:             runsKeptDefault,
 	}
 }
 
@@ -132,6 +153,9 @@ func (s *Settings) normalize() {
 		s.MaxFiles = d.MaxFiles
 	}
 	s.MaxFiles = min(s.MaxFiles, maxFilesLimit)
+	s.MaxRecent = min(max(s.MaxRecent, maxRecentMin), maxRecentLimit)
+	s.AnalysesKept = min(max(s.AnalysesKept, analysesKeptMin), analysesKeptLimit)
+	s.RunsKept = min(max(s.RunsKept, runsKeptMin), runsKeptLimit)
 }
 
 // maxFilesDefault is how many files an agent groups, unless asked otherwise,
@@ -139,6 +163,26 @@ func (s *Settings) normalize() {
 const (
 	maxFilesDefault = 2000
 	maxFilesLimit   = 100_000
+)
+
+// maxRecentDefault is how many repositories File → Open Recent lists, unless
+// asked otherwise, and the bounds it may be asked for.
+const (
+	maxRecentDefault = 10
+	maxRecentMin     = 3
+	maxRecentLimit   = 50
+)
+
+// analysesKeptDefault and runsKeptDefault are how many reviews and run logs
+// the cache keeps, unless asked otherwise, and the bounds they may be asked
+// for.
+const (
+	analysesKeptDefault = 50
+	analysesKeptMin     = 10
+	analysesKeptLimit   = 2000
+	runsKeptDefault     = 20
+	runsKeptMin         = 5
+	runsKeptLimit       = 200
 )
 
 // validLocale reports whether a language tag is one a review may be asked
@@ -382,9 +426,6 @@ type storeData struct {
 	LastRepository string `json:"lastRepository,omitempty"`
 }
 
-// maxRecent is how many repositories File → Open Recent lists.
-const maxRecent = 10
-
 var state = &store{}
 
 func (s *store) open() {
@@ -495,6 +536,15 @@ func (s *store) setLayout(width float32, shown bool) {
 	s.save()
 }
 
+// setSidebarShown says whether a window opens with its sidebar, keeping the
+// width the last one had.
+func (s *store) setSidebarShown(shown bool) {
+	s.mu.Lock()
+	s.data.SidebarShown = &shown
+	s.mu.Unlock()
+	s.save()
+}
+
 // recent returns the repositories opened, the last first.
 func (s *store) recent() []string {
 	s.mu.Lock()
@@ -502,9 +552,9 @@ func (s *store) recent() []string {
 	return slices.Clone(s.data.Recent)
 }
 
-// addRecent puts a repository first among the recent ones, and reports
-// whether that changed them.
-func (s *store) addRecent(root string) bool {
+// addRecent puts a repository first among the recent ones, keeping the
+// newest limit of them, and reports whether that changed them.
+func (s *store) addRecent(root string, limit int) bool {
 	s.mu.Lock()
 	if len(s.data.Recent) > 0 && s.data.Recent[0] == root {
 		s.mu.Unlock()
@@ -512,7 +562,7 @@ func (s *store) addRecent(root string) bool {
 	}
 	recent := slices.DeleteFunc(slices.Clone(s.data.Recent), func(r string) bool { return r == root })
 	recent = slices.Insert(recent, 0, root)
-	s.data.Recent = recent[:min(len(recent), maxRecent)]
+	s.data.Recent = recent[:min(len(recent), limit)]
 	s.mu.Unlock()
 	s.save()
 	return true

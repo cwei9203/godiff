@@ -742,13 +742,35 @@ func (w *window) setFiles(files []*diff.File) {
 			w.reloaded[f.Path] = true
 			fs.collapsed = f.Generated || f.Directory
 		default:
-			fs.collapsed = w.isViewed(fs) || f.Generated || f.Directory
+			fs.collapsed = w.isViewed(fs) || f.Generated || f.Directory || (w.settings.CollapseFiles && !refresh)
 		}
 		next = append(next, fs)
 	}
 	w.files = next
 	w.regroup()
+	if !refresh {
+		// What the settings say a review opens as: the groups folded and the
+		// agent asked for its review. A refresh keeps what the reader did.
+		if w.settings.CollapseGroups {
+			for _, g := range w.groups {
+				w.closedDirs["g:"+g.key] = true
+			}
+		}
+		w.autoAnalyze()
+	}
 	w.pruneComments()
+}
+
+// autoAnalyze asks the agent for its review as a repository opens, as the
+// settings say: one already saved, or running, is left alone.
+func (w *window) autoAnalyze() {
+	if !w.settings.AutoAnalyze || len(w.files) == 0 {
+		return
+	}
+	if _, ok := w.reviewAgent(); !ok {
+		return
+	}
+	w.reviewWithAI()
 }
 
 // isViewed reports whether the user marked the file viewed, as it is now.
@@ -783,7 +805,7 @@ var positionDebounce = time.Second
 // there for a while, so that the next window opens where this one stopped.
 func (w *window) rememberPosition() {
 	key, path := positionKey(w.repo.Root, w.source), w.shownPath()
-	if key == "" || path == "" || (key == w.posKey && path == w.posPath) {
+	if !w.settings.RestorePosition || key == "" || path == "" || (key == w.posKey && path == w.posPath) {
 		return
 	}
 	w.posKey, w.posPath = key, path
@@ -826,6 +848,9 @@ func (w *window) restorePosition() {
 		return
 	}
 	w.restoredPosition = true
+	if !w.settings.RestorePosition {
+		return
+	}
 	path := state.position(positionKey(w.repo.Root, w.source))
 	i := slices.IndexFunc(w.files, func(f *fileState) bool { return f.Path == path })
 	if i < 0 {
@@ -842,14 +867,6 @@ func (w *window) restorePosition() {
 	w.revealFile(i)
 }
 
-// analysesKept is how many reviews every repository together keeps, in one
-// directory of the app's own, and runsKept how many
-// logs of the repairs are kept in all: the newest, by their time.
-const (
-	analysesKept = 50
-	runsKept     = 20
-)
-
 // sweepCache deletes the reviews and the run logs godiff keeps past what it
 // needs, off the main thread and once per directory for the process: it is
 // neither the first frame's work nor the user's.
@@ -858,11 +875,12 @@ func (w *window) sweepCache() {
 	if dir == "" {
 		return
 	}
+	s := cfg.Get()
 	opts := gc.Options{
 		Analyses:      dir,
 		Runs:          runsDir(),
-		Slots:         analysesKept,
-		Logs:          runsKept,
+		Slots:         s.AnalysesKept,
+		Logs:          s.RunsKept,
 		SchemaVersion: agent.SchemaVersion,
 	}
 	w.background(func() { gc.SweepOnce(opts) })

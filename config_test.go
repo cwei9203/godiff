@@ -12,22 +12,22 @@ import (
 
 func TestRecent(t *testing.T) {
 	s := &store{}
-	for i := range maxRecent + 2 {
-		s.addRecent(fmt.Sprintf("/repo%d", i))
+	for i := range maxRecentDefault + 2 {
+		s.addRecent(fmt.Sprintf("/repo%d", i), maxRecentDefault)
 	}
 	got := s.recent()
-	if len(got) != maxRecent || got[0] != fmt.Sprintf("/repo%d", maxRecent+1) {
+	if len(got) != maxRecentDefault || got[0] != fmt.Sprintf("/repo%d", maxRecentDefault+1) {
 		t.Fatalf("got %v", got)
 	}
 	// Opening one again brings it first, once.
-	if !s.addRecent("/repo5") {
+	if !s.addRecent("/repo5", maxRecentDefault) {
 		t.Error("moving a repository first changed nothing")
 	}
-	if s.addRecent("/repo5") {
+	if s.addRecent("/repo5", maxRecentDefault) {
 		t.Error("the first repository changed the list")
 	}
 	got = s.recent()
-	if got[0] != "/repo5" || len(got) != maxRecent || slices.Index(got[1:], "/repo5") >= 0 {
+	if got[0] != "/repo5" || len(got) != maxRecentDefault || slices.Index(got[1:], "/repo5") >= 0 {
 		t.Errorf("got %v", got)
 	}
 	s.clearRecent()

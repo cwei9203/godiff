@@ -55,6 +55,7 @@ func languageChanged() {
 			w.win.Update(func() { w.rowsDirty = true })
 		}
 	}
+	retitleSettings()
 }
 
 // languageMenuItems choose the language the interface shows, each language
