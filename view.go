@@ -29,6 +29,14 @@ func (w *window) view(c *ui.Context) {
 	t := c.Theme()
 	pal := paletteFor(t)
 	w.now = c.Now()
+	if w.titleLang != interfaceLanguage {
+		// The title is the window's, not the frame's: it says the target in
+		// the interface's language when the window draws again.
+		w.titleLang = interfaceLanguage
+		if w.win != nil {
+			w.win.SetTitle(windowTitle(w))
+		}
+	}
 	if w.regroupPending {
 		w.regroupPending = false
 		w.regroup()
@@ -305,7 +313,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 	}
 	// The groups show in the sidebar while it shows the files, and as chips
 	// on the surface when it does not: one place for them, not both.
-	groupsInSidebar := w.sidebarShown && w.tab == 0
+	groupsInSidebar := w.sidebarShown && w.tab == tabFiles
 	if len(w.files) > 0 && w.loadErr == nil && !groupsInSidebar {
 		w.groupChips(c, pal)
 	}
@@ -367,7 +375,7 @@ func (w *window) mainArea(c *ui.Context, pal *palette) bool {
 		emptyState(c, pal, emptyBox{title: title, detail: detail, mono: true, actions: func() {
 			if w.source.kind == sourceWorkingTree && len(w.history) > 0 {
 				if ui.Button(c, msg().ShowHistory()).Clicked() {
-					w.tab, w.sidebarShown = 1, true
+					w.tab, w.sidebarShown = tabHistory, true
 				}
 			}
 		}})
@@ -641,47 +649,86 @@ func (v *welcome) row(c *ui.Context, pal *palette, i int, root string, last bool
 	})
 }
 
-// repoSwitcher is the repository of the window as a menu: where it is, the
-// folders opened lately, and the way to another one. A window is a
-// repository, so another one is another window, and closing this one leads
-// back to the welcome page.
+// repoSwitcher is the repository of the window: its name, which opens a panel
+// of the repository's other targets and of the ways to another repository. A
+// window is a session, so the panel reads the registry the Sessions tab reads,
+// and acts on it through the same calls: there is no second list of sessions.
 func (w *window) repoSwitcher(c *ui.Context, pal *palette) {
 	t := c.Theme()
 	root := w.repo.Root
-	b := ui.MenuButton(c, "", func(m *ui.Menu) {
-		m.Item(abbreviateHome(root)).Disabled(true)
-		m.Separator()
-		others := 0
-		for _, recent := range state.recent() {
-			if recent == root {
-				continue
-			}
-			others++
-			if m.Item(abbreviateHome(recent)).Chosen() {
-				go openRecent(recent)
-			}
-		}
-		if others == 0 {
-			m.Item(msg().NoOtherFolder()).Disabled(true)
-		}
-		m.Separator()
-		if m.Item(msg().OpenFolder()).Chosen() {
-			openFolder()
-		}
-		if m.Item(msg().RevealInFinder()).Disabled(runtime.GOOS != "darwin").Chosen() {
-			revealInFinder(root)
-		}
-		if m.Item(msg().CloseRepository()).Chosen() {
-			closeRepository(w)
-		}
-	}).Height(38).Label(textRepo())
-	b.Children(func() {
+	trigger := ui.ButtonBase(c).Height(38).Radius(7).Padding(0, 6).Label(textRepo()).Tooltip(msg().SwitchRepo())
+	if w.repoMenuOpen {
+		trigger.Background(pal.surfaceHover)
+	} else if trigger.Hovered() {
+		trigger.Background(pal.hover)
+	}
+	if trigger.Clicked() {
+		w.repoMenuOpen = !w.repoMenuOpen
+	}
+	trigger.Children(func() {
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Column(c).Gap(1).Shrink(1).MinWidth(0).Children(func() {
-				ui.Text(c, filepath.Base(root)).FontSize(13).Bold().SingleLine()
+				ui.Text(c, sessionRepoName(w)).FontSize(13).Bold().SingleLine()
 				ui.Text(c, filepath.Dir(abbreviateHome(root))).FontSize(11).TextColor(t.TextMuted).SingleLine()
 			})
 			ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 		})
+	})
+	ui.PopoverBase(c, trigger, &w.repoMenuOpen, func(panel ui.Element) {
+		panel.Width(272).Padding(6).Radius(radiusCard).Background(pal.surface).Border(1, pal.border).
+			Shadow(0, 18, 48, 0, ui.RGBA(0, 0, 0, 0.26)).Clip().Label(textRepo())
+		w.repoPanel(c, pal, panel)
+	})
+}
+
+// repoPanel is the repository's panel, under its name in the title bar: where
+// the repository is, the other targets it has a session for, and the ways to
+// another repository or to none.
+func (w *window) repoPanel(c *ui.Context, pal *palette, panel ui.Element) {
+	t := c.Theme()
+	// action is a row of the panel, as the menu items it stands in for.
+	action := func(svg *ui.SVG, label string, off bool, run func()) {
+		row := ui.ButtonBase(c).Height(28).Padding(0, 8).Gap(8).Radius(5).MinWidth(0).Label(label).Tooltip(label)
+		if off {
+			row.Disabled(true).Opacity(0.5)
+		} else if row.Hovered() {
+			row.Background(pal.hover)
+		}
+		if row.Clicked() && !off {
+			w.repoMenuOpen = false
+			run()
+		}
+		row.Children(func() {
+			ui.Icon(c, svg).FontSize(13).TextColor(t.TextMuted)
+			ui.Text(c, label).FontSize(12).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+		})
+	}
+	panel.Children(func() {
+		ui.Text(c, abbreviateHome(w.repo.Root)).FontSize(11).TextColor(t.TextMuted).
+			Padding(4, 8).SingleLine().Tooltip(w.repo.Root)
+		// The other targets of this repository are the sessions the Sessions
+		// tab lists under its name.
+		for _, e := range repoSessions(w.repo.Root) {
+			if e.w == w {
+				continue
+			}
+			row := ui.ButtonBase(c).Height(28).Padding(0, 8).Gap(8).Radius(5).MinWidth(0).
+				Label(e.target).Tooltip(msg().SessionGoTo(e.target))
+			if row.Hovered() {
+				row.Background(pal.hover)
+			}
+			if row.Clicked() {
+				w.repoMenuOpen = false
+				focusSession(e.w)
+			}
+			row.Children(func() {
+				ui.Icon(c, iconLayers).FontSize(13).TextColor(t.TextMuted)
+				ui.Text(c, e.target).FontSize(12).SingleLine().Grow(1).Shrink(1).MinWidth(0)
+			})
+		}
+		ui.Divider(c).Margin(4, 0)
+		action(iconFolderOpen, msg().OpenFolder(), false, openFolder)
+		action(iconOpen, msg().RevealInFinder(), runtime.GOOS != "darwin", func() { revealInFinder(w.repo.Root) })
+		action(iconClose, msg().CloseRepository(), false, func() { closeRepository(w) })
 	})
 }

@@ -4098,6 +4098,188 @@ func (msgs Messages) TabPullRequests() string {
 	return Catalog.Format(msgs.locale, "tabPullRequests", nil)
 }
 
+// TabSessions says "Sessions (⌘4)"
+// in the language the app shows.
+//
+// The sidebar's tab of the sessions open: the app's windows, grouped by
+// repository.
+func TabSessions() string { return In(i18n.Locale()).TabSessions() }
+
+// TabSessions says "Sessions (⌘4)"
+// in the language of msgs.
+//
+// The sidebar's tab of the sessions open: the app's windows, grouped by
+// repository.
+func (msgs Messages) TabSessions() string {
+	return Catalog.Format(msgs.locale, "tabSessions", nil)
+}
+
+// SessionsTabMenu says "Sessions"
+// in the language the app shows.
+//
+// The View menu's item showing the sidebar's Sessions tab.
+func SessionsTabMenu() string { return In(i18n.Locale()).SessionsTabMenu() }
+
+// SessionsTabMenu says "Sessions"
+// in the language of msgs.
+//
+// The View menu's item showing the sidebar's Sessions tab.
+func (msgs Messages) SessionsTabMenu() string {
+	return Catalog.Format(msgs.locale, "sessionsTabMenu", nil)
+}
+
+// SessionsLabel says "Sessions"
+// in the language the app shows.
+//
+// The accessible name of the list of the Sessions tab.
+func SessionsLabel() string { return In(i18n.Locale()).SessionsLabel() }
+
+// SessionsLabel says "Sessions"
+// in the language of msgs.
+//
+// The accessible name of the list of the Sessions tab.
+func (msgs Messages) SessionsLabel() string {
+	return Catalog.Format(msgs.locale, "sessionsLabel", nil)
+}
+
+// SessionWorktree says "Working tree"
+// in the language the app shows.
+//
+// A session reviewing the uncommitted changes of its repository, in the
+// Sessions tab and in the window's title.
+func SessionWorktree() string { return In(i18n.Locale()).SessionWorktree() }
+
+// SessionWorktree says "Working tree"
+// in the language of msgs.
+//
+// A session reviewing the uncommitted changes of its repository, in the
+// Sessions tab and in the window's title.
+func (msgs Messages) SessionWorktree() string {
+	return Catalog.Format(msgs.locale, "sessionWorktree", nil)
+}
+
+// SessionBranch says "Branch {branch}"
+// in the language the app shows.
+//
+// A session comparing the work tree with a branch, in the Sessions tab and
+// in the window's title.
+func SessionBranch(branch string) string { return In(i18n.Locale()).SessionBranch(branch) }
+
+// SessionBranch says "Branch {branch}"
+// in the language of msgs.
+//
+// A session comparing the work tree with a branch, in the Sessions tab and
+// in the window's title.
+func (msgs Messages) SessionBranch(branch string) string {
+	return Catalog.Format(msgs.locale, "sessionBranch", map[string]any{"branch": branch})
+}
+
+// SessionCommit says "Commit {sha}"
+// in the language the app shows.
+//
+// A session reviewing a commit, in the Sessions tab and in the window's
+// title.
+func SessionCommit(sha string) string { return In(i18n.Locale()).SessionCommit(sha) }
+
+// SessionCommit says "Commit {sha}"
+// in the language of msgs.
+//
+// A session reviewing a commit, in the Sessions tab and in the window's
+// title.
+func (msgs Messages) SessionCommit(sha string) string {
+	return Catalog.Format(msgs.locale, "sessionCommit", map[string]any{"sha": sha})
+}
+
+// SessionPull says "PR #{number}"
+// in the language the app shows.
+//
+// A session reviewing a pull request, in the Sessions tab and in the
+// window's title.
+func SessionPull(number int) string { return In(i18n.Locale()).SessionPull(number) }
+
+// SessionPull says "PR #{number}"
+// in the language of msgs.
+//
+// A session reviewing a pull request, in the Sessions tab and in the
+// window's title.
+func (msgs Messages) SessionPull(number int) string {
+	return Catalog.Format(msgs.locale, "sessionPull", map[string]any{"number": number})
+}
+
+// SessionCurrent says "The session you are in"
+// in the language the app shows.
+//
+// The tooltip of the mark on the row of the session the window is in.
+func SessionCurrent() string { return In(i18n.Locale()).SessionCurrent() }
+
+// SessionCurrent says "The session you are in"
+// in the language of msgs.
+//
+// The tooltip of the mark on the row of the session the window is in.
+func (msgs Messages) SessionCurrent() string {
+	return Catalog.Format(msgs.locale, "sessionCurrent", nil)
+}
+
+// SessionCloseTip says "Close this session"
+// in the language the app shows.
+//
+// The tooltip of the button closing a session, which closes its window.
+func SessionCloseTip() string { return In(i18n.Locale()).SessionCloseTip() }
+
+// SessionCloseTip says "Close this session"
+// in the language of msgs.
+//
+// The tooltip of the button closing a session, which closes its window.
+func (msgs Messages) SessionCloseTip() string {
+	return Catalog.Format(msgs.locale, "sessionCloseTip", nil)
+}
+
+// SessionGoTo says "Go to {target}"
+// in the language the app shows.
+//
+// The tooltip of another target of the repository, in the panel of the
+// title bar: it brings that session's window to the front.
+func SessionGoTo(target string) string { return In(i18n.Locale()).SessionGoTo(target) }
+
+// SessionGoTo says "Go to {target}"
+// in the language of msgs.
+//
+// The tooltip of another target of the repository, in the panel of the
+// title bar: it brings that session's window to the front.
+func (msgs Messages) SessionGoTo(target string) string {
+	return Catalog.Format(msgs.locale, "sessionGoTo", map[string]any{"target": target})
+}
+
+// SessionsEmpty says "No other session open. Open a folder, or pick one of the recent ones."
+// in the language the app shows.
+//
+// The Sessions tab with one session alone: the ways to another one follow
+// the list.
+func SessionsEmpty() string { return In(i18n.Locale()).SessionsEmpty() }
+
+// SessionsEmpty says "No other session open. Open a folder, or pick one of the recent ones."
+// in the language of msgs.
+//
+// The Sessions tab with one session alone: the ways to another one follow
+// the list.
+func (msgs Messages) SessionsEmpty() string {
+	return Catalog.Format(msgs.locale, "sessionsEmpty", nil)
+}
+
+// SessionsRecentTip says "The repositories opened lately"
+// in the language the app shows.
+//
+// The tooltip of the Sessions tab's Recent row, which lists them.
+func SessionsRecentTip() string { return In(i18n.Locale()).SessionsRecentTip() }
+
+// SessionsRecentTip says "The repositories opened lately"
+// in the language of msgs.
+//
+// The tooltip of the Sessions tab's Recent row, which lists them.
+func (msgs Messages) SessionsRecentTip() string {
+	return Catalog.Format(msgs.locale, "sessionsRecentTip", nil)
+}
+
 // SidebarLabel says "Sidebar"
 // in the language the app shows.
 func SidebarLabel() string { return In(i18n.Locale()).SidebarLabel() }

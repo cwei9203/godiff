@@ -131,9 +131,10 @@ func buildMenu() *mygo.Menu {
 		{Label: msg().ViewMenu(), Submenu: []*mygo.MenuItem{
 			{Label: msg().CommandBarMenu(), Accelerator: "CmdOrCtrl+K", Click: inWindow(func(w *window) { w.paletteOpen = !w.paletteOpen })},
 			{Label: msg().ToggleSidebarMenu(), Accelerator: "CmdOrCtrl+Shift+B", Click: inWindow(func(w *window) { w.toggleSidebar() })},
-			{Label: msg().FilesTabMenu(), Accelerator: "CmdOrCtrl+1", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = 0, true })},
-			{Label: msg().HistoryTabMenu(), Accelerator: "CmdOrCtrl+2", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = 1, true })},
+			{Label: msg().FilesTabMenu(), Accelerator: "CmdOrCtrl+1", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = tabFiles, true })},
+			{Label: msg().HistoryTabMenu(), Accelerator: "CmdOrCtrl+2", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = tabHistory, true })},
 			{Label: msg().PullRequestsTabMenu(), Accelerator: "CmdOrCtrl+3", Click: inWindow(func(w *window) { w.showPulls() })},
+			{Label: msg().SessionsTabMenu(), Accelerator: "CmdOrCtrl+4", Click: inWindow(func(w *window) { w.tab, w.sidebarShown = tabSessions, true })},
 			mygo.Separator(),
 			{Label: textReviewWithAI(), Accelerator: "CmdOrCtrl+Shift+I", Click: inWindow(func(w *window) { w.reviewWithAI() })},
 			{Label: textGroup(), Submenu: []*mygo.MenuItem{
