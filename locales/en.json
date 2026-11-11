@@ -662,7 +662,7 @@
   },
   "settingsAnalysesKept": "Reviews kept in the cache",
   "@settingsAnalysesKept": {
-    "description": "The Advanced page: how many reviews of each repository are kept."
+    "description": "The Advanced page: how many reviews of every repository together are kept."
   },
   "settingsAnalysesKeptDetail": "Of each repository, the newest.",
   "@settingsAnalysesKeptDetail": {

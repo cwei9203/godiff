@@ -161,7 +161,7 @@
   "settingsClearCacheDetail": "已保存的审查与修复日志会被删除，仓库本身不受影响。",
   "settingsCancel": "取消",
   "settingsAnalysesKept": "缓存中保留的审查数",
-  "settingsAnalysesKeptDetail": "每个仓库，最新的几个。",
+  "settingsAnalysesKeptDetail": "所有仓库共用一处，保留最新的几个。",
   "settingsRunsKept": "修复日志数量上限",
   "settingsRunsKeptDetail": "全部智能体最近几次运行的日志。",
   "settingsLogFolder": "日志",
