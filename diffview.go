@@ -167,7 +167,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 			} else if b.Hovered() {
 				b.Background(pal.surfaceHover)
 			}
-			b.Children(func() { ui.Icon(c, svg).FontSize(15).TextColor(t.TextMuted).Rotate(float32(turn)) })
+			b.Children(func() { uiIcon(c, svg, iconBase).TextColor(t.TextMuted).Rotate(float32(turn)) })
 			if b.Clicked() {
 				w.stepFile(dir)
 			}
@@ -176,7 +176,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 		ui.Text(c, fmt.Sprintf("%d / %d", at, total)).Font(w.codeFont()).FontSize(12).FontWeight(600).
 			TextColor(t.TextMuted).Shrink(0).Tooltip(msg().FilePosition(at, total))
 		ui.Row(c).Gap(5).Grow(1).Shrink(1).MinWidth(0).Children(func() {
-			fileIcon(c, f, 13)
+			fileIcon(c, f, iconSmall)
 			ui.RichText(c,
 				ui.Span{Text: f.Dir(), Color: t.TextMuted},
 				ui.Span{Text: f.Name(), Color: t.Text, Weight: 600},
@@ -187,7 +187,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 			svg, accent := groupMark(g)
 			ui.Row(c).Gap(5).Padding(3, 8).Radius(radiusChip).Background(pal.pill).Shrink(1).MinWidth(0).
 				Label(msg().InGroup(g.label)).Tooltip(msg().GroupTip(g.label)).Children(func() {
-				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)
+				uiIcon(c, svg, iconSmall).TextColor(categoryColor(accent, t, pal)).Shrink(0)
 				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 			})
 		}
@@ -215,7 +215,7 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 		if unviewed.Hovered() {
 			unviewed.Background(pal.surfaceHover)
 		}
-		unviewed.Children(func() { ui.Icon(c, iconEye).FontSize(15).TextColor(t.TextMuted) })
+		unviewed.Children(func() { uiIcon(c, iconEye, iconBase).TextColor(t.TextMuted) })
 		if unviewed.Clicked() {
 			w.stepUnviewed(1)
 		}
@@ -332,11 +332,11 @@ func (w *window) summaryLine(c *ui.Context, pal *palette) {
 		w.summaryOpen = true
 	}
 	b.Children(func() {
-		ui.Icon(c, iconSparkle).FontSize(13).TextColor(t.Accent).Shrink(0)
+		uiIcon(c, iconSparkle, iconBase).TextColor(t.Accent).Shrink(0)
 		ui.Text(c, textAIReview()).FontSize(13).FontWeight(600).SingleLine().Shrink(0)
 		ui.Text(c, what).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
 		ui.Spacer(c)
-		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(t.TextMuted).Shrink(0)
+		uiIcon(c, iconChevronRight, iconBase).TextColor(t.TextMuted).Shrink(0)
 	})
 }
 
@@ -412,9 +412,9 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 				w.showGroup(f.group)
 			}
 			crumb.Children(func() {
-				ui.Icon(c, svg).FontSize(11).TextColor(categoryColor(accent, t, pal)).Shrink(0)
+				uiIcon(c, svg, iconSmall).TextColor(categoryColor(accent, t, pal)).Shrink(0)
 				ui.Text(c, g.label).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().MaxWidth(120)
-				ui.Icon(c, iconChevronRight).FontSize(10).TextColor(t.TextMuted).Shrink(0)
+				uiIcon(c, iconChevronRight, iconSmall).TextColor(t.TextMuted).Shrink(0)
 			})
 		}
 		toggle := ui.ButtonBase(c).Gap(8).Grow(1).Shrink(1).MinWidth(0).Height(lineHeader).Label(f.Path).Tooltip(f.Path)
@@ -435,14 +435,14 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 				if collapsed {
 					target = -90
 				}
-				ic := ui.Icon(c, iconChevronDown).FontSize(15).TextColor(t.TextMuted)
+				ic := uiIcon(c, iconChevronDown, iconBase).TextColor(t.TextMuted)
 				ic.Rotate(ic.Animate("rot", target, 160*time.Millisecond))
 			})
 			pathColor := t.Text
 			if collapsed || viewed {
 				pathColor = t.TextMuted
 			}
-			fileIcon(c, f, 15)
+			fileIcon(c, f, iconBase)
 			ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(1).Children(func() {
 				ui.RichText(c,
 					ui.Span{Text: f.Dir(), Color: t.TextMuted},
@@ -484,7 +484,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		if n := w.openThreads(f.Path); n > 0 {
 			ui.Row(c).Gap(4).Padding(4, 9).Radius(radiusChip).Background(pal.pill).TextColor(t.TextMuted).Shrink(0).
 				Tooltip(msg().UnresolvedThreads(n)).Children(func() {
-				ui.Icon(c, iconComment).FontSize(12)
+				uiIcon(c, iconComment, iconSmall)
 				ui.Text(c, itoa(n)).Font(w.codeFont()).FontSize(12).FontWeight(600)
 			})
 		}
@@ -509,7 +509,7 @@ func (w *window) viewedButton(c *ui.Context, pal *palette, f *fileState, viewed 
 		box := ui.Box(c).Size(15, 15).Radius(4).Center()
 		if viewed {
 			box.Background(pal.viewed).Children(func() {
-				ui.Icon(c, iconCheck).FontSize(11).TextColor(pal.codeBg)
+				uiIcon(c, iconCheck, iconSmall).TextColor(pal.codeBg)
 			})
 		} else {
 			box.Border(1.5, ui.RGBA(127, 127, 127, 0.45))
@@ -575,7 +575,7 @@ func (w *window) gapRow(c *ui.Context, pal *palette, f *fileState, r *row) {
 				if b.Hovered() {
 					b.TextColor(t.Text).Background(pal.hover)
 				}
-				b.Children(func() { ui.Icon(c, svg).FontSize(14) })
+				b.Children(func() { uiIcon(c, svg, iconSmall) })
 				if b.Clicked() {
 					action()
 				}
@@ -827,7 +827,7 @@ func (w *window) lineCell(c *ui.Context, pal *palette, f *fileState, r *row, s l
 		if !hovered {
 			plus.Opacity(0)
 		}
-		plus.Children(func() { ui.Icon(c, iconPlus).FontSize(13) })
+		plus.Children(func() { uiIcon(c, iconPlus, iconSmall) })
 		if plus.Clicked() {
 			w.addComment(f.Path, sd, s.num, s.num)
 		}

@@ -602,7 +602,7 @@ func (w *window) groupChips(c *ui.Context, pal *palette) {
 				done := viewed[gi] == total[gi] && total[gi] > 0
 				b.Children(func() {
 					svg, accent := groupMark(g)
-					icon := ui.Icon(c, svg).FontSize(12).TextColor(categoryColor(accent, t, pal))
+					icon := uiIcon(c, svg, iconSmall).TextColor(categoryColor(accent, t, pal))
 					if g.critical {
 						icon.TextColor(careTone(pal))
 					}
@@ -653,19 +653,19 @@ func (w *window) groupRow(c *ui.Context, pal *palette, gi int) {
 		}
 		head.Children(func() {
 			svg, accent := groupMark(g)
-			icon := ui.Icon(c, svg).FontSize(15).TextColor(categoryColor(accent, t, pal))
+			icon := uiIcon(c, svg, iconBase).TextColor(categoryColor(accent, t, pal))
 			if g.critical {
 				icon.TextColor(careTone(pal))
 			}
 			name := ui.Row(c).Gap(8).Shrink(1).MinWidth(0)
 			name.Children(func() {
-				ui.Icon(c, svg).FontSize(15).TextColor(categoryColor(accent, t, pal))
+				uiIcon(c, svg, iconBase).TextColor(categoryColor(accent, t, pal))
 				ui.Text(c, g.label).FontSize(15).Bold().SingleLine().Shrink(1).MinWidth(0)
 				chevron := iconChevronDown
 				if allCollapsed {
 					chevron = iconChevronRight
 				}
-				ui.Icon(c, chevron).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+				uiIcon(c, chevron, iconBase).TextColor(t.TextMuted).Shrink(0)
 			})
 			if g.critical {
 				ui.Text(c, msg().NeedsCare()).FontSize(11).FontWeight(600).Padding(2, 8).Radius(10).
@@ -823,7 +823,7 @@ func (w *window) noteRow(c *ui.Context, pal *palette, n *aiNote) {
 	w.card(c, pal).Padding(6, 16).Children(func() {
 		ui.Row(c).Grow(1).MinWidth(0).Gap(10).Padding(8, 12).Radius(10).AlignItems(ui.Start).
 			Background(accent.Alpha(0.07)).Border(1, border).Children(func() {
-			ui.Icon(c, iconSparkle).FontSize(14).TextColor(accent).Margin(1, 0, 0)
+			uiIcon(c, iconSparkle, iconSmall).TextColor(accent).Margin(1, 0, 0)
 			ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
 				label := msg().AiNote()
 				switch {

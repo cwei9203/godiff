@@ -199,9 +199,9 @@ func (w *window) commentsButton(c *ui.Context, pal *palette) {
 	}
 	cb.Children(func() {
 		if copied {
-			ui.Icon(c, iconCheck).FontSize(15).TextColor(pal.viewed)
+			uiIcon(c, iconCheck, iconBase).TextColor(pal.viewed)
 		} else {
-			ui.Icon(c, iconComment).FontSize(15)
+			uiIcon(c, iconComment, iconBase)
 		}
 		ui.Textf(c, "%d", n).Font(w.codeFont()).FontSize(11).FontWeight(700)
 	})
@@ -268,9 +268,9 @@ func (w *window) viewMenu(c *ui.Context, pal *palette) {
 		b.Background(pal.surfaceHover)
 	}
 	b.Children(func() {
-		ui.Icon(c, iconEye).FontSize(15).TextColor(t.TextMuted)
+		uiIcon(c, iconEye, iconBase).TextColor(t.TextMuted)
 		ui.Text(c, textView()).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
-		ui.Icon(c, iconChevronDown).FontSize(10).TextColor(t.TextMuted).Shrink(0)
+		uiIcon(c, iconChevronDown, iconBase).TextColor(t.TextMuted).Shrink(0)
 	})
 }
 
@@ -278,7 +278,7 @@ func (w *window) viewMenu(c *ui.Context, pal *palette) {
 func chip(c *ui.Context, pal *palette, svg *ui.SVG, label string, color ui.Color) ui.Element {
 	return ui.Row(c).Gap(5).Padding(3, 8).Radius(12).Background(ui.RGBA(127, 127, 127, 0.08)).
 		Border(1, ui.RGBA(127, 127, 127, 0.12)).TextColor(color).Shrink(1).MinWidth(0).MaxWidth(240).Children(func() {
-		ui.Icon(c, svg).FontSize(12)
+		uiIcon(c, svg, iconSmall)
 		ui.Text(c, label).FontSize(12).FontWeight(600).SingleLine()
 	})
 }
@@ -550,7 +550,8 @@ func (v *welcome) view(c *ui.Context) {
 					if appIcon != nil {
 						ui.Image(c, appIcon).Size(44, 44).Radius(10)
 					} else {
-						ui.Icon(c, iconFileDiff).FontSize(36).TextColor(t.Accent)
+						// The app's own icon, at the size of the one in its place.
+						ui.Icon(c, iconFileDiff).FontSize(44).TextColor(t.Accent)
 					}
 					ui.Column(c).Gap(2).Shrink(1).MinWidth(0).Children(func() {
 						ui.Text(c, title).FontSize(20).FontWeight(600).SingleLine()
@@ -645,7 +646,7 @@ func (v *welcome) row(c *ui.Context, pal *palette, i int, root string, last bool
 			ui.Text(c, filepath.Base(root)).FontSize(13).FontWeight(600).SingleLine()
 			ui.Text(c, abbreviateHome(filepath.Dir(root))).FontSize(11).SingleLine().TextColor(muted).Tooltip(root)
 		})
-		ui.Icon(c, iconChevronRight).FontSize(13).TextColor(muted).Shrink(0)
+		uiIcon(c, iconChevronRight, iconSmall).TextColor(muted).Shrink(0)
 	})
 }
 
@@ -671,7 +672,7 @@ func (w *window) repoSwitcher(c *ui.Context, pal *palette) {
 				ui.Text(c, sessionRepoName(w)).FontSize(13).Bold().SingleLine()
 				ui.Text(c, filepath.Dir(abbreviateHome(root))).FontSize(11).TextColor(t.TextMuted).SingleLine()
 			})
-			ui.Icon(c, iconChevronDown).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+			uiIcon(c, iconChevronDown, iconBase).TextColor(t.TextMuted).Shrink(0)
 		})
 	})
 	ui.PopoverBase(c, trigger, &w.repoMenuOpen, func(panel ui.Element) {
@@ -699,7 +700,7 @@ func (w *window) repoPanel(c *ui.Context, pal *palette, panel ui.Element) {
 			run()
 		}
 		row.Children(func() {
-			ui.Icon(c, svg).FontSize(13).TextColor(t.TextMuted)
+			uiIcon(c, svg, iconBase).TextColor(t.TextMuted)
 			ui.Text(c, label).FontSize(12).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 		})
 	}
@@ -722,7 +723,7 @@ func (w *window) repoPanel(c *ui.Context, pal *palette, panel ui.Element) {
 				focusSession(e.w)
 			}
 			row.Children(func() {
-				ui.Icon(c, iconLayers).FontSize(13).TextColor(t.TextMuted)
+				uiIcon(c, iconLayers, iconBase).TextColor(t.TextMuted)
 				ui.Text(c, e.target).FontSize(12).SingleLine().Grow(1).Shrink(1).MinWidth(0)
 			})
 		}

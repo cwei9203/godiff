@@ -190,7 +190,7 @@ func (w *window) sessionsView(c *ui.Context) {
 func sessionGroupRow(c *ui.Context, pal *palette, g sessionGroup) {
 	t := c.Theme()
 	ui.Row(c).MinHeight(lineFile).Padding(2, 6).Gap(6).AlignItems(ui.Center).Children(func() {
-		ui.Icon(c, iconFolder).FontSize(12).TextColor(t.TextMuted).Shrink(0)
+		uiIcon(c, iconFolder, iconSmall).TextColor(t.TextMuted).Shrink(0)
 		ui.Text(c, g.name).FontSize(12).FontWeight(600).TextColor(t.TextMuted).SingleLine().
 			Grow(1).Shrink(1).MinWidth(0).Tooltip(abbreviateHome(g.root))
 	})
@@ -231,7 +231,7 @@ func (w *window) sessionEntryRow(c *ui.Context, pal *palette, e sessionEntry) {
 		if close.Hovered() {
 			close.Background(pal.surfaceHover)
 		}
-		close.Children(func() { ui.Icon(c, iconClose).FontSize(10).TextColor(t.TextMuted) })
+		close.Children(func() { uiIcon(c, iconClose, iconSmall).TextColor(t.TextMuted) })
 		if close.Clicked() {
 			closeSession(e.w)
 		}
@@ -259,7 +259,7 @@ func (w *window) sessionsFooter(c *ui.Context, pal *palette) {
 			openFolder()
 		}
 		open.Children(func() {
-			ui.Icon(c, iconFolderOpen).FontSize(14).TextColor(t.TextMuted)
+			uiIcon(c, iconFolderOpen, iconSmall).TextColor(t.TextMuted)
 			ui.Text(c, msg().OpenFolder()).FontSize(12).Grow(1).Shrink(1).MinWidth(0)
 		})
 		recent := ui.Row(c).Height(28).Padding(0, 6).Gap(7).Radius(6).MinWidth(0).
@@ -271,9 +271,9 @@ func (w *window) sessionsFooter(c *ui.Context, pal *palette) {
 			w.recentOpen = !w.recentOpen
 		}
 		recent.Children(func() {
-			ui.Icon(c, iconHistory).FontSize(14).TextColor(t.TextMuted)
+			uiIcon(c, iconHistory, iconSmall).TextColor(t.TextMuted)
 			ui.Text(c, msg().Recent()).FontSize(12).Grow(1).Shrink(1).MinWidth(0)
-			arrow := ui.Icon(c, iconChevronDown).FontSize(10).TextColor(t.TextMuted).Shrink(0)
+			arrow := uiIcon(c, iconChevronDown, iconSmall).TextColor(t.TextMuted).Shrink(0)
 			turned := float32(0)
 			if w.recentOpen {
 				turned = -90

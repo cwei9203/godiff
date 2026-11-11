@@ -55,9 +55,9 @@ func emptyWords(c *ui.Context, pal *palette, box emptyBox) {
 	if icon == nil {
 		icon = iconFileDiff
 	}
-	size, gap, title, detail := float32(28), float32(10), float32(15), float32(13)
+	gap, title, detail := float32(10), float32(15), float32(13)
 	if box.shape == emptySmall {
-		size, gap, title, detail = 18, 6, 12, 11
+		gap, title, detail = 6, 12, 11
 	}
 	panel := ui.Column(c).AlignItems(ui.Center).Gap(gap)
 	if box.shape == emptyFull {
@@ -66,7 +66,13 @@ func emptyWords(c *ui.Context, pal *palette, box emptyBox) {
 		panel.MaxWidth(520).Padding(28).Radius(radiusCard).Background(pal.surface).Border(1, pal.border)
 	}
 	panel.Children(func() {
-		ui.Icon(c, icon).FontSize(size).TextColor(t.TextMuted)
+		if box.shape == emptySmall {
+			uiIcon(c, icon, iconBase).TextColor(t.TextMuted)
+		} else {
+			// The icon of an empty surface is the third size there is: 28, as
+			// large as the surface it explains.
+			ui.Icon(c, icon).FontSize(28).TextColor(t.TextMuted)
+		}
 		ui.Text(c, box.title).FontSize(title).Bold().TextAlign(ui.Center)
 		if box.detail != "" {
 			line := ui.Text(c, box.detail).FontSize(detail).TextColor(t.TextMuted).TextAlign(ui.Center).Selectable()
@@ -88,7 +94,7 @@ func emptyLineOf(c *ui.Context, box emptyBox) {
 		icon = iconFileDiff
 	}
 	ui.Row(c).Gap(6).Padding(2, 0).Children(func() {
-		ui.Icon(c, icon).FontSize(12).TextColor(t.TextMuted).Shrink(0)
+		uiIcon(c, icon, iconSmall).TextColor(t.TextMuted).Shrink(0)
 		ui.Text(c, box.title).FontSize(11).TextColor(t.TextMuted).Shrink(0)
 		if box.detail != "" {
 			ui.Text(c, box.detail).FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(1).MinWidth(0)
