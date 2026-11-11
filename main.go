@@ -162,6 +162,13 @@ func noWindows() bool {
 	return n == 0 && (welcomeWin == nil || welcomeWin.IsDestroyed())
 }
 
+// startPage is the page a launch without a repository opens, which a session
+// closed comes back to when it was the last one. It is assigned in init so
+// that a test can watch the way back without a window.
+var startPage func(error)
+
+func init() { startPage = showWelcome }
+
 // showWelcome shows the window that opens a repository, with why none
 // was.
 func showWelcome(err error) {

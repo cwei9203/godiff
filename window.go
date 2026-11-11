@@ -220,6 +220,16 @@ type window struct {
 	help      bool
 	// undo is the one-tap action the bar under the surface offers back.
 	undo *undo
+
+	// The Sessions tab: the rows of the registry, the one the keys are on,
+	// and whether the recent repositories show under them.
+	sessionsList ui.ListState
+	sessionsSel  int
+	recentOpen   bool
+	// repoMenuOpen shows the repository panel of the title bar.
+	repoMenuOpen bool
+	// titleLang is the language the window's title was last written in.
+	titleLang string
 }
 
 var (
@@ -227,7 +237,58 @@ var (
 	windows   []*window
 )
 
-// openWindow opens a window on the repository holding dir.
+// registerWindow adds a window to the registry of the sessions open.
+func registerWindow(w *window) {
+	windowsMu.Lock()
+	windows = append(windows, w)
+	windowsMu.Unlock()
+}
+
+// unregisterWindow takes a window out of the registry of the sessions open.
+func unregisterWindow(w *window) {
+	windowsMu.Lock()
+	for i, o := range windows {
+		if o == w {
+			windows = append(windows[:i], windows[i+1:]...)
+			break
+		}
+	}
+	windowsMu.Unlock()
+}
+
+// sessionWindows is the registry of the sessions open, as the windows are
+// now: the sessions are the windows, so there is no second list to keep.
+func sessionWindows() []*window {
+	windowsMu.Lock()
+	defer windowsMu.Unlock()
+	return slices.Clone(windows)
+}
+
+// findSession returns the window reviewing a source of a repository, nil when
+// none does: a repository and a target make a session, and a session is one
+// window.
+func findSession(root string, src source) *window {
+	for _, w := range sessionWindows() {
+		if w.repo.Root == root && w.launch == src {
+			return w
+		}
+	}
+	return nil
+}
+
+// focusSession brings a session to the front. It is a variable so that a test
+// can watch where a click goes: the window a test opens has none of the
+// platform's to focus.
+var focusSession = func(w *window) {
+	if w.win != nil {
+		w.win.Show()
+		w.win.Focus()
+	}
+}
+
+// openWindow opens a window on the repository holding dir, or brings the
+// window already reviewing that source of it to the front: opening a session
+// that is open is a way back to it, never a second copy of it.
 func openWindow(dir string, src source) error {
 	repo, err := git.Open(dir)
 	if err != nil {
@@ -247,21 +308,24 @@ func openWindow(dir string, src source) error {
 		}
 		src.ref = ref
 	}
-	// A repository already open comes to the front.
-	windowsMu.Lock()
-	for _, w := range windows {
-		if w.repo.Root == repo.Root && w.launch == src {
-			windowsMu.Unlock()
-			w.win.Show()
-			w.win.Focus()
-			return nil
-		}
+	if w := findSession(repo.Root, src); w != nil {
+		focusSession(w)
+		return nil
 	}
-	windowsMu.Unlock()
+	return openNewWindow(repo, src)
+}
 
+// newPlatformWindow makes the window of the platform a session draws in. It is
+// a variable so that a test opens a session without one, and reads the
+// registry and its rows alone.
+var newPlatformWindow = mygo.NewWindow
+
+// openNewWindow makes the window of a session: its review, its platform
+// window, and the work that keeps it current.
+func openNewWindow(repo *git.Repo, src source) error {
 	w := newWindow(repo, src)
-	w.win = mygo.NewWindow(mygo.WindowOptions{
-		Title:          windowTitle(repo.Root, src),
+	w.win = newPlatformWindow(mygo.WindowOptions{
+		Title:          windowTitle(w),
 		Width:          1280,
 		Height:         860,
 		MinWidth:       720,
@@ -272,9 +336,13 @@ func openWindow(dir string, src source) error {
 		Vibrancy:       mygo.VibrancySidebar,
 		Content:        ui.View(w.view),
 	})
-	windowsMu.Lock()
-	windows = append(windows, w)
-	windowsMu.Unlock()
+	registerWindow(w)
+	if w.win == nil {
+		// A window a test opens has none of the platform's: it takes its place
+		// in the registry with its review, and nothing else.
+		w.load()
+		return nil
+	}
 	stop := make(chan struct{})
 	w.win.OnClose(func(*mygo.CloseEvent) {
 		if w.settings.CopyCommentsOnClose && len(w.comments) > 0 {
@@ -292,14 +360,7 @@ func openWindow(dir string, src source) error {
 		}
 		close(stop)
 		offSettings()
-		windowsMu.Lock()
-		for i, o := range windows {
-			if o == w {
-				windows = append(windows[:i], windows[i+1:]...)
-				break
-			}
-		}
-		windowsMu.Unlock()
+		unregisterWindow(w)
 	})
 	w.win.OnFocus(func() { go w.checkChanges() })
 	go noteRecent(repo.Root)
@@ -347,19 +408,11 @@ func newWindow(repo *git.Repo, src source) *window {
 	return w
 }
 
-// windowTitle is "<repository>[/<source>] · Godiff".
-func windowTitle(root string, src source) string {
-	name := filepath.Base(root)
-	switch src.kind {
-	case sourceCommit:
-		name += "/" + shortHash(src.ref)
-	case sourceBranch:
-		name += "/" + src.ref
-	case sourcePull:
-		_, n := src.pull()
-		name += fmt.Sprintf("/#%d", n)
-	}
-	return name + " · Godiff"
+// windowTitle is "<repository> — <target> · Godiff": the title the Window menu
+// and the Dock list the window by, which names the target so that the windows
+// of one launch read apart.
+func windowTitle(w *window) string {
+	return sessionRepoName(w) + " — " + sessionTarget(w.source) + " · Godiff"
 }
 
 func shortHash(h string) string {
@@ -516,7 +569,8 @@ func (w *window) switchTo(src source) {
 	w.current, w.shownFor = 0, -1
 	w.unviewedMiss = false
 	if w.win != nil {
-		w.win.SetTitle(windowTitle(w.repo.Root, src))
+		w.win.SetTitle(windowTitle(w))
+		w.titleLang = interfaceLanguage
 	}
 }
 
@@ -651,7 +705,7 @@ func (w *window) load() {
 			if !w.loadedOnce && len(files) == 0 && src.kind != sourceCommit && src.kind != sourcePull {
 				// Nothing to review: the history shows instead, and takes
 				// the keys in place of the review.
-				w.tab = 1
+				w.tab = tabHistory
 				w.focusHistory = w.sidebarShown
 				w.focusedOnce = true
 			}

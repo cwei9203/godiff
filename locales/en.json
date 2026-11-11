@@ -945,6 +945,78 @@
   "tabFiles": "Files (⌘1)",
   "tabHistory": "History (⌘2)",
   "tabPullRequests": "Pull Requests (⌘3)",
+  "tabSessions": "Sessions (⌘4)",
+  "@tabSessions": {
+    "description": "The sidebar's tab of the sessions open: the app's windows, grouped by repository."
+  },
+  "sessionsTabMenu": "Sessions",
+  "@sessionsTabMenu": {
+    "description": "The View menu's item showing the sidebar's Sessions tab."
+  },
+  "sessionsLabel": "Sessions",
+  "@sessionsLabel": {
+    "description": "The accessible name of the list of the Sessions tab."
+  },
+  "sessionWorktree": "Working tree",
+  "@sessionWorktree": {
+    "description": "A session reviewing the uncommitted changes of its repository, in the Sessions tab and in the window's title."
+  },
+  "sessionBranch": "Branch {branch}",
+  "@sessionBranch": {
+    "description": "A session comparing the work tree with a branch, in the Sessions tab and in the window's title.",
+    "placeholders": {
+      "branch": {
+        "type": "String",
+        "example": "main"
+      }
+    }
+  },
+  "sessionCommit": "Commit {sha}",
+  "@sessionCommit": {
+    "description": "A session reviewing a commit, in the Sessions tab and in the window's title.",
+    "placeholders": {
+      "sha": {
+        "type": "String",
+        "example": "a1b2c3d"
+      }
+    }
+  },
+  "sessionPull": "PR #{number}",
+  "@sessionPull": {
+    "description": "A session reviewing a pull request, in the Sessions tab and in the window's title.",
+    "placeholders": {
+      "number": {
+        "type": "int",
+        "example": "123"
+      }
+    }
+  },
+  "sessionCurrent": "The session you are in",
+  "@sessionCurrent": {
+    "description": "The tooltip of the mark on the row of the session the window is in."
+  },
+  "sessionCloseTip": "Close this session",
+  "@sessionCloseTip": {
+    "description": "The tooltip of the button closing a session, which closes its window."
+  },
+  "sessionGoTo": "Go to {target}",
+  "@sessionGoTo": {
+    "description": "The tooltip of another target of the repository, in the panel of the title bar: it brings that session's window to the front.",
+    "placeholders": {
+      "target": {
+        "type": "String",
+        "example": "PR #123"
+      }
+    }
+  },
+  "sessionsEmpty": "No other session open. Open a folder, or pick one of the recent ones.",
+  "@sessionsEmpty": {
+    "description": "The Sessions tab with one session alone: the ways to another one follow the list."
+  },
+  "sessionsRecentTip": "The repositories opened lately",
+  "@sessionsRecentTip": {
+    "description": "The tooltip of the Sessions tab's Recent row, which lists them."
+  },
   "sidebarLabel": "Sidebar",
   "clearLabel": "Clear",
   "loading": "Loading…",

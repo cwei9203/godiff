@@ -289,33 +289,32 @@ func (w *window) sidebar(c *ui.Context) {
 				ui.Spacer(c)
 			}
 		})
-		if w.tab == 2 && !w.gh.ok() {
-			w.tab = 0
-		}
 		ui.Column(c).Padding(2, 10, 8).Children(func() {
 			switch w.tab {
-			case 0:
+			case tabFiles:
 				if searchInput(c, &w.filter, msg().FilterFiles(), &w.filterFocus, &w.typing) {
 					w.matchesFor = "\x00"
 					w.buildTree()
 					w.rowsDirty = true
 				}
-			case 1:
+			case tabHistory:
 				searchInput(c, &w.historyFilter, msg().FilterHistory(), &w.filterFocus, &w.typing)
-			default:
+			case tabPullRequests:
 				searchInput(c, &w.pullsFilter, msg().FilterPullRequests(), &w.filterFocus, &w.typing)
 			}
 		})
-		if w.tab == 0 {
+		if w.tab == tabFiles {
 			w.foldAllRow(c, pal)
 		}
 		switch w.tab {
-		case 0:
+		case tabFiles:
 			w.fileTree(c)
-		case 1:
+		case tabHistory:
 			w.historyView(c)
-		default:
+		case tabPullRequests:
 			w.pullsView(c)
+		case tabSessions:
+			w.sessionsView(c)
 		}
 		w.sidebarFooter(c, pal)
 	})
@@ -334,8 +333,18 @@ func (w *window) sidebarBg(t *ui.Theme) ui.Color {
 // their controls on the traffic lights of a window with an inset title bar.
 const titleBarHeight = 52
 
-// tabControl switches the sidebar between the files, the history and the
-// pull requests, and reports a switch.
+// The sidebar's tabs. A window keeps its tab by these, whatever the segment
+// control shows: the pull requests' tab is not there where the repository has
+// no remote on GitHub, which would shift the sessions' index.
+const (
+	tabFiles = iota
+	tabHistory
+	tabPullRequests
+	tabSessions
+)
+
+// tabControl switches the sidebar between the files, the history, the pull
+// requests, and the sessions open, and reports a switch.
 func (w *window) tabControl(c *ui.Context) bool {
 	t := c.Theme()
 	pal := paletteFor(t)
@@ -344,19 +353,25 @@ func (w *window) tabControl(c *ui.Context) bool {
 		name string
 	}
 	items := []item{{iconTree, msg().TabFiles()}, {iconHistory, msg().TabHistory()}}
+	tabs := []int{tabFiles, tabHistory}
 	if w.gh.ok() {
 		items = append(items, item{iconPull, msg().TabPullRequests()})
+		tabs = append(tabs, tabPullRequests)
 	}
-	seg := ui.SegmentedBase(c, &w.tab, len(items))
+	items = append(items, item{iconLayers, msg().TabSessions()})
+	tabs = append(tabs, tabSessions)
+	shown := max(slices.Index(tabs, w.tab), 0)
+	seg := ui.SegmentedBase(c, &shown, len(items))
 	seg.Track.Padding(2).Gap(2).Radius(8).Background(ui.RGBA(127, 127, 127, 0.12)).Label(msg().SidebarLabel()).Children(func() {
 		for i, it := range items {
 			s := seg.Segment(i).Size(30, 24).Radius(6).Center().Label(it.name).Tooltip(it.name).TextColor(t.TextMuted)
-			if i == w.tab {
+			if i == shown {
 				s.Background(pal.surface).Shadow(0, 1, 2, 0, ui.RGBA(0, 0, 0, 0.12)).TextColor(t.Text)
 			}
 			s.Children(func() { ui.Icon(c, it.icon).FontSize(15) })
 		}
 	})
+	w.tab = tabs[shown]
 	return seg.Track.Changed()
 }
 
@@ -925,12 +940,12 @@ func (w *window) sidebarFooter(c *ui.Context, pal *palette) {
 			counted = true
 		}
 	}
-	canCommit := w.tab == 0 && w.source.kind == sourceWorkingTree && len(w.files) > 0
-	if !(counted && w.tab == 0) && !canCommit {
+	canCommit := w.tab == tabFiles && w.source.kind == sourceWorkingTree && len(w.files) > 0
+	if !(counted && w.tab == tabFiles) && !canCommit {
 		return
 	}
 	ui.Row(c).MinHeight(40).Padding(6, 10).Gap(8).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
-		if counted && w.tab == 0 {
+		if counted && w.tab == tabFiles {
 			ui.Row(c).Gap(6).Tooltip(msg().TotalChangeTip(adds, dels)).Children(func() {
 				ui.Text(c, msg().TotalLabel()).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
 				ui.Text(c, "+"+thousands(adds)).Font(w.codeFont()).FontSize(11).FontWeight(600).TextColor(pal.addText)
