@@ -25,6 +25,8 @@ func TestMain(m *testing.M) {
 	// The tests review every file at once unless they say otherwise: the
 	// file view that shows one file at a time has tests of its own.
 	cfg.settings.FileView = fileViewStack
+	// The file shown is saved at once: no test waits a second for it.
+	positionDebounce = 0
 	code := m.Run()
 	os.RemoveAll(dir)
 	os.Exit(code)

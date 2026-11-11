@@ -199,13 +199,24 @@ func analysisSlot(root string, src source) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// analysisPath is where the review of a source is saved, "" without a
-// place for it, as in tests.
-func analysisPath(root string, src source) string {
+// analysesDir is where the reviews of every source are saved, side by side,
+// "" without a place for them, as in tests. The sweep of the cache keeps
+// them per repository, and deletes the ones no window needs again.
+func analysesDir() string {
 	if state.path == "" {
 		return ""
 	}
-	return filepath.Join(filepath.Dir(state.path), "analyses", analysisSlot(root, src)+".json")
+	return filepath.Join(filepath.Dir(state.path), "analyses")
+}
+
+// analysisPath is where the review of a source is saved, "" without a
+// place for it, as in tests.
+func analysisPath(root string, src source) string {
+	dir := analysesDir()
+	if dir == "" {
+		return ""
+	}
+	return filepath.Join(dir, analysisSlot(root, src)+".json")
 }
 
 type savedAnalysis struct {
@@ -213,7 +224,11 @@ type savedAnalysis struct {
 	// Key is the analysisKey of what made the analysis: one saved under
 	// another key — by another prompt, model or language, or by a version
 	// before keys — is no review of what would run now.
-	Key          string            `json:"key,omitempty"`
+	Key string `json:"key,omitempty"`
+	// Root is the repository the review is of: the reviews of every
+	// repository are saved in one directory, and the sweep keeps each
+	// repository's own.
+	Root         string            `json:"root,omitempty"`
 	Fingerprints map[string]string `json:"fingerprints"`
 }
 
@@ -259,13 +274,14 @@ func (w *window) loadAnalysis(src source) {
 }
 
 // saveAnalysis writes an analysis where its source's review is kept, with
-// its key, so that it is read only while it is the review that would run.
-func saveAnalysis(path, key string, a *agent.Analysis, fingerprints map[string]string) {
+// its key and its repository, so that it is read only while it is the review
+// that would run.
+func saveAnalysis(path, root, key string, a *agent.Analysis, fingerprints map[string]string) {
 	if path == "" {
 		return
 	}
 	a.Normalize()
-	data, err := json.Marshal(savedAnalysis{Analysis: a, Key: key, Fingerprints: fingerprints})
+	data, err := json.Marshal(savedAnalysis{Analysis: a, Key: key, Root: root, Fingerprints: fingerprints})
 	if err != nil {
 		return
 	}
@@ -362,7 +378,7 @@ func (w *window) runAnalysis() {
 			if sha, rerr := w.repo.Resolve(rev); rerr == nil {
 				an.HeadSHA = sha
 			}
-			saveAnalysis(path, w.analysisKeyOf(src, an, fingerprints), an, fingerprints)
+			saveAnalysis(path, w.repo.Root, w.analysisKeyOf(src, an, fingerprints), an, fingerprints)
 		}
 		w.update(func() {
 			st.running, st.cancel = false, nil

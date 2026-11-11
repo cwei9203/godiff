@@ -430,11 +430,29 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	if w.list.Shortcut(c, 0, ui.KeyEnter) || (w.selHunk >= 0 && c.Shortcut(0, ui.KeyEnter)) {
 		w.commentOnSelection()
 	}
-	if c.Shortcut(0, ui.KeyN) {
-		w.nextNote(1)
-	}
-	if c.Shortcut(ui.Shift, ui.KeyN) {
-		w.nextNote(-1)
+	// n and N step to the files not viewed yet, one file at a time: with
+	// every file stacked they stay the notes', and the notes keep a key of
+	// their own while the files are one at a time, ⌥n and ⌥⇧n.
+	if w.oneFile() {
+		if c.Shortcut(0, ui.KeyN) {
+			w.stepUnviewed(1)
+		}
+		if c.Shortcut(ui.Shift, ui.KeyN) {
+			w.stepUnviewed(-1)
+		}
+		if c.Shortcut(ui.Alt, ui.KeyN) {
+			w.nextNote(1)
+		}
+		if c.Shortcut(ui.Alt|ui.Shift, ui.KeyN) {
+			w.nextNote(-1)
+		}
+	} else {
+		if c.Shortcut(0, ui.KeyN) {
+			w.nextNote(1)
+		}
+		if c.Shortcut(ui.Shift, ui.KeyN) {
+			w.nextNote(-1)
+		}
 	}
 	if (w.selHunk >= 0 || w.noteSel != nil) && c.Shortcut(0, ui.KeyEscape) {
 		w.selFile, w.selHunk, w.noteSel = -1, -1, nil

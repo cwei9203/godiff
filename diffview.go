@@ -76,6 +76,9 @@ func (f *fileState) metrics() fileMetrics {
 func (w *window) diffList(c *ui.Context) {
 	t := c.Theme()
 	pal := paletteFor(t)
+	// A window opened again comes back to the file shown last, before the
+	// rows are laid out for the file it would show first.
+	w.restorePosition()
 	shown := w.current
 	if w.oneFile() {
 		shown = w.shownFile()
@@ -118,6 +121,9 @@ func (w *window) diffList(c *ui.Context) {
 			w.selectTreeFile(file)
 		}
 	}
+	// The file shown is where the next window opens, once it has stayed a
+	// while: a walk through the files saves the last alone.
+	w.rememberPosition()
 }
 
 // matchRow scrolls the row of the match the find bar is on into the middle
@@ -186,6 +192,21 @@ func (w *window) fileNavRow(c *ui.Context, pal *palette, idx int) {
 			})
 		}
 		step(iconChevronRight, 0, 1, "Next file (\u005d)")
+		if w.unviewedMiss {
+			// The step found nothing: every file of the review is viewed.
+			ui.Text(c, everyFileViewed).FontSize(11).TextColor(t.TextMuted).Shrink(0)
+		}
+		// The same step for the reader who reviews by what is left: the first
+		// file not viewed yet, round from this one.
+		unviewed := ui.ButtonBase(c).Size(26, 26).Radius(6).Center().Label("Next unviewed file").
+			Tooltip("Next unviewed file").FocusRing(false)
+		if unviewed.Hovered() {
+			unviewed.Background(pal.hover)
+		}
+		unviewed.Children(func() { ui.Icon(c, iconEye).FontSize(15).TextColor(t.TextMuted) })
+		if unviewed.Clicked() {
+			w.stepUnviewed(1)
+		}
 	})
 }
 

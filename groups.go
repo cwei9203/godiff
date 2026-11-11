@@ -87,7 +87,50 @@ func (w *window) stepFile(dir int) {
 		return
 	}
 	files := w.viewFiles()
-	i := files[slices.Index(files, w.shownFile())+dir]
+	w.showFile(files[slices.Index(files, w.shownFile())+dir])
+}
+
+// everyFileViewed is what the bar says when there is no file left to step
+// to: a review every file of is viewed stays where it is.
+const everyFileViewed = "Every file is viewed"
+
+// nextUnviewed shows the next (dir 1) or the previous (dir -1) file not
+// viewed yet, from the one shown: the review is a circle, so the files are
+// searched round from the last to the first, and reports whether it found
+// one.
+func (w *window) nextUnviewed(dir int) bool {
+	files := w.viewFiles()
+	if len(files) == 0 {
+		return false
+	}
+	at := max(slices.Index(files, w.shownFile()), 0)
+	for step := 1; step <= len(files); step++ {
+		i := files[((at+dir*step)%len(files)+len(files))%len(files)]
+		if w.isViewed(w.files[i]) {
+			continue
+		}
+		w.showFile(i)
+		return true
+	}
+	return false
+}
+
+// stepUnviewed steps to a file not viewed yet, and says so in the bar when
+// every file of the review is viewed: nothing moves, and nothing opens.
+func (w *window) stepUnviewed(dir int) {
+	w.unviewedMiss = !w.nextUnviewed(dir)
+}
+
+// showFile shows a file of the files: one at a time it is the one laid out,
+// and in the stack the surface scrolls to its head.
+func (w *window) showFile(i int) {
+	if i < 0 || i >= len(w.files) {
+		return
+	}
+	if !w.oneFile() {
+		w.revealFile(i)
+		return
+	}
 	w.current = i
 	w.selFile, w.selHunk, w.noteSel = -1, -1, nil
 	w.revealedAt = w.now

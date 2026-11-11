@@ -384,13 +384,22 @@ func (w *window) sourceDialog(c *ui.Context) {
 // shortcutsHelp lists the keyboard shortcuts.
 func (w *window) shortcutsHelp(c *ui.Context) {
 	t := c.Theme()
+	// One file at a time, n steps through the files not viewed yet, and the
+	// notes take ⌥n; with every file stacked, n stays the notes'.
+	keys := [][2]string{{"Next unviewed file", "N"}, {"Previous unviewed file", "⇧N"},
+		{"Next AI note", "⌥N"}, {"Previous AI note", "⌥⇧N"}}
+	if !w.oneFile() {
+		keys = [][2]string{{"Next AI note", "N"}, {"Previous AI note", "⇧N"}}
+	}
+	navigation := [][2]string{{"Command bar", "⌘K"}, {"Filter files", "⌘P"}, {"Next hunk", "J"}, {"Previous hunk", "K"}}
+	navigation = append(navigation, keys...)
+	navigation = append(navigation, [2]string{"Toggle sidebar", "⌘⇧B"}, [2]string{"Toggle word wrap", "⌥Z"},
+		[2]string{"Open file in editor", "⌘⇧O"}, [2]string{"Refresh changes", "⌘R"})
 	groups := []struct {
 		title string
 		keys  [][2]string
 	}{
-		{"Navigation", [][2]string{{"Command bar", "⌘K"}, {"Filter files", "⌘P"}, {"Next hunk", "J"}, {"Previous hunk", "K"},
-			{"Next AI note", "N"}, {"Previous AI note", "⇧N"},
-			{"Toggle sidebar", "⌘⇧B"}, {"Toggle word wrap", "⌥Z"}, {"Open file in editor", "⌘⇧O"}, {"Refresh changes", "⌘R"}}},
+		{"Navigation", navigation},
 		{"Search", [][2]string{{"Find in diffs", "⌘F"}, {"Next match", "↩"}, {"Previous match", "⇧↩"}, {"Close search", "Esc"}}},
 		{"Comments", [][2]string{{"Comment on a line", "Click"}, {"Comment on the hunk", "↩"}, {"Add comment", "⌘↩"}, {"Discard comment", "Esc"}}},
 		{"Pull requests", [][2]string{{"Pull requests", "⌘3"}, {"Review with AI", "⌘⇧I"}, {"Add to your review", "⌘↩"}, {"Reply", "⌘↩"}}},
