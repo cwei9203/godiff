@@ -705,6 +705,22 @@ func (w *window) groupTreeRow(c *ui.Context, pal *palette, gi int, key string, f
 	}
 	if row.Clicked() {
 		w.closedDirs[key] = open
+		// The fold folds the group's cards too, where the surface stacks
+		// them: one click, one meaning, read in the tree or in the diffs.
+		// One file at a time, there is nothing to stack and the card of the
+		// file read is left open.
+		if !w.oneFile() {
+			// A fold is no navigation: the file read stays the one read,
+			// and the tree keeps the choice it had, whatever the cards
+			// folding away do to the top of the surface.
+			file, chosen := w.current, w.treeSel
+			for _, i := range w.groupFiles(gi) {
+				w.files[i].collapsed = open
+			}
+			w.current, w.treeSel = file, chosen
+			w.revealedAt = w.now
+			w.rowsDirty = true
+		}
 	}
 	row.Children(func() {
 		tip := "Hide the files of " + g.label
