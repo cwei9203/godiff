@@ -2143,13 +2143,15 @@ func (msgs Messages) SettingsCancel() string {
 // SettingsAnalysesKept says "Reviews kept in the cache"
 // in the language the app shows.
 //
-// The Advanced page: how many reviews of each repository are kept.
+// The Advanced page: how many reviews of every repository together are
+// kept.
 func SettingsAnalysesKept() string { return In(i18n.Locale()).SettingsAnalysesKept() }
 
 // SettingsAnalysesKept says "Reviews kept in the cache"
 // in the language of msgs.
 //
-// The Advanced page: how many reviews of each repository are kept.
+// The Advanced page: how many reviews of every repository together are
+// kept.
 func (msgs Messages) SettingsAnalysesKept() string {
 	return Catalog.Format(msgs.locale, "settingsAnalysesKept", nil)
 }
