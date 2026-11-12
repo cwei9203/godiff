@@ -462,7 +462,9 @@ func (w *window) fixDrawer(c *ui.Context, pal *palette) {
 	if st == nil {
 		return
 	}
-	ui.Column(c).Shrink(0).Background(pal.surface).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).Children(func() {
+	ui.Column(c).Shrink(0).Background(pal.surface).BorderWidth(1, 0, 0, 0).BorderColor(pal.border).
+		// The drawer is one stop of Tab: the arrows walk its head and its log.
+		FocusGroup(ui.Vertical).Label(msg().AgentOutput()).Children(func() {
 		ui.Column(c).Padding(7, 12).Gap(5).Children(func() {
 			w.fixHeader(c, st)
 			// Folded, the drawer is the one line of the header; open, the

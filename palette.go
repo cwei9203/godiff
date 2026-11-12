@@ -110,6 +110,14 @@ func (w *window) commands() []command {
 				w.setViewed(f, !w.isViewed(f))
 			}
 		}},
+		// The card's other actions have keys and menus of their own: the file
+		// opens in the editor with ⌘⇧O, and its path is copied here, as a
+		// right-click on its header copies it.
+		{title: msg().CopyPath(), hint: selected, run: func() {
+			if p := w.shownPath(); p != "" && w.win != nil {
+				mygo.Clipboard.WriteText(p)
+			}
+		}},
 		{title: msg().MarkAllViewed(), hint: msg().MarkAllViewedHint(), run: w.markAllViewed},
 		{title: msg().ResetReviewState(), hint: msg().ResetReviewStateHint(), run: w.resetReviewState},
 		{title: msg().NextFileCommand(), hint: msg().OneFileHint(), keys: stepNext, run: func() { w.stepFile(1) }},
@@ -423,7 +431,8 @@ func (w *window) shortcutsHelp(c *ui.Context) {
 	if !w.oneFile() {
 		keys = [][2]string{{msg().NextAiNoteCommand(), "N"}, {msg().PreviousAiNoteCommand(), "⇧N"}}
 	}
-	navigation := [][2]string{{msg().CommandBar(), "⌘K"}, {msg().FilterFiles(), "⌘P"}, {msg().NextHunk(), "J"}, {msg().PreviousHunk(), "K"}}
+	navigation := [][2]string{{msg().CommandBar(), "⌘K"}, {msg().FilterFiles(), "⌘P"}, {msg().NextHunk(), "J"}, {msg().PreviousHunk(), "K"},
+		{msg().ToggleViewed(), "V"}}
 	navigation = append(navigation, keys...)
 	navigation = append(navigation, [2]string{msg().ToggleSidebarMenu(), "⌘⇧B"}, [2]string{msg().ToggleWordWrap(), "⌥Z"},
 		[2]string{msg().OpenFileInEditorCommand(), "⌘⇧O"}, [2]string{msg().RefreshChanges(), "⌘R"})

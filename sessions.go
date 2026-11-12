@@ -312,3 +312,87 @@ func repoSessions(root string) []sessionEntry {
 	}
 	return nil
 }
+
+// savedSession is a session as the state keeps it: the repository, and the
+// target reviewed there. A state file outlives the code that wrote it, so the
+// kind of target is kept by its name rather than by its number.
+type savedSession struct {
+	Root string `json:"root"`
+	Kind string `json:"kind"`
+	Ref  string `json:"ref,omitempty"`
+}
+
+// ofSession is the session of a window as the state keeps it.
+func ofSession(w *window) savedSession {
+	return savedSession{Root: w.repo.Root, Kind: w.source.kind.String(), Ref: w.source.ref}
+}
+
+// source reads the target a saved session reviewed, false for a kind it does
+// not know: a state written by another version restores what it can.
+func (s savedSession) source() (source, bool) {
+	kind, ok := parseSourceKind(s.Kind)
+	if !ok {
+		return source{}, false
+	}
+	return source{kind: kind, ref: s.Ref}, true
+}
+
+// sessions returns the sessions the last run left open, in the order they
+// opened.
+func (s *store) sessions() []savedSession {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.data.Sessions)
+}
+
+// setSessions keeps the sessions open now, for the launch after this one.
+func (s *store) setSessions(list []savedSession) {
+	s.mu.Lock()
+	if slices.Equal(s.data.Sessions, list) {
+		s.mu.Unlock()
+		return
+	}
+	s.data.Sessions = list
+	s.mu.Unlock()
+	s.save()
+}
+
+// openSessions is the sessions open now, in the order they opened.
+func openSessions() []savedSession {
+	var kept []savedSession
+	for _, w := range sessionWindows() {
+		kept = append(kept, ofSession(w))
+	}
+	return kept
+}
+
+// noteSessions writes the sessions open to the state, for a launch that
+// restores them, as a window closes. Off, nothing is written and the next
+// launch opens the page that opens a repository.
+func noteSessions() {
+	if !cfg.Get().RestoreSessions {
+		return
+	}
+	state.setSessions(openSessions())
+}
+
+// restoreSessions reopens the sessions the last run left open, in the order
+// they opened. One that cannot be is skipped without a word: a repository
+// deleted, a commit gone, a branch that is no more. A launch that restores
+// none of them opens the page that opens a repository.
+func restoreSessions() {
+	restored := 0
+	for _, s := range state.sessions() {
+		src, ok := s.source()
+		if !ok {
+			continue
+		}
+		if err := openWindow(s.Root, src); err != nil {
+			continue
+		}
+		restored++
+	}
+	if restored == 0 {
+		startPage(nil)
+	}
+}

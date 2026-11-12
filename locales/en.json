@@ -1,6 +1,10 @@
 {
   "@@locale": "en",
   "toolbarFind": "Find in diffs",
+  "toolbarLabel": "Toolbar",
+  "@toolbarLabel": {
+    "description": "The bar along the top of a review, as assistive technology names it: the repository, the search, the comments, the view menu and the settings."
+  },
   "@toolbarFind": {
     "description": "The toolbar's search button, and the placeholder of the bar it opens: the search over the diffs."
   },
@@ -215,6 +219,20 @@
   "viewed": "Viewed",
   "@viewed": {
     "description": "The file card's checkbox marking the file read, which folds it."
+  },
+  "writtenIn": "This review was written in {language}",
+  "@writtenIn": {
+    "description": "The AI Review card, when the review it shows was written in a language other than the one the settings ask for now: the language it came in.",
+    "placeholders": {
+      "language": {
+        "type": "String",
+        "example": "English"
+      }
+    }
+  },
+  "analyzeInThisLanguage": "Analyze again in the current language",
+  "@analyzeInThisLanguage": {
+    "description": "The AI Review card, next to the language a review was written in: asks the agent for the review again, in the language the settings ask for now, which is paid for."
   },
   "collapseAll": "Collapse All",
   "@collapseAll": {
@@ -670,6 +688,14 @@
   "@settingsRestorePosition": {
     "description": "The Workspace page: a repository opens at the file shown when it was closed last."
   },
+  "settingsRestoreSessions": "Reopen the sessions of the last run",
+  "@settingsRestoreSessions": {
+    "description": "The Workspace page: whether a launch reopens the repositories and the targets the last run left open."
+  },
+  "settingsRestoreSessionsDetail": "A launch reopens the repositories and the targets the last run left open, in the order they opened. Off, it opens the page that opens a repository. One that cannot be reopened — a repository deleted, a commit gone — is skipped without a word.",
+  "@settingsRestoreSessionsDetail": {
+    "description": "The Workspace page: what reopening the sessions of the last run does, under the switch that asks for it."
+  },
   "settingsMaxRecent": "Repositories in Open Recent",
   "@settingsMaxRecent": {
     "description": "The Workspace page: how many repositories File → Open Recent lists."
@@ -1112,6 +1138,10 @@
   "explainNotInstalled": "The agent is not installed, or not on PATH. Install it, or choose another agent in Settings.",
   "explainNetwork": "The agent could not reach its service. Check the network, then try again.",
   "explainTimeout": "The agent did not answer in time. Try again, or choose a faster model.",
+  "explainNotVerified": "This agent is not supported for repairs yet: the way to let it write files has not been verified, so it would run read-only and change nothing. Review with it, or repair with another agent.",
+  "@explainNotVerified": {
+    "description": "A repair, failing because godiff does not know how to let that agent write files: unverified, rather than impossible for the agent."
+  },
   "finishYourReview": "Finish Your Review",
   "reviewSummaryPlaceholder": "Leave a comment",
   "reviewSummaryLabel": "Review summary",

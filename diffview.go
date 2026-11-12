@@ -103,11 +103,22 @@ func (w *window) diffList(c *ui.Context) {
 			w.list.ScrollTo(0, ui.Start)
 		}
 	}
-	// The review is a place the keys go, as the tree and the drawer are: Tab
-	// stops on it before the buttons of its cards.
+	// The review is a place the keys go, as the tree and the drawer are, and
+	// one stop of Tab rather than one for every button its cards hold: Tab
+	// stops on the review, and the file-level actions have keys and menus of
+	// their own.
 	changes := ui.List(c, &w.list, len(w.rows), func(i int) { w.diffRow(c, pal, i, w.list.FocusWithin(c)) }).
-		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Focusable().Label(msg().ChangesLabel())
+		Grow(1).MinWidth(0).Padding(0, 12, 24).Background(pal.appBg).Focusable().FocusGroup(ui.Vertical).
+		Label(msg().ChangesLabel())
 	focusRing(changes, pal, 0)
+	// The file shown has a menu of its own from the keys as well: Shift+F10 on
+	// the review opens what its header opens on a right-click, so that the
+	// actions of a card are not the pointer's alone.
+	changes.ContextMenu(func(m *ui.Menu) {
+		if w.current >= 0 && w.current < len(w.files) {
+			w.fileMenu(c, m, w.files[w.current])
+		}
+	})
 
 	// The file at the top follows the scrolling, and the tree with it.
 	first, _ := w.list.Visible()
@@ -379,24 +390,7 @@ func (w *window) fileHeader(c *ui.Context, pal *palette, idx int, f *fileState, 
 		// card draws: the rest stand apart by their ground alone.
 		h.Border(1, pal.border)
 	}
-	h.ContextMenu(func(m *ui.Menu) {
-		if m.Item(msg().OpenInEditor()).Disabled(f.Status == diff.Deleted).Chosen() {
-			w.openInEditor(f.Path, firstLine(f))
-		}
-		if m.Item(msg().CopyPath()).Chosen() {
-			c.WriteClipboard(f.Path)
-		}
-		if m.Item(msg().Viewed()).Checked(viewed).Chosen() {
-			w.setViewed(f, !viewed)
-		}
-		m.Separator()
-		if m.Item(msg().CollapseAll()).Chosen() {
-			w.setAllCollapsed(true)
-		}
-		if m.Item(msg().ExpandAll()).Chosen() {
-			w.setAllCollapsed(false)
-		}
-	})
+	h.ContextMenu(func(m *ui.Menu) { w.fileMenu(c, m, f) })
 	h.Children(func() {
 		if f.group >= 0 && f.group < len(w.groups) {
 			// Where the file belongs, so that a card says it too, and the way
@@ -993,4 +987,26 @@ func formatBytes(n int) string {
 		return fmt.Sprintf("%.1f %s", v, unit)
 	}
 	return fmt.Sprintf("%.0f %s", v, unit)
+}
+
+// fileMenu fills the menu of a file: the actions of its card, which its header
+// opens on a right-click, and the review opens from the keys.
+func (w *window) fileMenu(c *ui.Context, m *ui.Menu, f *fileState) {
+	viewed := w.isViewed(f)
+	if m.Item(msg().OpenInEditor()).Disabled(f.Status == diff.Deleted).Chosen() {
+		w.openInEditor(f.Path, firstLine(f))
+	}
+	if m.Item(msg().CopyPath()).Chosen() {
+		c.WriteClipboard(f.Path)
+	}
+	if m.Item(msg().Viewed()).Checked(viewed).Chosen() {
+		w.setViewed(f, !viewed)
+	}
+	m.Separator()
+	if m.Item(msg().CollapseAll()).Chosen() {
+		w.setAllCollapsed(true)
+	}
+	if m.Item(msg().ExpandAll()).Chosen() {
+		w.setAllCollapsed(false)
+	}
 }

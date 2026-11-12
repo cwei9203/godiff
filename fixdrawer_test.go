@@ -107,6 +107,15 @@ func TestEndFix(t *testing.T) {
 		t.Errorf("the error shown is %q, want %q", end.errText, want)
 	}
 
+	// An agent the way to let write is unverified is refused with a sentence
+	// too: unverified is not unable.
+	unverified := res
+	unverified.ErrReason = agent.ReasonNotVerified
+	end = endFix(unverified, errAgent, false)
+	if want := msg().ExplainNotVerified(); end.errText != want {
+		t.Errorf("the error shown is %q, want %q", end.errText, want)
+	}
+
 	// A failure that wrote nothing to stderr shows the error itself, and the
 	// long tail of it is cut to the lines the card shows.
 	end = endFix(review.FixResult{ExitCode: -1}, errAgent, false)

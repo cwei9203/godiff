@@ -137,6 +137,12 @@ func analysisKey(in analysisKeyInput) string {
 // the settings chose would make would be keyed so. An analysis keyed to
 // anything else is another analysis, not this one.
 func (w *window) analysisKeyOf(src source, a *agent.Analysis, fingerprints map[string]string) string {
+	return w.analysisKeyIn(src, a, fingerprints, cmp.Or(analysisLocale(), a.Locale))
+}
+
+// analysisKeyIn is analysisKeyOf in a language named: the one a review would
+// be written in now, or the one a review saved was written in.
+func (w *window) analysisKeyIn(src source, a *agent.Analysis, fingerprints map[string]string, locale string) string {
 	return analysisKey(analysisKeyInput{
 		SchemaVersion: agent.SchemaVersion,
 		PromptVersion: agent.PromptVersion,
@@ -144,11 +150,26 @@ func (w *window) analysisKeyOf(src source, a *agent.Analysis, fingerprints map[s
 		// was made with: those are the ones it chose.
 		Agent:        cmp.Or(w.settings.AIAgent, a.Agent),
 		Model:        cmp.Or(w.settings.AIModel, a.Model),
-		Locale:       cmp.Or(analysisLocale(), a.Locale),
+		Locale:       locale,
 		Root:         w.repo.Root,
 		Source:       strconv.Itoa(int(src.kind)) + ":" + src.ref,
 		Fingerprints: fingerprints,
 	})
+}
+
+// writtenIn is the language a review was written in when it is not the one a
+// review would be written in now, "" when it is: the review is still the
+// review of these files, and the card says which language it came in rather
+// than asking the agent again, which is paid for.
+func (w *window) writtenIn(a *agent.Analysis) string {
+	if a == nil {
+		return ""
+	}
+	now := analysisLocale()
+	if a.Locale == "" || now == "" || a.Locale == now {
+		return ""
+	}
+	return a.Locale
 }
 
 // readerLocale is the language the reader prefers, as the system has them,
@@ -254,10 +275,16 @@ func (w *window) loadAnalysis(src source) {
 		}
 		a := saved.Analysis
 		// An analysis of another contract, or one keyed as neither this
-		// prompt, this agent, this model, this language nor these files
-		// would be, is not a review of what runs now. It is no review at
-		// all rather than a stale one, and the next run writes over it.
-		if a.SchemaVersion != agent.SchemaVersion || saved.Key == "" || saved.Key != w.analysisKeyOf(src, a, saved.Fingerprints) {
+		// prompt, this agent, this model nor these files would be, is not a
+		// review of what runs now: it is no review at all rather than a stale
+		// one, and the next run writes over it.
+		//
+		// A review of another language stays: it is the review of these files
+		// all the same, and asking again is paid for, so the card names the
+		// language it came in and offers the run.
+		if a.SchemaVersion != agent.SchemaVersion || saved.Key == "" ||
+			(saved.Key != w.analysisKeyOf(src, a, saved.Fingerprints) &&
+				saved.Key != w.analysisKeyIn(src, a, saved.Fingerprints, a.Locale)) {
 			return
 		}
 		a.Normalize()
@@ -489,6 +516,21 @@ func (w *window) summaryCard(c *ui.Context, pal *palette) ui.Element {
 				}
 			}
 		})
+		// A review of another language is the review of these files all the
+		// same: the card names the language it came in, and offers the run
+		// that would say it again in this one, which is paid for.
+		if tag := w.writtenIn(st.result); tag != "" && !st.running {
+			ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+				ui.Text(c, msg().WrittenIn(summaryLocaleLabel(tag))).FontSize(12).TextColor(t.TextMuted).
+					Grow(1).Shrink(1).MinWidth(0).Wrap()
+				b := ui.ButtonBase(c).Shrink(0).Children(func() {
+					ui.Text(c, msg().AnalyzeInThisLanguage()).FontSize(12).FontWeight(600).TextColor(t.Accent)
+				})
+				if b.Clicked() {
+					w.runAnalysis()
+				}
+			})
+		}
 		switch {
 		case st.running:
 			w.cardRunning(c, pal, st)

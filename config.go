@@ -79,6 +79,9 @@ type Settings struct {
 	// RestorePosition opens a repository at the file shown last, off at
 	// its first file.
 	RestorePosition bool `json:"restorePosition"`
+	// RestoreSessions reopens the repositories and targets a run left open
+	// as the next one starts, off opening the page that opens a repository.
+	RestoreSessions bool `json:"restoreSessions"`
 	// MaxRecent is how many repositories File → Open Recent lists.
 	MaxRecent int `json:"maxRecent"`
 	// AnalysesKept is how many reviews of each repository the cache keeps,
@@ -422,6 +425,9 @@ type storeData struct {
 	// Recent lists them, and the app opens the first when started without
 	// one, from the Dock.
 	Recent []string `json:"recent"`
+	// Sessions are the repositories and targets the last run left open, in
+	// the order they opened: a launch with restoreSessions on reopens them.
+	Sessions []savedSession `json:"sessions,omitempty"`
 	// LastRepository is the repository opened last, as kept before Recent.
 	LastRepository string `json:"lastRepository,omitempty"`
 }

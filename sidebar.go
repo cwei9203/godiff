@@ -289,34 +289,38 @@ func (w *window) sidebar(c *ui.Context) {
 				ui.Spacer(c)
 			}
 		})
-		ui.Column(c).Padding(2, 10, 8).Children(func() {
+		// The panel is one stop of Tab: its filter, its folds and its list are
+		// walked by the arrows once the keys are in it, as a sidebar is.
+		ui.Column(c).Grow(1).MinWidth(0).FocusGroup(ui.Vertical).Label(msg().SidebarLabel()).Children(func() {
+			ui.Column(c).Padding(2, 10, 8).Children(func() {
+				switch w.tab {
+				case tabFiles:
+					if searchInput(c, &w.filter, msg().FilterFiles(), &w.filterFocus, &w.typing) {
+						w.matchesFor = "\x00"
+						w.buildTree()
+						w.rowsDirty = true
+					}
+				case tabHistory:
+					searchInput(c, &w.historyFilter, msg().FilterHistory(), &w.filterFocus, &w.typing)
+				case tabPullRequests:
+					searchInput(c, &w.pullsFilter, msg().FilterPullRequests(), &w.filterFocus, &w.typing)
+				}
+			})
+			if w.tab == tabFiles {
+				w.foldAllRow(c, pal)
+			}
 			switch w.tab {
 			case tabFiles:
-				if searchInput(c, &w.filter, msg().FilterFiles(), &w.filterFocus, &w.typing) {
-					w.matchesFor = "\x00"
-					w.buildTree()
-					w.rowsDirty = true
-				}
+				w.fileTree(c)
 			case tabHistory:
-				searchInput(c, &w.historyFilter, msg().FilterHistory(), &w.filterFocus, &w.typing)
+				w.historyView(c)
 			case tabPullRequests:
-				searchInput(c, &w.pullsFilter, msg().FilterPullRequests(), &w.filterFocus, &w.typing)
+				w.pullsView(c)
+			case tabSessions:
+				w.sessionsView(c)
 			}
+			w.sidebarFooter(c, pal)
 		})
-		if w.tab == tabFiles {
-			w.foldAllRow(c, pal)
-		}
-		switch w.tab {
-		case tabFiles:
-			w.fileTree(c)
-		case tabHistory:
-			w.historyView(c)
-		case tabPullRequests:
-			w.pullsView(c)
-		case tabSessions:
-			w.sessionsView(c)
-		}
-		w.sidebarFooter(c, pal)
 	})
 }
 

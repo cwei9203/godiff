@@ -355,7 +355,7 @@ func TestSettingsSnapshot(t *testing.T) {
 	)
 	withSettings(t, func(s *Settings) { s.AIAgent = "claude" })
 	for _, c := range []struct{ prefix, tag string }{{"en", "en"}, {"zh", "zh-Hans"}} {
-		for _, page := range []string{settingsAppearance, settingsAI, settingsAdvanced} {
+		for _, page := range []string{settingsAppearance, settingsAI, settingsWorkspace, settingsAdvanced} {
 			sw, tt := settingsOn(t, page)
 			sw.set(func(s *Settings) { s.UILocale = c.tag })
 			applyUiLocale(cfg.Get())

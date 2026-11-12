@@ -11,6 +11,7 @@ import (
 
 	"github.com/egoist/godiff/internal/agent"
 	"github.com/egoist/godiff/internal/git"
+	"github.com/egoist/mygo/ui"
 )
 
 // keyInput is an analysis of a change, keyed.
@@ -125,6 +126,16 @@ func TestSavedAnalysisKeyed(t *testing.T) {
 	if a := loaded(); a != nil {
 		t.Errorf("the review of another model loaded: %+v", a)
 	}
+	// A review of another language is still the review of these files: it
+	// loads, and the card says which language it came in.
+	withSettings(t, func(s *Settings) { s.SummaryLocale = "en" })
+	save("sonnet")
+	withSettings(t, func(s *Settings) { s.SummaryLocale = "zh-CN" })
+	if a := loaded(); a == nil || a.Locale != "en" {
+		t.Fatalf("the review of another language did not load: %+v", a)
+	}
+	withSettings(t, func(s *Settings) { s.SummaryLocale = "" })
+	save("sonnet")
 	// One saved before keys, or under another contract, is no review either.
 	withSettings(t, func(s *Settings) { s.AIAgent, s.AIModel = "claude", "sonnet" })
 	data, _ := os.ReadFile(analysisPath(repo.Root, src))
@@ -215,5 +226,69 @@ func TestAnalysisShowsUnknownFailures(t *testing.T) {
 	tt.Frame()
 	if !tt.HasText("it answered nothing") || tt.HasText("Show what it said") {
 		t.Errorf("the card of a failure it does not know: %q", tt.Texts())
+	}
+}
+
+// TestReviewWrittenInAnotherLanguage checks the card of a review of another
+// language: it says which language it came in, and offers the run that would
+// say it again in the one the settings ask for. The run is paid for, so it is
+// offered and never started by itself.
+func TestReviewWrittenInAnotherLanguage(t *testing.T) {
+	w, tt := newTestWindow(t, testRepo(t))
+	withSettings(t, func(s *Settings) { s.SummaryLocale = "zh-CN" })
+	w.settings = cfg.Get()
+	st := w.analysisFor(w.source)
+	st.result = &agent.Analysis{
+		Agent: "claude", Model: "sonnet", Locale: "en", OverallSummary: "One read path.",
+		Groups: []agent.Group{{Key: "code", Label: "Code", FilePaths: []string{"main.go"}}},
+	}
+	w.rowsDirty = true
+	tt.Frame()
+	if !tt.HasText(msg().WrittenIn("English")) {
+		t.Fatalf("the card does not say which language the review came in: %q", tt.Texts())
+	}
+	if !tt.HasText(msg().AnalyzeInThisLanguage()) {
+		t.Errorf("the card offers no review in this language: %q", tt.Texts())
+	}
+	// The language the settings ask for is the review's own: nothing to say.
+	st.result.Locale = "zh-CN"
+	tt.Frame()
+	if tt.HasText(msg().WrittenIn("简体中文")) || tt.HasText(msg().AnalyzeInThisLanguage()) {
+		t.Errorf("a review of this language is shown as another: %q", tt.Texts())
+	}
+}
+
+// TestReviewLanguageSnapshots saves the card of a review written in another
+// language, in each language: the sentence that says which one it came in, and
+// the way to ask again in this one.
+func TestReviewLanguageSnapshots(t *testing.T) {
+	if os.Getenv("GODIFF_SNAPSHOTS") == "" {
+		t.Skip("no GODIFF_SNAPSHOTS")
+	}
+	useEnglish(t)
+	w, tt := newTestWindow(t, testRepo(t))
+	st := w.analysisFor(w.source)
+	st.result = &agent.Analysis{
+		Agent: "claude", Model: "sonnet", Locale: "en",
+		OverallSummary: "The change renames the greeting and adds a helper.",
+		Groups: []agent.Group{{
+			Key: "code", Label: "Code", FilePaths: []string{"main.go"},
+			LineNotes: []agent.LineNote{{Path: "main.go", Side: "additions", Line: 6, Text: "The greeting gained punctuation."}},
+		}},
+	}
+	// The settings ask for a language, and the review is of another: the card
+	// says so, in the language of the interface.
+	for _, c := range []struct{ tag, ui, review string }{
+		{"en", "en", "zh-CN"},
+		{"zh", "zh-Hans", "en"},
+	} {
+		w.applySetting(func(s *Settings) { s.UILocale, s.SummaryLocale = c.ui, c.ui })
+		w.settings = cfg.Get()
+		st.result.Locale = c.review
+		w.rowsDirty = true
+		w.list.ScrollTo(0, ui.Start)
+		tt.Frame()
+		tt.Frame()
+		snapshot(t, tt, "review-language-"+c.tag)
 	}
 }
