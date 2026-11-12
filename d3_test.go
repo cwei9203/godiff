@@ -423,57 +423,94 @@ func TestProgressLineFollowsTheStep(t *testing.T) {
 	}
 }
 
-// TestTabWalksThePanels checks the order the keys walk: the tree, the review,
-// the drawer, and the toolbar, which is built last for it.
+// TestTabWalksThePanels checks what Tab stops on: the panels of a window, one
+// stop in each, rather than a stop on every button the review's cards hold.
+// A panel's own buttons are reached from it with the arrows; the ones a
+// file-level key or a right-click answers are not stops of Tab at all.
 func TestTabWalksThePanels(t *testing.T) {
 	w, tt := kindWindow(t)
 	w.fix = &fixState{open: true, phase: fixRunning, agent: "Claude Code", started: w.now}
 	tt.Frame()
-	// The tree takes the focus from a click, and the keys walk from it to the
-	// review, to the drawer, and to the bar, in that order.
+	// The tree takes the focus from a click, and the keys walk from it on.
 	box, ok := tt.Find("README.md")
 	if !ok {
 		t.Fatalf("no README.md: %q", tt.Texts())
 	}
 	tt.ClickAt(box.X+4, box.Y+box.H/2)
 	tt.Frame()
-	if !tt.Focused("Changed files") {
+	if !tt.Focused(msg().ChangedFilesLabel()) {
 		t.Fatal("the tree did not take the focus")
 	}
-	// The stops of the panels, in the order the keys reach them: each panel
-	// has stops of its own, and the panels keep their order.
-	region := func(s string) string {
-		switch s {
-		case "Changed files", "Commit", "Files (⌘1)", "History (⌘2)", "Filter files":
-			return "sidebar"
-		case "Changes", "Next file (])", "Next unviewed file", "Viewed", "Copy path", "Comment":
+	// stop names what holds the keys: a panel, "" for anything else. The
+	// sidebar says so twice, as a tab bar and the list under it are two
+	// stops: the arrows choose among the tabs, and Tab steps past them.
+	stop := func() string {
+		switch {
+		case tt.Focused(msg().ChangesLabel()):
 			return "main"
-		case "The agent's output", "Stop", "Hide the agent's output":
+		case tt.Focused(msg().ChangedFilesLabel()), tt.Focused(msg().FilterFiles()):
+			return "sidebar"
+		case tt.Focused(msg().TabFiles()):
+			return "tabs"
+		case tt.Focused(msg().HideOutput()), tt.Focused(msg().ShowOutput()),
+			tt.Focused(msg().AgentOutput()), tt.Focused(textStop()):
 			return "drawer"
-		case textRepo(), textFind() + " (⌘F)", textView(), "Hide sidebar (⌘⇧B)":
+		case tt.Focused(msg().SwitchRepo()), tt.Focused(msg().ToolbarLabel()):
 			return "bar"
 		}
 		return ""
 	}
 	var walked []string
-	for range 200 {
+	for range 40 {
 		tt.Key(0, ui.KeyTab)
 		tt.Frame()
-		if r := region(focusedText(tt)); r != "" && (len(walked) == 0 || walked[len(walked)-1] != r) {
-			walked = append(walked, r)
+		s := stop()
+		if s == "" {
+			// A stop of a button, or of something in no panel: either way
+			// the walk is not the panels' alone.
+			t.Fatalf("Tab stopped on %q, which is no panel of the review", focusedText(tt))
+		}
+		walked = append(walked, s)
+	}
+	// Five stops, in the order the panels stand, round from the last to the
+	// first.
+	want := []string{"main", "drawer", "bar", "tabs", "sidebar"}
+	at := slices.Index(walked, want[0])
+	if at < 0 {
+		t.Fatalf("the keys walk %v, want %v", walked, want)
+	}
+	for i := range walked {
+		if got, want := walked[i], want[(i-at+len(want))%len(want)]; got != want {
+			t.Fatalf("the keys walk %v: %s comes where %s should", walked, got, want)
 		}
 	}
-	want := []string{"main", "drawer", "bar", "sidebar"}
-	if !slices.Contains(walked, "main") || !slices.Contains(walked, "drawer") || !slices.Contains(walked, "bar") {
-		t.Fatalf("the keys walk %v, want the review, the drawer and the bar", walked)
+}
+
+// TestFileMenuFromTheKeys checks the menu of the file shown from the keys: with
+// the keys in the review, Shift+F10 opens what the card's header opens on a
+// right-click, so that the actions of a card are not the pointer's alone.
+func TestFileMenuFromTheKeys(t *testing.T) {
+	w, tt := kindWindow(t)
+	tt.Frame()
+	shown := w.shownFile()
+	if shown < 0 {
+		t.Fatalf("no file shown of %d", len(w.files))
 	}
-	// From wherever the walk starts, the panels keep their order, round from
-	// the last to the first.
-	at := slices.Index(walked, "main")
-	for i, r := range want {
-		if got := walked[(at+i)%len(walked)]; got != r {
-			t.Fatalf("the keys walk %v: %s comes where %s should", walked, got, r)
+	tt.Key(ui.Shift, ui.KeyF10)
+	tt.Frame()
+	menu := tt.Menu()
+	for _, want := range []string{msg().OpenInEditor(), msg().CopyPath(), msg().Viewed(), msg().CollapseAll(), msg().ExpandAll()} {
+		if !slices.Contains(menu, want) {
+			t.Errorf("%q is not in the menu of the review: %q", want, menu)
 		}
+	}
+	// And the menu acts on the file shown, as the buttons of its card do.
+	if err := tt.ChooseMenuItem(msg().Viewed()); err != nil {
+		t.Fatalf("choose %s: %v", msg().Viewed(), err)
+	}
+	tt.Frame()
+	if !w.isViewed(w.files[shown]) {
+		t.Errorf("%s is not viewed, though the menu of the review chose it", w.files[shown].Path)
 	}
 }
 

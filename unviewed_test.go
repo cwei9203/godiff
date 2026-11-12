@@ -151,3 +151,43 @@ func TestStackKeepsNForTheNotes(t *testing.T) {
 		t.Errorf("n went to the note of %s:%d", w.noteSel.path, w.noteSel.line)
 	}
 }
+
+// TestViewedKeyMarksTheFileShown checks the one key of a file's action: v
+// marks the file the surface shows viewed, which folds it, and v again
+// unmarks it, as the card's checkbox does.
+func TestViewedKeyMarksTheFileShown(t *testing.T) {
+	w, tt := fileViewWindow(t)
+	// One file at a time, the surface shows that one: the key acts on it.
+	shown := w.shownFile()
+	if shown < 0 {
+		t.Fatalf("no file shown of %d", len(w.files))
+	}
+	f := w.files[shown]
+	if w.isViewed(f) {
+		t.Fatalf("%s is viewed before the key", f.Path)
+	}
+	tt.Key(0, ui.KeyV)
+	tt.Frame()
+	if !w.isViewed(f) {
+		t.Fatalf("v did not mark %s viewed", f.Path)
+	}
+	if !f.collapsed {
+		t.Errorf("%s is viewed and not folded", f.Path)
+	}
+	tt.Key(0, ui.KeyV)
+	tt.Frame()
+	if w.isViewed(f) {
+		t.Fatalf("v did not unmark %s", f.Path)
+	}
+	if f.collapsed {
+		t.Errorf("%s is unmarked and still folded", f.Path)
+	}
+	// A field with the focus keeps its letters: v is a letter to type.
+	tt.Click(msg().FilterFiles())
+	tt.Frame()
+	tt.Type("v")
+	tt.Frame()
+	if w.isViewed(f) {
+		t.Fatalf("v in the filter marked %s viewed", f.Path)
+	}
+}

@@ -223,8 +223,12 @@ func namesRepository(args []string) bool {
 // names no repository.
 func open(req request, args []string, fromUser bool) {
 	if showsWelcome(args, fromUser) {
-		// Started from Finder or the Dock: the window that opens a
-		// repository, of the recent ones or of a folder.
+		// Started from Finder or the Dock: the sessions the last run left
+		// open, or else the window that opens a repository.
+		if cfg.Get().RestoreSessions {
+			restoreSessions()
+			return
+		}
 		showWelcome(nil)
 		return
 	}
@@ -298,6 +302,21 @@ func main() {
 	mygo.App.OnWindowAllClosed(func() {
 		if runtime.GOOS != "darwin" {
 			mygo.App.Quit()
+		}
+	})
+	// The sessions open as a quit starts are the ones the next launch
+	// restores. They are read there and written once the quit goes on: each
+	// window closing writes the ones left, and the last of those writes would
+	// be one session short.
+	var atQuit []savedSession
+	mygo.App.OnBeforeQuit(func(*mygo.QuitEvent) {
+		if cfg.Get().RestoreSessions {
+			atQuit = openSessions()
+		}
+	})
+	mygo.App.OnWillQuit(func(*mygo.QuitEvent) {
+		if atQuit != nil {
+			state.setSessions(atQuit)
 		}
 	})
 	mygo.App.OnActivate(func(hasVisibleWindows bool) {

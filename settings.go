@@ -822,6 +822,14 @@ func (sw *settingsWindow) workspacePage(c *ui.Context, pal *palette) {
 		sw.check(c, msg().SettingsRestorePosition(), s.RestorePosition, func(on bool) {
 			sw.set(func(s *Settings) { s.RestorePosition = on })
 		})
+		sw.checkDetail(c, msg().SettingsRestoreSessions(), msg().SettingsRestoreSessionsDetail(), s.RestoreSessions, func(on bool) {
+			sw.set(func(s *Settings) { s.RestoreSessions = on })
+			// Off, what the state keeps of the last run goes: nothing is
+			// restored by a launch the switch did not ask.
+			if !on {
+				state.setSessions(nil)
+			}
+		})
 
 		ui.Field(c, msg().SettingsMaxRecent(), func() {
 			if ui.NumberInput(c, &sw.maxRecent, maxRecentMin, maxRecentLimit, 1).Changed() {

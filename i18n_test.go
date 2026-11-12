@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -261,5 +264,39 @@ func TestI18nSnapshotsWelcomeAndCard(t *testing.T) {
 		st.progress = agent.Progress{Kind: agent.ProgressReading, Paths: []string{"app.go", "app_test.go", "go.mod"}}
 		tt.Frame()
 		snapshot(t, tt, "ai-running-"+c.prefix)
+	}
+}
+
+// TestGenLocalesScript checks the script that writes the catalog: it runs from
+// a repository whose path has a space in it, which is what it is for, and the
+// file it writes is the one the catalogs make.
+func TestGenLocalesScript(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the script is a shell script")
+	}
+	src, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The repository copied where the generator can work, under a folder whose
+	// name has a space in it, as ~/Library/Application Support has.
+	dir := filepath.Join(t.TempDir(), "a folder with a space")
+	if out, err := exec.Command("cp", "-R", src+"/.", dir).CombinedOutput(); err != nil {
+		t.Fatalf("copy the repository to %s: %v\n%s", dir, err, out)
+	}
+	want, err := os.ReadFile(filepath.Join(src, "locales", "catalog_gen.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := exec.Command("/bin/sh", filepath.Join(dir, "scripts", "gen-locales.sh")).CombinedOutput()
+	if err != nil {
+		t.Fatalf("the script failed in %s: %v\n%s", dir, err, out)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, "locales", "catalog_gen.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Errorf("the script wrote another catalog than the one the repository has:\n%s", out)
 	}
 }

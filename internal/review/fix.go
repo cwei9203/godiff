@@ -99,7 +99,11 @@ func fix(ctx context.Context, req FixRequest, started time.Time, onLine func(str
 	}
 	args, err := fixArgs(req)
 	if err != nil {
-		return FixResult{}, err
+		res := FixResult{}
+		if errors.Is(err, errNotVerified) {
+			res.ErrReason = agent.ReasonNotVerified
+		}
+		return res, err
 	}
 	// The file and the prompt are one text: what the agent is told is
 	// exactly what a user running it by hand would read.
@@ -171,6 +175,10 @@ func fix(ctx context.Context, req FixRequest, started time.Time, onLine func(str
 	return res, nil
 }
 
+// errNotVerified is an agent the way to let write files has not been verified
+// for: it is a reason the interface says rather than a failure of the agent's.
+var errNotVerified = errors.New("the way to let this agent write files has not been verified, so it would run read-only and change nothing")
+
 // fixArgs is the command of a repair, which is the command of an analysis
 // with the permissions the other way round: an analysis reads the change,
 // a repair writes it. The prompt goes on stdin, never in the arguments: a
@@ -206,8 +214,10 @@ func fixArgs(req FixRequest) ([]string, error) {
 	case "opencode":
 		// Its analysis adapter denies every tool that changes anything, and
 		// the way to allow them is unverified: running it with the analysis
-		// arguments would call itself a repair and change nothing.
-		return nil, errors.New("opencode cannot repair: the way to let it write has not been verified, so it would run read-only and change nothing")
+		// arguments would call itself a repair and change nothing. The
+		// interface says why in the reader's language, as the reason
+		// errNotVerified carries.
+		return nil, errNotVerified
 	}
 	return nil, fmt.Errorf("unknown agent %q", req.Agent.Name)
 }

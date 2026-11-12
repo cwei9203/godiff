@@ -50,6 +50,22 @@ func (msgs Messages) ToolbarFind() string {
 	return Catalog.Format(msgs.locale, "toolbarFind", nil)
 }
 
+// ToolbarLabel says "Toolbar"
+// in the language the app shows.
+//
+// The bar along the top of a review, as assistive technology names it: the
+// repository, the search, the comments, the view menu and the settings.
+func ToolbarLabel() string { return In(i18n.Locale()).ToolbarLabel() }
+
+// ToolbarLabel says "Toolbar"
+// in the language of msgs.
+//
+// The bar along the top of a review, as assistive technology names it: the
+// repository, the search, the comments, the view menu and the settings.
+func (msgs Messages) ToolbarLabel() string {
+	return Catalog.Format(msgs.locale, "toolbarLabel", nil)
+}
+
 // ViewMenu says "View"
 // in the language the app shows.
 //
@@ -648,6 +664,40 @@ func Viewed() string { return In(i18n.Locale()).Viewed() }
 // The file card's checkbox marking the file read, which folds it.
 func (msgs Messages) Viewed() string {
 	return Catalog.Format(msgs.locale, "viewed", nil)
+}
+
+// WrittenIn says "This review was written in {language}"
+// in the language the app shows.
+//
+// The AI Review card, when the review it shows was written in a language
+// other than the one the settings ask for now: the language it came in.
+func WrittenIn(language string) string { return In(i18n.Locale()).WrittenIn(language) }
+
+// WrittenIn says "This review was written in {language}"
+// in the language of msgs.
+//
+// The AI Review card, when the review it shows was written in a language
+// other than the one the settings ask for now: the language it came in.
+func (msgs Messages) WrittenIn(language string) string {
+	return Catalog.Format(msgs.locale, "writtenIn", map[string]any{"language": language})
+}
+
+// AnalyzeInThisLanguage says "Analyze again in the current language"
+// in the language the app shows.
+//
+// The AI Review card, next to the language a review was written in: asks
+// the agent for the review again, in the language the settings ask for now,
+// which is paid for.
+func AnalyzeInThisLanguage() string { return In(i18n.Locale()).AnalyzeInThisLanguage() }
+
+// AnalyzeInThisLanguage says "Analyze again in the current language"
+// in the language of msgs.
+//
+// The AI Review card, next to the language a review was written in: asks
+// the agent for the review again, in the language the settings ask for now,
+// which is paid for.
+func (msgs Messages) AnalyzeInThisLanguage() string {
+	return Catalog.Format(msgs.locale, "analyzeInThisLanguage", nil)
 }
 
 // CollapseAll says "Collapse All"
@@ -1994,6 +2044,38 @@ func SettingsRestorePosition() string { return In(i18n.Locale()).SettingsRestore
 // closed last.
 func (msgs Messages) SettingsRestorePosition() string {
 	return Catalog.Format(msgs.locale, "settingsRestorePosition", nil)
+}
+
+// SettingsRestoreSessions says "Reopen the sessions of the last run"
+// in the language the app shows.
+//
+// The Workspace page: whether a launch reopens the repositories and the
+// targets the last run left open.
+func SettingsRestoreSessions() string { return In(i18n.Locale()).SettingsRestoreSessions() }
+
+// SettingsRestoreSessions says "Reopen the sessions of the last run"
+// in the language of msgs.
+//
+// The Workspace page: whether a launch reopens the repositories and the
+// targets the last run left open.
+func (msgs Messages) SettingsRestoreSessions() string {
+	return Catalog.Format(msgs.locale, "settingsRestoreSessions", nil)
+}
+
+// SettingsRestoreSessionsDetail says "A launch reopens the repositories and the targets the last run left open, in the order they opened. Off, it opens the…"
+// in the language the app shows.
+//
+// The Workspace page: what reopening the sessions of the last run does,
+// under the switch that asks for it.
+func SettingsRestoreSessionsDetail() string { return In(i18n.Locale()).SettingsRestoreSessionsDetail() }
+
+// SettingsRestoreSessionsDetail says "A launch reopens the repositories and the targets the last run left open, in the order they opened. Off, it opens the…"
+// in the language of msgs.
+//
+// The Workspace page: what reopening the sessions of the last run does,
+// under the switch that asks for it.
+func (msgs Messages) SettingsRestoreSessionsDetail() string {
+	return Catalog.Format(msgs.locale, "settingsRestoreSessionsDetail", nil)
 }
 
 // SettingsMaxRecent says "Repositories in Open Recent"
@@ -5236,6 +5318,22 @@ func ExplainTimeout() string { return In(i18n.Locale()).ExplainTimeout() }
 // in the language of msgs.
 func (msgs Messages) ExplainTimeout() string {
 	return Catalog.Format(msgs.locale, "explainTimeout", nil)
+}
+
+// ExplainNotVerified says "This agent is not supported for repairs yet: the way to let it write files has not been verified, so it would run rea…"
+// in the language the app shows.
+//
+// A repair, failing because godiff does not know how to let that agent
+// write files: unverified, rather than impossible for the agent.
+func ExplainNotVerified() string { return In(i18n.Locale()).ExplainNotVerified() }
+
+// ExplainNotVerified says "This agent is not supported for repairs yet: the way to let it write files has not been verified, so it would run rea…"
+// in the language of msgs.
+//
+// A repair, failing because godiff does not know how to let that agent
+// write files: unverified, rather than impossible for the agent.
+func (msgs Messages) ExplainNotVerified() string {
+	return Catalog.Format(msgs.locale, "explainNotVerified", nil)
 }
 
 // FinishYourReview says "Finish Your Review"

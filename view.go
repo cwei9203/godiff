@@ -130,7 +130,10 @@ func (w *window) toolbar(c *ui.Context, pal *palette) {
 	}
 	width, _ := c.Size()
 	ui.Row(c).Absolute().Top(0).Left(0).Right(0).Height(titleBarHeight).Padding(0, right, 0, left).Gap(8).
-		DragWindow().BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Background(pal.surface.Alpha(0.6)).Children(func() {
+		DragWindow().BorderWidth(0, 0, 1, 0).BorderColor(pal.border).Background(pal.surface.Alpha(0.6)).
+		// The bar is one stop of Tab, as a toolbar is; the arrows walk its
+		// controls.
+		FocusGroup(ui.Horizontal).Role(ui.RoleToolbar).Label(msg().ToolbarLabel()).Children(func() {
 		// The repository: its name, and where it is, and the way to
 		// another one: the folders of late, or one to pick.
 		w.repoSwitcher(c, pal)
@@ -470,6 +473,11 @@ func (w *window) shortcuts(c *ui.Context, reviewBuilt bool) {
 	}
 	if c.Shortcut(0, ui.KeyK) || c.Shortcut(ui.Ctrl, ui.KeyUp) {
 		w.nextHunk(-1)
+	}
+	// v marks the file shown viewed, or not, which folds it: the one action of
+	// a file, for a keyboard that does not walk to the card's checkbox.
+	if c.Shortcut(0, ui.KeyV) {
+		w.toggleViewedShown()
 	}
 	if w.list.Shortcut(c, 0, ui.KeyEnter) || (w.selHunk >= 0 && c.Shortcut(0, ui.KeyEnter)) {
 		w.commentOnSelection()

@@ -40,6 +40,36 @@ type source struct {
 	ref  string // the commit, the branch, or the pull request as owner/repo#123
 }
 
+// String names a kind of source as the state keeps it, and parseSourceKind
+// reads it back: a state file outlives the numbers of the kinds.
+func (k sourceKind) String() string {
+	switch k {
+	case sourceCommit:
+		return "commit"
+	case sourceBranch:
+		return "branch"
+	case sourcePull:
+		return "pull"
+	}
+	return "worktree"
+}
+
+// parseSourceKind reads a kind of source as the state keeps it, false for
+// one it does not know.
+func parseSourceKind(s string) (sourceKind, bool) {
+	switch s {
+	case "worktree":
+		return sourceWorkingTree, true
+	case "commit":
+		return sourceCommit, true
+	case "branch":
+		return sourceBranch, true
+	case "pull":
+		return sourcePull, true
+	}
+	return sourceWorkingTree, false
+}
+
 // historyPage is how many commits the History tab loads at a time: git
 // lists hundreds in a few milliseconds, and the list builds only the rows
 // in view.
@@ -361,6 +391,9 @@ func openNewWindow(repo *git.Repo, src source) error {
 		close(stop)
 		offSettings()
 		unregisterWindow(w)
+		// The sessions left open are the ones the next launch restores; a
+		// quit writes the ones it started with, once it goes on.
+		noteSessions()
 	})
 	w.win.OnFocus(func() { go w.checkChanges() })
 	go noteRecent(repo.Root)
@@ -849,6 +882,17 @@ func (w *window) setViewed(f *fileState, viewed bool) {
 	// What was not viewed is not what the reader asked for anymore.
 	w.unviewedMiss = false
 	w.rowsDirty = true
+}
+
+// toggleViewedShown marks the file shown viewed, or not, as the card's
+// checkbox does. It is what the v key does: the one action of a file, for a
+// keyboard that does not walk to the checkbox of every card.
+func (w *window) toggleViewedShown() {
+	i := w.shownFile()
+	if i < 0 || i >= len(w.files) {
+		return
+	}
+	w.setViewed(w.files[i], !w.isViewed(w.files[i]))
 }
 
 // positionDebounce is how long the file shown stays before it is saved: it

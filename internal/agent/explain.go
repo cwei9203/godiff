@@ -21,6 +21,10 @@ const (
 	ReasonNetwork
 	// ReasonTimeout is an agent that did not answer in time.
 	ReasonTimeout
+	// ReasonNotVerified is an agent godiff does not know how to let write
+	// files: the way has not been verified, rather than the agent being
+	// unable to.
+	ReasonNotVerified
 )
 
 // String names a reason, for a log or a test.
@@ -36,6 +40,8 @@ func (r Reason) String() string {
 		return "network"
 	case ReasonTimeout:
 		return "timeout"
+	case ReasonNotVerified:
+		return "not verified"
 	}
 	return "unknown"
 }

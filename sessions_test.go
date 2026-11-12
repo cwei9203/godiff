@@ -407,3 +407,81 @@ func TestSessionsRecentRow(t *testing.T) {
 		t.Error("the Recent row did not close")
 	}
 }
+
+// TestRestoreSessionsReopensTheLastRun checks the switch that carries the
+// sessions across a restart: on, closing a window writes what is open, and a
+// launch opens them again in the order they opened; off, nothing is written
+// and a launch opens the page that opens a repository. One that cannot be
+// reopened is skipped without a word.
+func TestRestoreSessionsReopensTheLastRun(t *testing.T) {
+	useEnglish(t)
+	noPlatformWindows(t)
+	withStateFile(t)
+	first, second := testRepo(t), testRepo(t)
+	gitIn(t, second, "branch", "feature")
+	a, _ := openTestSession(t, first, source{})
+	b, _ := openTestSession(t, second, source{kind: sourceBranch, ref: "feature"})
+
+	// Off, a window closing writes nothing to restore.
+	noteSessions()
+	if kept := state.sessions(); len(kept) != 0 {
+		t.Fatalf("the sessions of a run that restores none were written: %+v", kept)
+	}
+
+	// On, the sessions open are written as they stand, in the order they
+	// opened.
+	withSettings(t, func(s *Settings) { s.RestoreSessions = true })
+	noteSessions()
+	kept := state.sessions()
+	if len(kept) != 2 {
+		t.Fatalf("%d sessions written, want the two open: %+v", len(kept), kept)
+	}
+	if kept[0].Root != a.repo.Root || kept[0].Kind != "worktree" {
+		t.Errorf("the first session written is %+v, want the work tree of %s", kept[0], a.repo.Root)
+	}
+	if kept[1].Root != b.repo.Root || kept[1].Kind != "branch" || kept[1].Ref != "feature" {
+		t.Errorf("the second session written is %+v, want the branch feature of %s", kept[1], b.repo.Root)
+	}
+
+	// The next launch opens them again, in that order.
+	for _, w := range sessionWindows() {
+		unregisterWindow(w)
+	}
+	restoreSessions()
+	t.Cleanup(func() {
+		for _, w := range sessionWindows() {
+			unregisterWindow(w)
+		}
+	})
+	opened := sessionWindows()
+	if len(opened) != 2 {
+		t.Fatalf("%d sessions reopened, want the two", len(opened))
+	}
+	if opened[0].repo.Root != a.repo.Root || opened[0].source.kind != sourceWorkingTree {
+		t.Errorf("the first session reopened is %s of %s, want the work tree of %s",
+			sessionTarget(opened[0].source), opened[0].repo.Root, a.repo.Root)
+	}
+	if opened[1].repo.Root != b.repo.Root || opened[1].source.kind != sourceBranch || opened[1].source.ref != "feature" {
+		t.Errorf("the second session reopened is %s of %s, want the branch feature of %s",
+			sessionTarget(opened[1].source), opened[1].repo.Root, b.repo.Root)
+	}
+
+	// A repository deleted and a commit gone are skipped without a word, and
+	// a launch that restores none of them opens the page that opens a
+	// repository.
+	for _, w := range sessionWindows() {
+		unregisterWindow(w)
+	}
+	showed := watchingStartPage(t)
+	state.setSessions([]savedSession{
+		{Root: filepath.Join(t.TempDir(), "gone"), Kind: "worktree"},
+		{Root: first, Kind: "commit", Ref: "0000000000000000000000000000000000000000"},
+	})
+	restoreSessions()
+	if n := len(sessionWindows()); n != 0 {
+		t.Errorf("%d sessions reopened of two that cannot be", n)
+	}
+	if *showed != 1 {
+		t.Errorf("the launch came back to the page that opens a repository %d times, want once", *showed)
+	}
+}

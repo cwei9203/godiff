@@ -1,6 +1,10 @@
 {
   "@@locale": "zh-Hans",
   "toolbarFind": "在差异中搜索",
+  "toolbarLabel": "工具栏",
+  "@toolbarLabel": {
+    "description": "The bar along the top of a review, as assistive technology names it: the repository, the search, the comments, the view menu and the settings."
+  },
   "viewMenu": "视图",
   "viewMenuTip": "这里决定审查显示什么：差异的排布、文件视图、主题、换行、空白和分组",
   "diffMenu": "差异",
@@ -36,6 +40,20 @@
   "noMatchingDiffs": "差异里没有匹配",
   "groupViewed": "已看 {viewed}/{total}",
   "viewedFilesTip": "已看的文件",
+  "writtenIn": "此结果用 {language} 生成",
+  "@writtenIn": {
+    "description": "The AI Review card, when the review it shows was written in a language other than the one the settings ask for now: the language it came in.",
+    "placeholders": {
+      "language": {
+        "type": "String",
+        "example": "简体中文"
+      }
+    }
+  },
+  "analyzeInThisLanguage": "用当前语言重新分析",
+  "@analyzeInThisLanguage": {
+    "description": "The AI Review card, next to the language a review was written in: asks the agent for the review again, in the language the settings ask for now, which is paid for."
+  },
   "foldGroup": "收起",
   "unfoldGroup": "展开",
   "foldGroupTip": "收起或展开 {group}",
@@ -136,6 +154,14 @@
   "settingsRestorePosition": "恢复上次阅读位置",
   "settingsMaxRecent": "最近仓库条数",
   "settingsMaxRecentDetail": "列出最新的几个。",
+  "settingsRestoreSessions": "恢复上次的会话",
+  "@settingsRestoreSessions": {
+    "description": "The Workspace page: whether a launch reopens the repositories and the targets the last run left open."
+  },
+  "settingsRestoreSessionsDetail": "启动时恢复上次开着的仓库与 target，按打开的顺序。关闭时打开起手页。恢复失败的（仓库被删、commit 不存在）静默跳过。",
+  "@settingsRestoreSessionsDetail": {
+    "description": "The Workspace page: what reopening the sessions of the last run does, under the switch that asks for it."
+  },
   "settingsAdvancedDetail": "缓存、日志和命令行工具。",
   "settingsCacheUnknown": "正在读取缓存…",
   "settingsCacheUsage": "缓存占用 {size}。",
@@ -441,6 +467,10 @@
   "explainNotInstalled": "智能体未安装，或不在 PATH 里。请安装它，或在设置里换一个智能体。",
   "explainNetwork": "智能体连不上它的服务。请检查网络，然后重试。",
   "explainTimeout": "智能体没有及时响应。请重试，或换一个更快的模型。",
+  "explainNotVerified": "这个智能体暂不支持修复：放它写文件的方式尚未验证，它只会只读运行、什么都不改。可以用它评审，换一个智能体来修。",
+  "@explainNotVerified": {
+    "description": "A repair, failing because godiff does not know how to let that agent write files: unverified, rather than impossible for the agent."
+  },
   "finishYourReview": "完成你的审查",
   "reviewSummaryPlaceholder": "留下评论",
   "reviewSummaryLabel": "审查总结",

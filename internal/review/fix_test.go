@@ -376,8 +376,13 @@ func TestFixUnsupportedAgent(t *testing.T) {
 	root := fixRepo(t)
 	a, _ := agent.ByName("opencode")
 	res, err, lines := runFix(t, FixRequest{Root: root, Agent: a, Task: "# Review\n"})
-	if err == nil || !strings.Contains(err.Error(), "opencode") {
-		t.Fatalf("opencode was not refused: %v", err)
+	if err == nil {
+		t.Fatal("opencode was not refused")
+	}
+	// The refusal is a reason the interface says in the reader's language: the
+	// way to let it write is unverified, which is no failure of the agent's.
+	if res.ErrReason != agent.ReasonNotVerified {
+		t.Errorf("the refusal is reason %s, want the unverified way to write", res.ErrReason)
 	}
 	if res.LogPath != "" || len(lines) != 0 {
 		t.Errorf("opencode ran anyway: %q, %q", res.LogPath, lines)

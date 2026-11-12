@@ -75,7 +75,8 @@ go run . [<commit> | <branch> | <pull request>] [<path>]
 Every repository opens in a window of its own. **Godiff → Install Command Line
 Tool…** installs a `godiff` command that opens the app on the repository it
 runs in. Started from Finder or the Dock, the app reopens the repository opened
-last, and **File → Open Recent** lists the ten opened lately.
+last, or with `restoreSessions` on, every repository and target the run before
+left open; **File → Open Recent** lists the ten opened lately.
 
 ### Keyboard
 
@@ -85,6 +86,7 @@ last, and **File → Open Recent** lists the ten opened lately.
 | <kbd>⌘P</kbd> | Filter files |
 | <kbd>⌘F</kbd> | Find in diffs |
 | <kbd>J</kbd> / <kbd>K</kbd> | Next / previous hunk |
+| <kbd>V</kbd> | Mark the file shown viewed |
 | <kbd>N</kbd> / <kbd>⇧N</kbd> | Next / previous AI note |
 | <kbd>Enter</kbd> | Comment on the hunk chosen |
 | <kbd>⌘↩</kbd> | Add the comment; commit, in the commit view |
@@ -114,6 +116,7 @@ with codiff's names, and apply to open windows as the file changes:
     "aiAgent": "",                 // claude, codex, opencode or pi; empty is the first installed
     "aiModel": "",                 // e.g. "sonnet" or "deepseek/deepseek-flash"; empty is the agent's default
     "reviewCommentsPrefix": "# Address these Review Comments",
+    "restoreSessions": false,      // reopen every session of the last run at launch
     "sidebarPosition": "left",     // or "right"
     "showWhitespace": false,
     "theme": "system",             // or "light", "dark"
@@ -143,6 +146,12 @@ go tool mygo build        # Godiff.app and a disk image in build/
 go run ./tools/genicon    # render resources/icon.svg to the app icon
 go run ./tools/genfileicons <@pierre/trees package>  # update the file icons
 ```
+
+`scripts/gen-locales.sh` writes `locales/catalog_gen.go` from the catalogs
+beside it, and is what to run instead of `go tool mygo generate` under a path
+with a space in it, as `~/Library/Application Support` has: it does the work in
+a copy of the repository under a path with no space, and copies the one file it
+wrote back.
 
 `GODIFF_SNAPSHOTS=<dir> go test .` saves PNGs of the views the tests drive, and
 `GODIFF_CAPTURE=<file.png>` makes the app save a picture of its window once

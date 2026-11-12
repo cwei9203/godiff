@@ -21,6 +21,8 @@ func textReason(reason agent.Reason) string {
 		return msg().ExplainNetwork()
 	case agent.ReasonTimeout:
 		return msg().ExplainTimeout()
+	case agent.ReasonNotVerified:
+		return msg().ExplainNotVerified()
 	}
 	return ""
 }
